@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,61 +28,12 @@ import {
   Check,
   ArrowUp,
   ArrowDown,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { HeroSlide } from "@/components/marketing/hero-carousel";
-
-// Mock data - in production this would come from a database
-const initialSlides: HeroSlide[] = [
-  {
-    id: "1",
-    badge: "Introducing EDGE-X™ — Next-Gen Manufacturing Intelligence",
-    headline: "Win OEM Contracts.",
-    highlightedText: "Transform",
-    subheadline: "We help small- and mid-sized U.S. manufacturers become qualified suppliers through ISO certification, operational readiness, and supplier development.",
-    benefits: ["OEM Supplier Qualification", "ISO/QMS Certification", "Industry 4.0 Ready"],
-    primaryCta: { text: "Get Your Free Assessment", href: "/contact" },
-    secondaryCta: { text: "See Success Stories", href: "/case-studies" },
-    isPublished: true,
-    order: 1,
-  },
-  {
-    id: "2",
-    badge: "V+ TwinEDGE™ — Digital Twin Solutions",
-    headline: "Visualize Your Factory.",
-    highlightedText: "Optimize",
-    subheadline: "Create digital replicas of your manufacturing processes to simulate, analyze, and improve operations before making costly physical changes.",
-    benefits: ["Real-time Monitoring", "Predictive Analytics", "Process Simulation"],
-    primaryCta: { text: "Explore Digital Twins", href: "/services/twinedge" },
-    secondaryCta: { text: "Watch Demo", href: "/demo" },
-    isPublished: true,
-    order: 2,
-  },
-  {
-    id: "3",
-    badge: "V+ IntellEDGE™ — AI-Powered Insights",
-    headline: "Make Smarter Decisions.",
-    highlightedText: "Faster",
-    subheadline: "Leverage artificial intelligence to gain actionable insights from your manufacturing data, predict maintenance needs, and optimize production schedules.",
-    benefits: ["AI-Driven Analytics", "Predictive Maintenance", "Smart Scheduling"],
-    primaryCta: { text: "Discover AI Solutions", href: "/services/intelledge" },
-    secondaryCta: { text: "Learn More", href: "/about" },
-    isPublished: true,
-    order: 3,
-  },
-  {
-    id: "4",
-    badge: "Reshoring Initiative Partner",
-    headline: "Bring Manufacturing",
-    highlightedText: "Home",
-    subheadline: "Join the reshoring movement. We help companies navigate the complexities of bringing manufacturing back to the United States with comprehensive support.",
-    benefits: ["Supply Chain Security", "Quality Control", "Job Creation"],
-    primaryCta: { text: "Start Reshoring", href: "/services/reshoring" },
-    secondaryCta: { text: "View Case Studies", href: "/case-studies" },
-    isPublished: false,
-    order: 4,
-  },
-];
 
 const wizardSteps = [
   { id: 1, title: "Basic Info", description: "Badge and headline" },
@@ -118,11 +69,36 @@ const emptyFormData: SlideFormData = {
 };
 
 export default function HeroManagementPage() {
-  const [slides, setSlides] = useState<HeroSlide[]>(initialSlides);
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [formData, setFormData] = useState<SlideFormData>(emptyFormData);
+
+  // Fetch slides from API
+  const fetchSlides = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/hero-slides");
+      if (response.ok) {
+        const data = await response.json();
+        setSlides(data.slides || []);
+      } else {
+        toast.error("Failed to fetch slides");
+      }
+    } catch (error) {
+      console.error("Error fetching slides:", error);
+      toast.error("Failed to fetch slides");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSlides();
+  }, []);
 
   const openWizard = (slide?: HeroSlide) => {
     if (slide) {
@@ -154,53 +130,127 @@ export default function HeroManagementPage() {
     setWizardStep(1);
   };
 
-  const handleSave = () => {
-    const newSlide: HeroSlide = {
-      id: editingSlide?.id || Date.now().toString(),
-      badge: formData.badge,
-      headline: formData.headline,
-      highlightedText: formData.highlightedText,
-      subheadline: formData.subheadline,
-      benefits: formData.benefits.filter(b => b.trim() !== ""),
-      primaryCta: { text: formData.primaryCtaText, href: formData.primaryCtaHref },
-      secondaryCta: { text: formData.secondaryCtaText, href: formData.secondaryCtaHref },
-      isPublished: formData.isPublished,
-      order: editingSlide?.order || slides.length + 1,
-    };
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const slideData = {
+        badge: formData.badge,
+        headline: formData.headline,
+        highlightedText: formData.highlightedText,
+        subheadline: formData.subheadline,
+        benefits: formData.benefits.filter(b => b.trim() !== ""),
+        primaryCta: { text: formData.primaryCtaText, href: formData.primaryCtaHref },
+        secondaryCta: { text: formData.secondaryCtaText, href: formData.secondaryCtaHref },
+        isPublished: formData.isPublished,
+      };
 
-    if (editingSlide) {
-      setSlides(slides.map(s => s.id === editingSlide.id ? newSlide : s));
-    } else {
-      setSlides([...slides, newSlide]);
+      let response;
+      if (editingSlide) {
+        response = await fetch(`/api/hero-slides/${editingSlide.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(slideData),
+        });
+      } else {
+        response = await fetch("/api/hero-slides", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(slideData),
+        });
+      }
+
+      if (response.ok) {
+        toast.success(editingSlide ? "Slide updated successfully" : "Slide created successfully");
+        closeWizard();
+        fetchSlides();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to save slide");
+      }
+    } catch (error) {
+      console.error("Error saving slide:", error);
+      toast.error("Failed to save slide");
+    } finally {
+      setIsSaving(false);
     }
-    closeWizard();
   };
 
-  const handleDelete = (id: string) => {
-    setSlides(slides.filter(s => s.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this slide?")) return;
+    
+    try {
+      const response = await fetch(`/api/hero-slides/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast.success("Slide deleted successfully");
+        fetchSlides();
+      } else {
+        toast.error("Failed to delete slide");
+      }
+    } catch (error) {
+      console.error("Error deleting slide:", error);
+      toast.error("Failed to delete slide");
+    }
   };
 
-  const togglePublish = (id: string) => {
-    setSlides(slides.map(s => s.id === id ? { ...s, isPublished: !s.isPublished } : s));
+  const togglePublish = async (id: string) => {
+    const slide = slides.find(s => s.id === id);
+    if (!slide) return;
+
+    try {
+      const response = await fetch(`/api/hero-slides/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublished: !slide.isPublished }),
+      });
+
+      if (response.ok) {
+        toast.success(slide.isPublished ? "Slide unpublished" : "Slide published");
+        fetchSlides();
+      } else {
+        toast.error("Failed to update slide");
+      }
+    } catch (error) {
+      console.error("Error toggling publish:", error);
+      toast.error("Failed to update slide");
+    }
   };
 
-  const moveSlide = (id: string, direction: "up" | "down") => {
-    const index = slides.findIndex(s => s.id === id);
+  const moveSlide = async (id: string, direction: "up" | "down") => {
+    const sortedSlides = [...slides].sort((a, b) => a.order - b.order);
+    const index = sortedSlides.findIndex(s => s.id === id);
     if (
       (direction === "up" && index === 0) ||
-      (direction === "down" && index === slides.length - 1)
+      (direction === "down" && index === sortedSlides.length - 1)
     ) return;
 
-    const newSlides = [...slides];
     const swapIndex = direction === "up" ? index - 1 : index + 1;
-    [newSlides[index], newSlides[swapIndex]] = [newSlides[swapIndex], newSlides[index]];
+    [sortedSlides[index], sortedSlides[swapIndex]] = [sortedSlides[swapIndex], sortedSlides[index]];
     
     // Update order values
-    newSlides.forEach((slide, i) => {
-      slide.order = i + 1;
-    });
-    
-    setSlides(newSlides);
+    const reorderedSlides = sortedSlides.map((slide, i) => ({
+      id: slide.id,
+      order: i + 1,
+    }));
+
+    try {
+      const response = await fetch("/api/hero-slides/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slides: reorderedSlides }),
+      });
+
+      if (response.ok) {
+        fetchSlides();
+      } else {
+        toast.error("Failed to reorder slides");
+      }
+    } catch (error) {
+      console.error("Error reordering slides:", error);
+      toast.error("Failed to reorder slides");
+    }
   };
 
   const updateBenefit = (index: number, value: string) => {
@@ -219,10 +269,16 @@ export default function HeroManagementPage() {
             Manage the rotating hero slides on the homepage
           </p>
         </div>
-        <Button onClick={() => openWizard()}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add New Slide
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchSlides} disabled={isLoading}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+            Refresh
+          </Button>
+          <Button onClick={() => openWizard()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Slide
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -266,6 +322,18 @@ export default function HeroManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : slides.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+              <p>No hero slides yet</p>
+              <Button variant="link" onClick={() => openWizard()}>
+                Create your first slide
+              </Button>
+            </div>
+          ) : (
           <div className="space-y-4">
             {slides.sort((a, b) => a.order - b.order).map((slide, index) => (
               <div
@@ -341,6 +409,7 @@ export default function HeroManagementPage() {
               </div>
             ))}
           </div>
+        )}
         </CardContent>
       </Card>
 
@@ -548,8 +617,12 @@ export default function HeroManagementPage() {
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button onClick={handleSave}>
-                <Check className="mr-2 h-4 w-4" />
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-2 h-4 w-4" />
+                )}
                 {editingSlide ? "Save Changes" : "Create Slide"}
               </Button>
             )}

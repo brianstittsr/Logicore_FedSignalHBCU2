@@ -6,8 +6,9 @@ import { auth, db } from "@/lib/firebase";
 import { getTeamMemberByAuthUid, findAndLinkTeamMember, updateTeamMemberProfile } from "@/lib/auth-team-member-link";
 import type { TeamMemberDoc } from "@/lib/schema";
 import { ENHANCED_COLLECTIONS, type NetworkingProfileDoc } from "@/lib/schema-extensions";
-import { doc, setDoc, getDoc, Timestamp, addDoc, collection } from "firebase/firestore";
+import { doc, setDoc, getDoc, Timestamp, addDoc, collection, updateDoc } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/schema";
+import { syncUserToTeamMember } from "@/lib/user-team-member-sync";
 
 // User profile fields
 export interface UserProfile {
@@ -532,20 +533,66 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         return { success: false, error: "No team member ID available. Please sign in again." };
       }
 
-      // Update team member basic profile
-      const teamMemberUpdates = mapProfileToTeamMember(profile);
-      const updatedTeamMember = await updateTeamMemberProfile(teamMemberId, teamMemberUpdates);
-      
+      // Save User Profile to Firestore
+      if (profile.id && db) {
+        const userRef = doc(db, COLLECTIONS.USERS, profile.id);
+        const userUpdates = {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone,
+          company: profile.company,
+          jobTitle: profile.jobTitle,
+          location: profile.location,
+          bio: profile.bio,
+          avatarUrl: profile.avatarUrl,
+          role: profile.role,
+          isAffiliate: profile.isAffiliate,
+          networkingProfile: profile.networkingProfile,
+          affiliateOnboardingComplete: profile.affiliateOnboardingComplete,
+          affiliateAgreementSigned: profile.affiliateAgreementSigned,
+          affiliateAgreementDate: profile.affiliateAgreementDate,
+          profileCompletedAt: profile.profileCompletedAt,
+          updatedAt: Timestamp.now(),
+        };
+        await updateDoc(userRef, userUpdates);
+        console.log("User Profile saved to Firestore");
+      }
+
+      // Sync User Profile changes to Team Member
+      if (profile.id) {
+        const syncResult = await syncUserToTeamMember(profile.id, {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone,
+          company: profile.company,
+          jobTitle: profile.jobTitle,
+          location: profile.location,
+          bio: profile.bio,
+          avatarUrl: profile.avatarUrl,
+          role: profile.role,
+          networkingProfile: profile.networkingProfile,
+        });
+        
+        if (syncResult.success) {
+          console.log("Profile synced to Team Member successfully");
+        } else {
+          console.warn("Failed to sync to Team Member:", syncResult.error);
+        }
+      }
+
+      // Refresh Team Member data
+      const updatedTeamMember = await getTeamMemberByAuthUid(profile.id);
       if (updatedTeamMember) {
         setLinkedTeamMember(updatedTeamMember);
-        console.log("Profile saved successfully to Team Member:", updatedTeamMember.id);
       }
       
       // Save networking profile to separate collection (for affiliates)
       if (profile.isAffiliate && profile.networkingProfile) {
         const networkingSaved = await saveNetworkingProfile(teamMemberId, profile.networkingProfile);
         if (!networkingSaved) {
-          console.warn("Failed to save networking profile, but team member was updated");
+          console.warn("Failed to save networking profile, but profile was updated");
         }
       }
       

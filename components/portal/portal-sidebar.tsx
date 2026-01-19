@@ -434,12 +434,24 @@ export function PortalSidebar() {
 
   const handleSignOut = async () => {
     try {
+      // Sign out from Firebase Auth
       if (auth) {
         await signOut(auth);
       }
-      router.push("/login");
+      
+      // Clear all session storage
+      sessionStorage.clear();
+      
+      // Clear specific localStorage items if needed
+      localStorage.removeItem("svp_remembered_email");
+      localStorage.removeItem("svp_remember_me");
+      
+      // Redirect to home page
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
+      // Even if there's an error, try to redirect
+      router.push("/");
     }
   };
   const [bookCallLeadsCount, setBookCallLeadsCount] = useState(0);

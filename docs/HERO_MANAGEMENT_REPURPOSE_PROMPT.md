@@ -12,7 +12,12 @@ This prompt provides a comprehensive blueprint for repurposing the Hero Carousel
 
 | File | Purpose |
 |------|---------|
+| `lib/schema.ts` | Firebase schema with `HeroSlideDoc` interface and `HERO_SLIDES` collection |
+| `app/api/hero-slides/route.ts` | API routes for list (GET) and create (POST) |
+| `app/api/hero-slides/[id]/route.ts` | API routes for single slide CRUD (GET, PATCH, DELETE) |
+| `app/api/hero-slides/reorder/route.ts` | API route for batch reordering slides |
 | `components/marketing/hero-carousel.tsx` | Frontend carousel component with auto-play and navigation |
+| `components/marketing/hero-carousel-wrapper.tsx` | Wrapper that fetches slides from API |
 | `components/marketing/hero.tsx` | Static hero component (single slide, no carousel) |
 | `app/(portal)/portal/admin/hero/page.tsx` | Admin management page with wizard dialog |
 

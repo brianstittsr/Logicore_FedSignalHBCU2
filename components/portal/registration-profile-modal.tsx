@@ -23,7 +23,7 @@ import {
 import { Loader2, UserCheck } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { COLLECTIONS } from "@/lib/schema";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc, Timestamp } from "firebase/firestore";
 
 export interface RegistrationData {
   firebaseUid: string;
@@ -139,10 +139,76 @@ export function RegistrationProfileModal({
         updatedAt: Timestamp.now(),
       };
 
-      // Write single merged record to Firestore
+      // Write Team Member record to Firestore
       const docRef = await addDoc(collection(db, COLLECTIONS.TEAM_MEMBERS), teamMemberData);
       
       console.log("Created team member with auth linkage:", docRef.id, "Firebase UID:", registrationData.firebaseUid);
+
+      // Create User Profile document (using firebaseUid as document ID)
+      const userProfileData = {
+        // Firebase Auth linkage
+        id: registrationData.firebaseUid,
+        firebaseUid: registrationData.firebaseUid,
+        
+        // Basic info
+        email: formData.emailPrimary.trim().toLowerCase(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.mobile.trim() || "",
+        company: formData.company.trim() || "",
+        jobTitle: formData.title.trim() || "",
+        location: formData.location.trim() || "",
+        bio: formData.bio.trim() || "",
+        avatarUrl: "",
+        
+        // Role and permissions
+        role: formData.role === "affiliate" ? "affiliate" : 
+              formData.role === "consultant" ? "affiliate" : "team_member",
+        isAffiliate: formData.role === "affiliate" || formData.role === "consultant",
+        
+        // Affiliate onboarding tracking
+        affiliateOnboardingComplete: false,
+        affiliateAgreementSigned: false,
+        affiliateAgreementDate: null,
+        
+        // Default networking profile structure
+        networkingProfile: {
+          expertise: formData.expertise.trim() ? [formData.expertise.trim()] : [],
+          categories: [],
+          idealReferralPartner: "",
+          topReferralSources: "",
+          goalsThisQuarter: "",
+          uniqueValueProposition: "",
+          targetClientProfile: "",
+          problemsYouSolve: "",
+          successStory: "",
+          businessType: "",
+          industry: [],
+          targetCustomers: "",
+          servicesOffered: "",
+          geographicFocus: [],
+          networkingGoals: [],
+          meetingFrequency: "",
+          availableDays: [],
+          timePreference: "",
+          communicationPreference: "",
+          lookingFor: [],
+          canProvide: [],
+          additionalNotes: "",
+        },
+        
+        // Profile completion tracking
+        profileCompletedAt: null,
+        
+        // Timestamps
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+
+      // Use setDoc with firebaseUid as document ID for easy lookup
+      await setDoc(doc(db, COLLECTIONS.USERS, registrationData.firebaseUid), userProfileData);
+      
+      console.log("Created user profile:", registrationData.firebaseUid);
 
       // Store team member ID in session for immediate use
       sessionStorage.setItem("svp_team_member_id", docRef.id);

@@ -881,6 +881,34 @@ export interface BackupStorageLocation {
   uploadedAt: Timestamp;
 }
 
+// ============================================================================
+// Hero Carousel Management
+// ============================================================================
+
+/** Hero slide document in Firestore */
+export interface HeroSlideDoc {
+  id: string;
+  badge: string;                 // Top badge text
+  headline: string;              // Main headline
+  highlightedText: string;       // Accent-colored text
+  subheadline: string;           // Supporting description
+  benefits: string[];            // Key benefits (up to 3)
+  primaryCta: {
+    text: string;
+    href: string;
+  };
+  secondaryCta: {
+    text: string;
+    href: string;
+  };
+  isPublished: boolean;          // Whether visible on frontend
+  order: number;                 // Display order
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  createdBy?: string;            // User ID
+  updatedBy?: string;            // User ID
+}
+
 /** Backup metadata document in Firestore */
 export interface BackupMetadataDoc {
   id: string;
@@ -1978,6 +2006,8 @@ export const COLLECTIONS = {
   BACKUP_METADATA: "backupMetadata",
   BACKUP_SETTINGS: "backupSettings",
   GOOGLE_DRIVE_TOKENS: "googleDriveTokens",
+  // Hero Carousel
+  HERO_SLIDES: "heroSlides",
 } as const;
 
 // ============================================================================

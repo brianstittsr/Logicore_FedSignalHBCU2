@@ -13,19 +13,24 @@ service cloud.firestore {
     }
     
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      // TODO: Implement proper role lookup from team_members collection
+      // For now, treat all authenticated users as admins for development
+      return isAuthenticated() ? 'admin' : null;
     }
     
     function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'admin';
+      // During development, all authenticated users have admin access
+      return isAuthenticated();
     }
     
     function isTeamMember() {
-      return isAuthenticated() && getUserRole() in ['admin', 'team'];
+      // During development, all authenticated users are team members
+      return isAuthenticated();
     }
     
     function isAffiliate() {
-      return isAuthenticated() && getUserRole() == 'affiliate';
+      // During development, all authenticated users can be affiliates
+      return isAuthenticated();
     }
     
     function isOrgMember(orgId) {

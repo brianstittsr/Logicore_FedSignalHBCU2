@@ -68,6 +68,7 @@ import { db } from "@/lib/firebase";
 import { COLLECTIONS, type TeamMemberDoc, type OneToOneQueueItemDoc } from "@/lib/schema";
 import { logTeamMemberAdded, logActivity } from "@/lib/activity-logger";
 import Link from "next/link";
+import { syncTeamMemberToUser } from "@/lib/user-team-member-sync";
 
 // Seed data for Team Members
 const seedTeamMembers: Omit<TeamMemberDoc, "id" | "createdAt" | "updatedAt">[] = [
@@ -102,7 +103,7 @@ const seedTeamMembers: Omit<TeamMemberDoc, "id" | "createdAt" | "updatedAt">[] =
   { firstName: "Mike", lastName: "Liu", emailPrimary: "mike@freefuse.com", mobile: "(818)-324-0538", expertise: "Multimedia User-Defined Learning Platforms", role: "affiliate", status: "active" },
   { firstName: "Nate", lastName: "Hallums", emailPrimary: "nhallums@strategicvalueplus.com", emailSecondary: "nate@backyardfishingagency.co", mobile: "(523) 273-7789", expertise: "Net-No-Cost Wellness Plans that Generate Cash Flow", role: "team", status: "active" },
   { firstName: "Nathan", lastName: "Tyler", emailPrimary: "nathan@nsquared.io", expertise: "Executive Dash Boards", role: "affiliate", status: "active" },
-  { firstName: "Nelinia", lastName: "Varenas", emailPrimary: "nelinia@stategicvalueplus.com", emailSecondary: "neliniav@gmail.com", mobile: "(310) 650-0725", expertise: "CEO", role: "admin", status: "active" },
+  { firstName: "Nelinia", lastName: "Varenas", emailPrimary: "nelinia@strategicvalueplus.com", emailSecondary: "neliniav@gmail.com", mobile: "(310) 650-0725", expertise: "CEO", role: "admin", status: "active" },
   { firstName: "Nicholas", lastName: "Chiselett", emailPrimary: "nicholas@2bytes.com.au", mobile: "61414247540", expertise: "Construction On-line Stores", role: "affiliate", status: "active" },
   { firstName: "Philip", lastName: "Wolfstein", emailPrimary: "phil@philwolfstein.com", expertise: "Certified Business Broker", role: "affiliate", status: "active" },
   { firstName: "RC", lastName: "Caldwell", emailPrimary: "rc@CaldwellLeanSixSigma.com", mobile: "(937) 367-6743", expertise: "Black Belt Six Sigma/TOC Expert", role: "affiliate", status: "active" },
@@ -251,6 +252,15 @@ export default function TeamMembersPage() {
           ...formData,
           updatedAt: Timestamp.now(),
         });
+        
+        // Sync changes to User Profile if linked
+        const syncResult = await syncTeamMemberToUser(editingMember.id, formData);
+        if (syncResult.success) {
+          console.log("Team Member changes synced to User Profile");
+        } else {
+          console.warn("Failed to sync to User Profile:", syncResult.error);
+        }
+        
         // Log activity
         await logActivity({
           type: "update",
@@ -334,16 +344,14 @@ export default function TeamMembersPage() {
     }
   };
 
-  // Delete member (also deletes Firebase Auth account via API)
+  // Delete member
   const handleDeleteMember = async (id: string, memberName: string) => {
-    if (!confirm(`Are you sure you want to delete ${memberName}? This will also remove their login account.`)) return;
+    if (!confirm(`Are you sure you want to delete ${memberName}?`)) return;
     
     try {
-      // Call API to delete team member and their Firebase Auth account
-      const response = await fetch("/api/admin/delete-team-member", {
+      // Use the new team-members API endpoint
+      const response = await fetch(`/api/team-members/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamMemberId: id }),
       });
 
       const result = await response.json();
@@ -358,7 +366,7 @@ export default function TeamMembersPage() {
         entityType: "team-member",
         entityId: id,
         entityName: memberName,
-        description: `Team member removed: ${memberName}${result.authDeleted ? " (login account also deleted)" : ""}`,
+        description: `Team member removed: ${memberName}`,
       });
 
       await fetchMembers();
