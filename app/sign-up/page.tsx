@@ -21,11 +21,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState<"affiliate" | "strategic_partner" | "client" | "">("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -48,10 +44,6 @@ export default function SignUpPage() {
   };
 
   const validateStep2 = () => {
-    if (!firstName.trim() || !lastName.trim()) {
-      setError("Please enter your full name");
-      return false;
-    }
     if (!email.trim() || !email.includes("@")) {
       setError("Please enter a valid email address");
       return false;
@@ -101,9 +93,10 @@ export default function SignUpPage() {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           firebaseUid = userCredential.user.uid;
           
-          // Update the user's display name
+          // Update the user's display name (use email prefix since name fields removed)
+          const emailPrefix = email.split("@")[0];
           await updateProfile(userCredential.user, {
-            displayName: `${firstName} ${lastName}`,
+            displayName: emailPrefix,
           });
 
           // Check if this email matches an existing Team Member and link them
@@ -120,9 +113,9 @@ export default function SignUpPage() {
             sessionStorage.setItem("svp_authenticated", "true");
             sessionStorage.setItem("svp_user_email", email);
             sessionStorage.setItem("svp_user_type", accountType);
-            sessionStorage.setItem("svp_user_name", `${firstName} ${lastName}`);
-            sessionStorage.setItem("svp_user_company", company);
-            sessionStorage.setItem("svp_user_phone", phone);
+            sessionStorage.setItem("svp_user_name", emailPrefix);
+            sessionStorage.setItem("svp_user_company", "");
+            sessionStorage.setItem("svp_user_phone", "");
             sessionStorage.setItem("svp_firebase_uid", firebaseUid);
             
             setIsLoading(false);
@@ -152,11 +145,11 @@ export default function SignUpPage() {
       if (firebaseUid && accountType) {
         setRegistrationData({
           firebaseUid,
-          firstName,
-          lastName,
+          firstName: "",
+          lastName: "",
           email,
-          phone,
-          company,
+          phone: "",
+          company: "",
           accountType: accountType as "affiliate" | "strategic_partner" | "client",
         });
         
@@ -164,9 +157,9 @@ export default function SignUpPage() {
         sessionStorage.setItem("svp_authenticated", "true");
         sessionStorage.setItem("svp_user_email", email);
         sessionStorage.setItem("svp_user_type", accountType);
-        sessionStorage.setItem("svp_user_name", `${firstName} ${lastName}`);
-        sessionStorage.setItem("svp_user_company", company);
-        sessionStorage.setItem("svp_user_phone", phone);
+        sessionStorage.setItem("svp_user_name", email.split("@")[0]);
+        sessionStorage.setItem("svp_user_company", "");
+        sessionStorage.setItem("svp_user_phone", "");
         sessionStorage.setItem("svp_firebase_uid", firebaseUid);
         
         // Show the profile completion modal
@@ -369,33 +362,6 @@ export default function SignUpPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      type="text"
-                      placeholder="John"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      type="text"
-                      placeholder="Doe"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                      className="h-11"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -406,30 +372,6 @@ export default function SignUpPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    className="h-11"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (Optional)</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company Name (Optional)</Label>
-                  <Input
-                    id="company"
-                    type="text"
-                    placeholder="Your Company LLC"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
                     className="h-11"
                   />
                 </div>
