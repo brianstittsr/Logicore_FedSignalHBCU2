@@ -94,49 +94,45 @@ import { cn } from "@/lib/utils";
 import { GraduationCap, Paintbrush, BookOpen, Network, Briefcase, Ticket } from "lucide-react";
 
 // ============================================================================
-// SECTION DEFINITIONS
+// SECTION DEFINITIONS - Organized by Role Access
 // ============================================================================
 export const SECTIONS = {
-  systemManagement: { label: "System Management" },
-  projectManagement: { label: "Project Management" },
-  data: { label: "Data" },
-  people: { label: "People" },
-  productivity: { label: "Productivity" },
-  affiliateCenter: { label: "Affiliate Center" },
-  content: { label: "Content" },
-  admin: { label: "Admin" },
-  initiatives: { label: "Initiatives" },
-  intelligence: { label: "Intelligence" },
-  other: { label: "Other" },
+  // Everyone sees these
+  dashboard: { label: "Dashboard", roles: ["admin", "team", "affiliate", "consultant"] },
+  myWork: { label: "My Work", roles: ["admin", "team", "affiliate", "consultant"] },
+  
+  // Networking & Collaboration (Affiliates, Team, Consultants)
+  networking: { label: "Networking", roles: ["admin", "team", "affiliate", "consultant"] },
+  
+  // Business Development (Team, Admin)
+  salesCrm: { label: "Sales & CRM", roles: ["admin", "team"] },
+  
+  // Content & Resources (Everyone)
+  resources: { label: "Resources", roles: ["admin", "team", "affiliate", "consultant"] },
+  
+  // AI Tools (Everyone)
+  aiTools: { label: "AI Tools", roles: ["admin", "team", "affiliate", "consultant"] },
+  
+  // Admin Only
+  adminTools: { label: "Admin Tools", roles: ["admin"] },
+  systemSettings: { label: "System Settings", roles: ["admin"] },
 } as const;
 
 // ============================================================================
-// SYSTEM MANAGEMENT
+// DASHBOARD - Everyone sees this
 // ============================================================================
-const systemManagementItems = [
+const dashboardItems = [
   {
-    title: "Bug Tracker",
-    href: "/portal/bug-tracker",
-    icon: Bug,
+    title: "Command Center",
+    href: "/portal/command-center",
+    icon: LayoutDashboard,
   },
 ];
 
 // ============================================================================
-// PROJECT MANAGEMENT
+// MY WORK - Personal productivity (Everyone)
 // ============================================================================
-const projectManagementItems = [
-  {
-    title: "Opportunities",
-    href: "/portal/opportunities",
-    icon: Target,
-    badge: "5",
-  },
-  {
-    title: "Projects",
-    href: "/portal/projects",
-    icon: FolderKanban,
-    badge: "3",
-  },
+const myWorkItems = [
   {
     title: "Calendar",
     href: "/portal/calendar",
@@ -153,10 +149,119 @@ const projectManagementItems = [
     icon: CalendarDays,
   },
   {
-    title: "Proposal Creator",
-    href: "/portal/proposals",
+    title: "Rocks",
+    href: "/portal/rocks",
+    icon: CheckSquare,
+  },
+  {
+    title: "Events",
+    href: "/portal/admin/events",
+    icon: Ticket,
+  },
+];
+
+// ============================================================================
+// NETWORKING - Affiliate-focused collaboration (Everyone)
+// ============================================================================
+const networkingItems = [
+  {
+    title: "Networking Hub",
+    href: "/portal/networking",
+    icon: Handshake,
+  },
+  {
+    title: "Member Directory",
+    href: "/portal/member-directory",
+    icon: Users,
+  },
+  {
+    title: "Team Members",
+    href: "/portal/team-members",
+    icon: UserCog,
+  },
+  {
+    title: "Affiliates",
+    href: "/portal/affiliates",
+    icon: Network,
+  },
+  {
+    title: "Referrals",
+    href: "/portal/referrals",
+    icon: Heart,
+  },
+];
+
+// ============================================================================
+// SALES & CRM - Business development (Team, Admin)
+// ============================================================================
+const salesCrmItems = [
+  {
+    title: "Opportunities",
+    href: "/portal/opportunities",
+    icon: Target,
+  },
+  {
+    title: "Projects",
+    href: "/portal/projects",
+    icon: FolderKanban,
+  },
+  {
+    title: "Customers",
+    href: "/portal/customers",
+    icon: Building,
+  },
+  {
+    title: "Deals",
+    href: "/portal/deals",
+    icon: DollarSign,
+  },
+  {
+    title: "Strategic Partners",
+    href: "/portal/admin/strategic-partners",
+    icon: Building2,
+  },
+  {
+    title: "Book Call Leads",
+    href: "/portal/admin/book-call-leads",
+    icon: Phone,
+  },
+  {
+    title: "GoHighLevel",
+    href: "/portal/gohighlevel",
+    icon: Plug,
+    badge: "CRM",
+  },
+];
+
+// ============================================================================
+// RESOURCES - Content & Documents (Everyone)
+// ============================================================================
+const resourcesItems = [
+  {
+    title: "Documents",
+    href: "/portal/documents",
     icon: FileText,
-    badge: "AI",
+  },
+  {
+    title: "Proposals",
+    href: "/portal/proposals",
+    icon: FileSignature,
+  },
+  {
+    title: "Agreements",
+    href: "/portal/agreements",
+    icon: FileText,
+  },
+];
+
+// ============================================================================
+// AI TOOLS - AI-powered features (Everyone)
+// ============================================================================
+const aiToolsItems = [
+  {
+    title: "Ask IntellEDGE",
+    href: "/portal/ask",
+    icon: Sparkles,
   },
   {
     title: "AI Workforce",
@@ -165,27 +270,17 @@ const projectManagementItems = [
     badge: "AI",
   },
   {
-    title: "Events",
-    href: "/portal/admin/events",
-    icon: Ticket,
+    title: "Proposal Creator",
+    href: "/portal/proposals",
+    icon: FileText,
+    badge: "AI",
   },
   {
-    title: "EOS2 Dashboard",
-    href: "/portal/eos2",
-    icon: Target,
-    badge: "EOS",
+    title: "LinkedIn Content",
+    href: "/portal/linkedin-content",
+    icon: Linkedin,
+    badge: "AI",
   },
-  {
-    title: "Rocks",
-    href: "/portal/rocks",
-    icon: CheckSquare,
-  },
-];
-
-// ============================================================================
-// DATA
-// ============================================================================
-const dataItems = [
   {
     title: "Apollo Search",
     href: "/portal/apollo-search",
@@ -198,131 +293,24 @@ const dataItems = [
     icon: Factory,
     badge: "AI",
   },
-];
-
-// ============================================================================
-// PEOPLE
-// ============================================================================
-const peopleItems = [
   {
-    title: "Team Members",
-    href: "/portal/team-members",
-    icon: UserCog,
-  },
-  {
-    title: "Affiliates",
-    href: "/portal/affiliates",
-    icon: Users,
-  },
-  {
-    title: "Customers",
-    href: "/portal/customers",
-    icon: Building,
-  },
-  {
-    title: "Member Directory",
-    href: "/portal/member-directory",
-    icon: Users,
-  },
-];
-
-// ============================================================================
-// PRODUCTIVITY
-// ============================================================================
-const productivityItems = [
-  {
-    title: "Networking",
-    href: "/portal/networking",
-    icon: Handshake,
-  },
-  {
-    title: "Deals",
-    href: "/portal/deals",
-    icon: DollarSign,
-  },
-];
-
-// ============================================================================
-// AFFILIATE CENTER
-// ============================================================================
-const affiliateCenterItems = [
-  {
-    title: "Affiliates",
-    href: "/portal/affiliates",
-    icon: Users,
-  },
-  {
-    title: "Networking",
-    href: "/portal/networking",
-    icon: Network,
-  },
-  {
-    title: "Deals",
-    href: "/portal/deals",
-    icon: Briefcase,
-  },
-];
-
-// ============================================================================
-// CONTENT
-// ============================================================================
-const contentItems = [
-  {
-    title: "Documents",
-    href: "/portal/documents",
-    icon: FileText,
-  },
-  {
-    title: "LinkedIn Content",
-    href: "/portal/linkedin-content",
-    icon: Linkedin,
+    title: "SVP Tools",
+    href: "/portal/svp-tools",
+    icon: Sparkles,
     badge: "AI",
   },
 ];
 
 // ============================================================================
-// ADMIN
+// ADMIN TOOLS - Platform management (Admin only)
 // ============================================================================
-const adminItems = [
+const adminToolsItems = [
   {
-    title: "GoHighLevel",
-    href: "/portal/gohighlevel",
-    icon: Plug,
-    badge: "CRM",
+    title: "EOS2 Dashboard",
+    href: "/portal/eos2",
+    icon: Target,
+    badge: "EOS",
   },
-  {
-    title: "Page Designer",
-    href: "/portal/admin/page-designer",
-    icon: Paintbrush,
-  },
-  {
-    title: "Academy Admin",
-    href: "/portal/admin/academy",
-    icon: GraduationCap,
-  },
-  {
-    title: "Backup & Restore",
-    href: "/portal/admin/backups",
-    icon: Database,
-  },
-  {
-    title: "Fathom Meetings",
-    href: "/portal/admin/fathom",
-    icon: Video,
-    badge: "NEW",
-  },
-  {
-    title: "Fireflies.ai",
-    href: "/portal/admin/fireflies",
-    icon: Flame,
-    badge: "NEW",
-  },
-];
-
-// ============================================================================
-// INITIATIVES
-// ============================================================================
-const initiativeItems = [
   {
     title: "Initiatives",
     href: "/portal/admin/initiatives",
@@ -333,52 +321,46 @@ const initiativeItems = [
     href: "/portal/admin/initiatives/tbmnc",
     icon: Battery,
   },
-];
-
-// ============================================================================
-// INTELLIGENCE (AI)
-// ============================================================================
-const intelligenceItems = [
   {
-    title: "Ask IntellEDGE",
-    href: "/portal/ask",
-    icon: Sparkles,
+    title: "Marketing Hub",
+    href: "/portal/admin/marketing-hub",
+    icon: Megaphone,
+    badge: "NEW",
+  },
+  {
+    title: "Academy Admin",
+    href: "/portal/admin/academy",
+    icon: GraduationCap,
+  },
+  {
+    title: "Fathom Meetings",
+    href: "/portal/admin/fathom",
+    icon: Video,
+  },
+  {
+    title: "Fireflies.ai",
+    href: "/portal/admin/fireflies",
+    icon: Flame,
   },
 ];
 
 // ============================================================================
-// OTHER (Uncategorized - For Future Organization)
+// SYSTEM SETTINGS - System configuration (Admin only)
 // ============================================================================
-const otherItems = [
+const systemSettingsItems = [
   {
-    title: "Command Center",
-    href: "/portal/command-center",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "DocuSeal",
-    href: "/portal/docuseal",
-    icon: FileSignature,
-  },
-  {
-    title: "SVP Tools",
-    href: "/portal/svp-tools",
-    icon: Sparkles,
-    badge: "AI",
-  },
-  {
-    title: "Book Call Leads",
-    href: "/portal/admin/book-call-leads",
-    icon: Phone,
-  },
-  {
-    title: "Strategic Partners",
-    href: "/portal/admin/strategic-partners",
-    icon: Building2,
+    title: "Page Designer",
+    href: "/portal/admin/page-designer",
+    icon: Paintbrush,
   },
   {
     title: "Hero Management",
     href: "/portal/admin/hero",
+    icon: ImageIcon,
+  },
+  {
+    title: "Image Manager",
+    href: "/portal/admin/images",
     icon: ImageIcon,
   },
   {
@@ -392,15 +374,14 @@ const otherItems = [
     icon: Battery,
   },
   {
-    title: "Image Manager",
-    href: "/portal/admin/images",
-    icon: ImageIcon,
+    title: "Backup & Restore",
+    href: "/portal/admin/backups",
+    icon: Database,
   },
   {
-    title: "Marketing Hub",
-    href: "/portal/admin/marketing-hub",
-    icon: Megaphone,
-    badge: "NEW",
+    title: "Bug Tracker",
+    href: "/portal/bug-tracker",
+    icon: Bug,
   },
 ];
 
@@ -415,16 +396,14 @@ const AVAILABLE_ROLES = [
 
 // Export all nav items for use in settings
 export const ALL_NAV_ITEMS = [
-  ...systemManagementItems.map(item => ({ ...item, section: "System Management" })),
-  ...projectManagementItems.map(item => ({ ...item, section: "Project Management" })),
-  ...dataItems.map(item => ({ ...item, section: "Data" })),
-  ...peopleItems.map(item => ({ ...item, section: "People" })),
-  ...productivityItems.map(item => ({ ...item, section: "Productivity" })),
-  ...contentItems.map(item => ({ ...item, section: "Content" })),
-  ...adminItems.map(item => ({ ...item, section: "Admin" })),
-  ...initiativeItems.map(item => ({ ...item, section: "Initiatives" })),
-  ...intelligenceItems.map(item => ({ ...item, section: "Intelligence" })),
-  ...otherItems.map(item => ({ ...item, section: "Other" })),
+  ...dashboardItems.map(item => ({ ...item, section: "Dashboard" })),
+  ...myWorkItems.map(item => ({ ...item, section: "My Work" })),
+  ...networkingItems.map(item => ({ ...item, section: "Networking" })),
+  ...salesCrmItems.map(item => ({ ...item, section: "Sales & CRM" })),
+  ...resourcesItems.map(item => ({ ...item, section: "Resources" })),
+  ...aiToolsItems.map(item => ({ ...item, section: "AI Tools" })),
+  ...adminToolsItems.map(item => ({ ...item, section: "Admin Tools" })),
+  ...systemSettingsItems.map(item => ({ ...item, section: "System Settings" })),
 ];
 
 export function PortalSidebar() {
@@ -545,16 +524,14 @@ export function PortalSidebar() {
   
   // Collapsible state for each section
   const [openSections, setOpenSections] = useState({
-    systemManagement: false,
-    projectManagement: true,
-    data: true,
-    people: true,
-    productivity: true,
-    content: true,
-    admin: false,
-    initiatives: false,
-    intelligence: true,
-    other: false,
+    dashboard: true,
+    myWork: true,
+    networking: true,
+    salesCrm: true,
+    resources: true,
+    aiTools: true,
+    adminTools: false,
+    systemSettings: false,
   });
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -580,19 +557,20 @@ export function PortalSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Reusable Section Renderer */}
+        {/* Reusable Section Renderer - Organized by Role */}
         {([
-          { key: "projectManagement", label: "Project Management", items: projectManagementItems },
-          { key: "data", label: "Data", items: dataItems },
-          { key: "people", label: "People", items: peopleItems },
-          { key: "productivity", label: "Productivity", items: productivityItems },
-          { key: "content", label: "Content", items: contentItems },
-          { key: "intelligence", label: "Intelligence", items: intelligenceItems },
-          { key: "admin", label: "Admin", items: adminItems },
-          { key: "initiatives", label: "Initiatives", items: initiativeItems },
-          { key: "systemManagement", label: "System Management", items: systemManagementItems },
-          { key: "other", label: "Other", items: otherItems },
-        ] as const).map(({ key, label, items }) => {
+          { key: "dashboard" as const, label: "Dashboard", items: dashboardItems, roles: ["admin", "team", "affiliate", "consultant"] },
+          { key: "myWork" as const, label: "My Work", items: myWorkItems, roles: ["admin", "team", "affiliate", "consultant"] },
+          { key: "networking" as const, label: "Networking", items: networkingItems, roles: ["admin", "team", "affiliate", "consultant"] },
+          { key: "salesCrm" as const, label: "Sales & CRM", items: salesCrmItems, roles: ["admin", "team"] },
+          { key: "resources" as const, label: "Resources", items: resourcesItems, roles: ["admin", "team", "affiliate", "consultant"] },
+          { key: "aiTools" as const, label: "AI Tools", items: aiToolsItems, roles: ["admin", "team", "affiliate", "consultant"] },
+          { key: "adminTools" as const, label: "Admin Tools", items: adminToolsItems, roles: ["admin"] },
+          { key: "systemSettings" as const, label: "System Settings", items: systemSettingsItems, roles: ["admin"] },
+        ]).map(({ key, label, items, roles }) => {
+          // Skip sections that the user's role doesn't have access to
+          if (!roles.includes(effectiveRole) && !isAdmin) return null;
+          
           const filteredItems = filterNavItems(items as NavItem[]);
           if (filteredItems.length === 0) return null;
           
