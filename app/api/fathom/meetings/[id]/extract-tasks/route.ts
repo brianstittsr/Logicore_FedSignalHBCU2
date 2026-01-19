@@ -9,10 +9,6 @@ import {
 import { COLLECTIONS, type FathomMeetingDoc, type FathomActionItem } from "@/lib/schema";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 // POST - Extract additional tasks from transcript using AI
 export async function POST(
   request: NextRequest,
@@ -20,6 +16,17 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+
+    // Initialize OpenAI client inside handler to avoid build-time errors
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 500 }
+      );
+    }
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
     if (!db) {
       return NextResponse.json(
