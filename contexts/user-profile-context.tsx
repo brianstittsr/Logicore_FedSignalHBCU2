@@ -357,7 +357,22 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         console.log("User authenticated:", firebaseUser.uid, firebaseUser.email);
         
         try {
-          // Try to find and link Team Member by UID first, then by email
+          // STEP 1: Try to load User Profile from Firestore first
+          let userProfileData: any = null;
+          if (db) {
+            try {
+              const userProfileRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+              const userProfileDoc = await getDoc(userProfileRef);
+              if (userProfileDoc.exists()) {
+                userProfileData = userProfileDoc.data();
+                console.log("User Profile found in Firestore:", firebaseUser.uid);
+              }
+            } catch (upError) {
+              console.error("Error fetching User Profile:", upError);
+            }
+          }
+          
+          // STEP 2: Try to find Team Member by UID first, then by email
           let teamMember = await getTeamMemberByAuthUid(firebaseUser.uid);
           
           if (!teamMember && firebaseUser.email) {
@@ -365,7 +380,68 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
             teamMember = await findAndLinkTeamMember(firebaseUser.email, firebaseUser.uid);
           }
           
-          if (teamMember) {
+          // STEP 3: If User Profile exists but no Team Member, create Team Member
+          if (userProfileData && !teamMember) {
+            console.log("User Profile exists but no Team Member - creating Team Member...");
+            const profileForTeamMember: UserProfile = {
+              ...defaultProfile,
+              id: firebaseUser.uid,
+              email: userProfileData.email || firebaseUser.email || "",
+              firstName: userProfileData.firstName || "",
+              lastName: userProfileData.lastName || "",
+              phone: userProfileData.phone || "",
+              company: userProfileData.company || "",
+              jobTitle: userProfileData.jobTitle || "",
+              location: userProfileData.location || "",
+              bio: userProfileData.bio || "",
+              avatarUrl: userProfileData.avatarUrl || "",
+              role: userProfileData.role || "team_member",
+              isAffiliate: userProfileData.isAffiliate || false,
+              networkingProfile: userProfileData.networkingProfile || defaultProfile.networkingProfile,
+            };
+            
+            const newTeamMember = await createTeamMember(profileForTeamMember, firebaseUser.uid);
+            if (newTeamMember) {
+              teamMember = newTeamMember;
+              console.log("Created Team Member from User Profile:", newTeamMember.id);
+            }
+          }
+          
+          // STEP 4: Set profile data - prioritize User Profile, fall back to Team Member
+          if (userProfileData) {
+            // Use User Profile as primary source
+            const networkingProfileData = userProfileData.networkingProfile || defaultProfile.networkingProfile;
+            
+            setProfile({
+              ...defaultProfile,
+              id: firebaseUser.uid,
+              email: userProfileData.email || firebaseUser.email || "",
+              firstName: userProfileData.firstName || "",
+              lastName: userProfileData.lastName || "",
+              phone: userProfileData.phone || "",
+              company: userProfileData.company || "",
+              jobTitle: userProfileData.jobTitle || "",
+              location: userProfileData.location || "",
+              bio: userProfileData.bio || "",
+              avatarUrl: userProfileData.avatarUrl || "",
+              role: userProfileData.role || "team_member",
+              isAffiliate: userProfileData.isAffiliate || false,
+              affiliateOnboardingComplete: userProfileData.affiliateOnboardingComplete || false,
+              affiliateAgreementSigned: userProfileData.affiliateAgreementSigned || false,
+              affiliateAgreementDate: userProfileData.affiliateAgreementDate?.toDate?.()?.toISOString() || userProfileData.affiliateAgreementDate || null,
+              networkingProfile: networkingProfileData,
+              profileCompletedAt: userProfileData.profileCompletedAt?.toDate?.()?.toISOString() || userProfileData.profileCompletedAt || null,
+              createdAt: userProfileData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+            
+            if (teamMember) {
+              setLinkedTeamMember(teamMember);
+            }
+            
+            console.log("Profile loaded from User Profile document");
+          } else if (teamMember) {
+            // Fall back to Team Member data
             console.log("Linked Team Member found:", teamMember.id, teamMember.firstName, teamMember.lastName);
             setLinkedTeamMember(teamMember);
             
@@ -390,7 +466,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
                     targetClientProfile: npData.lookingFor?.[0] || npData.targetClientProfile || "",
                     problemsYouSolve: npData.problemsYouSolve || "",
                     successStory: npData.successStory || "",
-                    // Business information fields
                     businessType: npData.businessType || "",
                     industry: npData.industry || [],
                     targetCustomers: npData.targetCustomers || "",
@@ -418,8 +493,40 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
               networkingProfile: networkingProfileData,
               updatedAt: new Date().toISOString(),
             }));
+            
+            // STEP 5: Create User Profile from Team Member if it doesn't exist
+            if (db && !userProfileData) {
+              console.log("Creating User Profile from Team Member data...");
+              try {
+                const userProfileRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+                await setDoc(userProfileRef, {
+                  id: firebaseUser.uid,
+                  firebaseUid: firebaseUser.uid,
+                  email: teamMember.emailPrimary || firebaseUser.email || "",
+                  firstName: teamMember.firstName || "",
+                  lastName: teamMember.lastName || "",
+                  phone: teamMember.mobile || "",
+                  company: teamMember.company || "",
+                  jobTitle: teamMember.title || "",
+                  location: teamMember.location || "",
+                  bio: teamMember.bio || "",
+                  avatarUrl: teamMember.avatar || "",
+                  role: teamMember.role || "team_member",
+                  isAffiliate: teamMember.role === "affiliate",
+                  affiliateOnboardingComplete: false,
+                  affiliateAgreementSigned: false,
+                  affiliateAgreementDate: Timestamp.now(),
+                  networkingProfile: networkingProfileData,
+                  createdAt: Timestamp.now(),
+                  updatedAt: Timestamp.now(),
+                });
+                console.log("User Profile created from Team Member data");
+              } catch (createError) {
+                console.error("Error creating User Profile:", createError);
+              }
+            }
           } else {
-            console.log("No linked Team Member found for user:", firebaseUser.email);
+            console.log("No User Profile or Team Member found for user:", firebaseUser.email);
             setLinkedTeamMember(null);
             
             // Try to get registration data from sessionStorage (set during sign-up)
@@ -455,7 +562,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
             }));
           }
         } catch (error) {
-          console.error("Error fetching Team Member:", error);
+          console.error("Error fetching user data:", error);
         }
       } else {
         setIsAuthenticated(false);
