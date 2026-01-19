@@ -86,12 +86,12 @@ export function PortalHeader() {
       localStorage.removeItem("svp_remembered_email");
       localStorage.removeItem("svp_remember_me");
       
-      // Redirect to home page
-      router.push("/");
+      // Hard redirect to home page to ensure full page reload and clear all state
+      window.location.href = "/";
     } catch (error) {
       console.error("Error signing out:", error);
       // Even if there's an error, try to redirect
-      router.push("/");
+      window.location.href = "/";
     }
   };
   const unreadCount = notifications.filter((n) => n.unread).length;
