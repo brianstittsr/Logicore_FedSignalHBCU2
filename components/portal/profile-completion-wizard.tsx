@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUserProfile } from "@/contexts/user-profile-context";
 import {
   Dialog,
@@ -87,6 +87,20 @@ export function ProfileCompletionWizard() {
     location: profile.location || "",
     bio: profile.bio || "",
   });
+
+  // Sync formData when profile data loads/changes (e.g., from Firestore)
+  useEffect(() => {
+    setFormData((prev) => ({
+      firstName: profile.firstName || prev.firstName,
+      lastName: profile.lastName || prev.lastName,
+      email: profile.email || prev.email,
+      phone: profile.phone || prev.phone,
+      company: profile.company || prev.company,
+      jobTitle: profile.jobTitle || prev.jobTitle,
+      location: profile.location || prev.location,
+      bio: profile.bio || prev.bio,
+    }));
+  }, [profile.firstName, profile.lastName, profile.email, profile.phone, profile.company, profile.jobTitle, profile.location, profile.bio]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
