@@ -206,7 +206,7 @@ const dataItems = [
 const peopleItems = [
   {
     title: "Team Members",
-    href: "/portal/admin/team-members",
+    href: "/portal/team-members",
     icon: UserCog,
   },
   {
