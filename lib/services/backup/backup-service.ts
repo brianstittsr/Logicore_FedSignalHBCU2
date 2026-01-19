@@ -127,18 +127,18 @@ export class BackupService {
         data: backupData,
       }, null, 2);
 
-      let backupBuffer = Buffer.from(backupJson, "utf-8");
+      let backupBuffer: Buffer = Buffer.from(backupJson, "utf-8");
       const originalSize = backupBuffer.length;
 
       // Apply compression if configured
       if (config.compression === "gzip") {
         const zlib = await import("zlib");
-        backupBuffer = zlib.gzipSync(backupBuffer);
+        backupBuffer = Buffer.from(zlib.gzipSync(backupBuffer));
       }
 
       // Apply encryption if configured
       if (config.encryption && config.encryptionKey) {
-        backupBuffer = this.encrypt(backupBuffer, config.encryptionKey);
+        backupBuffer = Buffer.from(this.encrypt(backupBuffer, config.encryptionKey));
       }
 
       const compressedSize = backupBuffer.length;
