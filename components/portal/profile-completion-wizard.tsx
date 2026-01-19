@@ -211,18 +211,18 @@ export function ProfileCompletionWizard() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name *</Label>
+                    <Label htmlFor="wizard-firstName">First Name *</Label>
                     <Input
-                      id="firstName"
+                      id="wizard-firstName"
                       value={formData.firstName}
                       onChange={(e) => handleInputChange("firstName", e.target.value)}
                       placeholder="Enter your first name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Label htmlFor="wizard-lastName">Last Name *</Label>
                     <Input
-                      id="lastName"
+                      id="wizard-lastName"
                       value={formData.lastName}
                       onChange={(e) => handleInputChange("lastName", e.target.value)}
                       placeholder="Enter your last name"
@@ -235,11 +235,11 @@ export function ProfileCompletionWizard() {
             {currentStep === 2 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
+                  <Label htmlFor="wizard-email">Email Address *</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="email"
+                      id="wizard-email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
@@ -249,11 +249,11 @@ export function ProfileCompletionWizard() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="wizard-phone">Phone Number *</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="phone"
+                      id="wizard-phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
@@ -268,11 +268,11 @@ export function ProfileCompletionWizard() {
             {currentStep === 3 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="company">Company Name *</Label>
+                  <Label htmlFor="wizard-company">Company Name *</Label>
                   <div className="relative">
                     <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="company"
+                      id="wizard-company"
                       value={formData.company}
                       onChange={(e) => handleInputChange("company", e.target.value)}
                       placeholder="Your company name"
@@ -281,11 +281,11 @@ export function ProfileCompletionWizard() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="jobTitle">Job Title *</Label>
+                  <Label htmlFor="wizard-jobTitle">Job Title *</Label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="jobTitle"
+                      id="wizard-jobTitle"
                       value={formData.jobTitle}
                       onChange={(e) => handleInputChange("jobTitle", e.target.value)}
                       placeholder="Your job title"
@@ -299,11 +299,11 @@ export function ProfileCompletionWizard() {
             {currentStep === 4 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
+                  <Label htmlFor="wizard-location">Location *</Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="location"
+                      id="wizard-location"
                       value={formData.location}
                       onChange={(e) => handleInputChange("location", e.target.value)}
                       placeholder="City, State"
@@ -312,9 +312,9 @@ export function ProfileCompletionWizard() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Bio *</Label>
+                  <Label htmlFor="wizard-bio">Bio *</Label>
                   <Textarea
-                    id="bio"
+                    id="wizard-bio"
                     value={formData.bio}
                     onChange={(e) => handleInputChange("bio", e.target.value)}
                     placeholder="Tell us about yourself and your expertise..."
