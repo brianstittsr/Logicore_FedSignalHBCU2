@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { COLLECTIONS } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -155,27 +158,31 @@ const premiumAITools: SVPTool[] = [
   { id: "pdf-ocr", name: "PDF Handwriting OCR", description: "Convert handwritten PDFs to structured data", icon: "file-scan", href: "/portal/svp-tools/pdf-handwriting", teamAccess: true, affiliateAccess: true },
 ];
 
-// Mock meeting recordings
-const mockRecordings = [
-  { id: "1", title: "Affiliate Orientation Call", date: "2024-12-10", duration: "45 min", type: "onboarding" },
-  { id: "2", title: "One-to-One with Sarah Chen", date: "2024-12-05", duration: "30 min", type: "networking" },
-  { id: "3", title: "Monthly Affiliate Meeting", date: "2024-12-01", duration: "60 min", type: "group" },
-  { id: "4", title: "ISO Training Workshop", date: "2024-11-28", duration: "90 min", type: "training" },
-];
+// Types for real data
+interface OneToOneRecord {
+  id: string;
+  partner: string;
+  date: string;
+  status: string;
+  notes?: string;
+}
 
-// Mock certifications
-const mockCertifications = [
-  { id: "1", name: "ISO 9001 Lead Auditor", issuer: "IRCA", date: "2023-06-15", expires: "2026-06-15", status: "active" },
-  { id: "2", name: "Six Sigma Black Belt", issuer: "ASQ", date: "2022-03-20", expires: null, status: "active" },
-  { id: "3", name: "Lean Practitioner", issuer: "SME", date: "2021-09-10", expires: "2024-09-10", status: "expiring" },
-];
+interface CertificationRecord {
+  id: string;
+  name: string;
+  issuer: string;
+  date: string;
+  expires: string | null;
+  status: "active" | "expiring" | "expired";
+}
 
-// Mock One-to-One history
-const mockOneToOnes = [
-  { id: "1", partner: "Sarah Chen", date: "2024-12-05", status: "completed", notes: "Discussed lean manufacturing collaboration" },
-  { id: "2", partner: "Michael Rodriguez", date: "2024-12-12", status: "scheduled", notes: "ISO certification referral opportunities" },
-  { id: "3", partner: "Jennifer Park", date: "2024-12-15", status: "pending", notes: "AI solutions for manufacturing" },
-];
+interface RecordingRecord {
+  id: string;
+  title: string;
+  date: string;
+  duration: string;
+  type: string;
+}
 
 export default function ProfilePage() {
   const { profile: userProfile, getDisplayName, getInitials, updateProfile: updateContextProfile, saveProfile: saveContextProfile, isSaving: contextIsSaving, linkedTeamMember } = useUserProfile();
@@ -214,9 +221,14 @@ export default function ProfilePage() {
       speaking: true,
       consulting: true,
     },
-    certifications: mockCertifications,
+    certifications: [] as CertificationRecord[],
     memberSince: "2024-01-15",
   });
+
+  // Real data state for networking metrics
+  const [oneToOnes, setOneToOnes] = useState<OneToOneRecord[]>([]);
+  const [recordings, setRecordings] = useState<RecordingRecord[]>([]);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
 
   const [newExpertise, setNewExpertise] = useState("");
   const [newCertification, setNewCertification] = useState({
@@ -260,6 +272,122 @@ export default function ProfilePage() {
       setAvatarPreview(userProfile.avatarUrl);
     }
   }, [userProfile]);
+
+  // Fetch real networking metrics from Firestore
+  useEffect(() => {
+    const fetchNetworkingMetrics = async () => {
+      if (!db || !linkedTeamMember?.id) {
+        setIsLoadingMetrics(false);
+        return;
+      }
+
+      setIsLoadingMetrics(true);
+      try {
+        // Fetch One-to-One meetings where user is initiator or partner
+        const initiatorQuery = query(
+          collection(db, COLLECTIONS.ONE_TO_ONE_MEETINGS),
+          where("initiatorId", "==", linkedTeamMember.id)
+        );
+        const partnerQuery = query(
+          collection(db, COLLECTIONS.ONE_TO_ONE_MEETINGS),
+          where("partnerId", "==", linkedTeamMember.id)
+        );
+
+        const [initiatorSnapshot, partnerSnapshot] = await Promise.all([
+          getDocs(initiatorQuery),
+          getDocs(partnerQuery),
+        ]);
+
+        const oneToOneData: OneToOneRecord[] = [];
+        
+        // Process initiator meetings
+        initiatorSnapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          oneToOneData.push({
+            id: doc.id,
+            partner: data.partnerName || "Unknown Partner",
+            date: data.scheduledDate?.toDate?.()?.toISOString?.()?.split("T")[0] || "",
+            status: data.status || "scheduled",
+            notes: data.meetingNotes || "",
+          });
+        });
+
+        // Process partner meetings
+        partnerSnapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          oneToOneData.push({
+            id: doc.id,
+            partner: data.initiatorName || "Unknown Partner",
+            date: data.scheduledDate?.toDate?.()?.toISOString?.()?.split("T")[0] || "",
+            status: data.status || "scheduled",
+            notes: data.meetingNotes || "",
+          });
+        });
+
+        // Sort by date descending
+        oneToOneData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setOneToOnes(oneToOneData);
+
+        // Fetch recordings from Fathom or Fireflies if available
+        const recordingsData: RecordingRecord[] = [];
+        
+        // Try to fetch Fathom meetings
+        try {
+          const fathomQuery = query(
+            collection(db, COLLECTIONS.FATHOM_MEETINGS),
+            where("linkedTeamMemberIds", "array-contains", linkedTeamMember.id)
+          );
+          const fathomSnapshot = await getDocs(fathomQuery);
+          fathomSnapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            recordingsData.push({
+              id: doc.id,
+              title: data.title || "Meeting Recording",
+              date: data.meetingDate?.toDate?.()?.toISOString?.()?.split("T")[0] || "",
+              duration: data.duration ? `${Math.round(data.duration / 60)} min` : "Unknown",
+              type: "meeting",
+            });
+          });
+        } catch (e) {
+          // Fathom collection may not exist or user may not have access
+          console.log("No Fathom recordings found");
+        }
+
+        // Try to fetch Fireflies meetings
+        try {
+          const firefliesQuery = query(
+            collection(db, COLLECTIONS.FIREFLIES_MEETINGS),
+            where("linkedTeamMemberIds", "array-contains", linkedTeamMember.id)
+          );
+          const firefliesSnapshot = await getDocs(firefliesQuery);
+          firefliesSnapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            recordingsData.push({
+              id: doc.id,
+              title: data.title || "Meeting Recording",
+              date: data.meetingDate?.toDate?.()?.toISOString?.()?.split("T")[0] || "",
+              duration: data.duration ? `${Math.round(data.duration / 60)} min` : "Unknown",
+              type: "meeting",
+            });
+          });
+        } catch (e) {
+          // Fireflies collection may not exist or user may not have access
+          console.log("No Fireflies recordings found");
+        }
+
+        // Sort recordings by date descending
+        recordingsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setRecordings(recordingsData);
+
+      } catch (error) {
+        console.error("Error fetching networking metrics:", error);
+      } finally {
+        setIsLoadingMetrics(false);
+      }
+    };
+
+    fetchNetworkingMetrics();
+  }, [linkedTeamMember?.id]);
 
   const updateProfile = (field: string, value: any) => {
     setProfile({ ...profile, [field]: value });
@@ -498,7 +626,7 @@ export default function ProfilePage() {
               {/* Quick Stats */}
               <div className="flex gap-6 pt-2">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{mockOneToOnes.length}</div>
+                  <div className="text-2xl font-bold text-primary">{oneToOnes.length}</div>
                   <div className="text-xs text-muted-foreground">One-to-Ones</div>
                 </div>
                 <div className="text-center">
@@ -506,7 +634,7 @@ export default function ProfilePage() {
                   <div className="text-xs text-muted-foreground">Certifications</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{mockRecordings.length}</div>
+                  <div className="text-2xl font-bold text-primary">{recordings.length}</div>
                   <div className="text-xs text-muted-foreground">Recordings</div>
                 </div>
               </div>
@@ -1024,19 +1152,19 @@ export default function ProfilePage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 border rounded-lg text-center">
-                  <div className="text-3xl font-bold text-primary">{mockOneToOnes.filter(m => m.status === 'completed').length}</div>
+                  <div className="text-3xl font-bold text-primary">{oneToOnes.filter(m => m.status === 'completed').length}</div>
                   <div className="text-sm text-muted-foreground">Completed 1-to-1s</div>
                 </div>
                 <div className="p-4 border rounded-lg text-center">
-                  <div className="text-3xl font-bold text-blue-600">{mockOneToOnes.filter(m => m.status === 'scheduled').length}</div>
+                  <div className="text-3xl font-bold text-blue-600">{oneToOnes.filter(m => m.status === 'scheduled').length}</div>
                   <div className="text-sm text-muted-foreground">Scheduled Meetings</div>
                 </div>
                 <div className="p-4 border rounded-lg text-center">
-                  <div className="text-3xl font-bold text-green-600">{mockRecordings.filter(r => r.type === 'networking').length}</div>
+                  <div className="text-3xl font-bold text-green-600">{recordings.filter(r => r.type === 'networking').length}</div>
                   <div className="text-sm text-muted-foreground">Networking Calls</div>
                 </div>
                 <div className="p-4 border rounded-lg text-center">
-                  <div className="text-3xl font-bold text-purple-600">{mockRecordings.length}</div>
+                  <div className="text-3xl font-bold text-purple-600">{recordings.length}</div>
                   <div className="text-sm text-muted-foreground">Total Recordings</div>
                 </div>
               </div>
@@ -1048,15 +1176,15 @@ export default function ProfilePage() {
                 <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
                   <div className="flex items-center gap-1">
                     <CheckCircle className="h-3 w-3 text-green-500" />
-                    <span>{mockOneToOnes.filter(m => m.status === 'completed').length} completed</span>
+                    <span>{oneToOnes.filter(m => m.status === 'completed').length} completed</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3 text-blue-500" />
-                    <span>{mockOneToOnes.filter(m => m.status === 'scheduled').length} upcoming</span>
+                    <span>{oneToOnes.filter(m => m.status === 'scheduled').length} upcoming</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3 text-purple-500" />
-                    <span>{new Set(mockOneToOnes.map(m => m.partner)).size} partners</span>
+                    <span>{new Set(oneToOnes.map(m => m.partner)).size} partners</span>
                   </div>
                 </div>
               </div>
@@ -1070,7 +1198,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockOneToOnes.map((meeting) => (
+                {oneToOnes.map((meeting) => (
                   <div
                     key={meeting.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
@@ -1419,7 +1547,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockRecordings.map((recording) => (
+                {recordings.map((recording) => (
                   <div
                     key={recording.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -1451,7 +1579,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 ))}
-                {mockRecordings.length === 0 && (
+                {recordings.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No recordings available yet</p>
