@@ -396,11 +396,47 @@ export default function ProfilePage() {
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+      // Compress and resize image to fit Firestore limits (max ~500KB)
+      const maxWidth = 400;
+      const maxHeight = 400;
+      const quality = 0.8;
+
+      const img = document.createElement("img");
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions maintaining aspect ratio
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+          setAvatarPreview(compressedDataUrl);
+          console.log("Profile photo compressed:", {
+            originalSize: file.size,
+            compressedSize: compressedDataUrl.length,
+            dimensions: `${width}x${height}`,
+          });
+        }
       };
-      reader.readAsDataURL(file);
+
+      img.src = URL.createObjectURL(file);
     }
   };
 
