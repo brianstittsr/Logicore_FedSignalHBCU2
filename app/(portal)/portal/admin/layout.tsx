@@ -13,7 +13,7 @@ export default function AdminLayout({
   const { isAuthenticated, isLoading, linkedTeamMember } = useUserProfile();
   const router = useRouter();
 
-  const isAdmin = linkedTeamMember?.role === "admin";
+  const isAdmin = linkedTeamMember?.role === "admin" || linkedTeamMember?.role === "superadmin";
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && !isAdmin) {
