@@ -329,7 +329,7 @@ const adminToolsItems = [
 // ============================================================================
 const systemSettingsItems = [
   {
-    title: "Page Designer",
+    title: "AI Page Designer",
     href: "/portal/admin/page-designer",
     icon: Paintbrush,
   },
