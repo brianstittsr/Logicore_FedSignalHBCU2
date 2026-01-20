@@ -286,6 +286,11 @@ const aiToolsItems = [
 // ============================================================================
 const adminToolsItems = [
   {
+    title: "Team Members",
+    href: "/portal/admin/team-members",
+    icon: UserCog,
+  },
+  {
     title: "EOS2 Dashboard",
     href: "/portal/eos2",
     icon: Target,
