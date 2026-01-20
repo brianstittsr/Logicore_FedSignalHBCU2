@@ -126,6 +126,42 @@ const NDA_WIZARD_STEPS = [
   { id: 3, title: "Sign & Send", icon: FileSignature, description: "Send for signature" },
 ];
 
+// RFI/RFP Response wizard steps (no Forms, Dashboard, Export)
+const RFI_RFP_WIZARD_STEPS = [
+  { id: 1, title: "Basic Info", icon: FileText, description: "Document upload & basic details" },
+  { id: 2, title: "Entities", icon: Building, description: "Collaborating organizations" },
+  { id: 3, title: "Data Collection", icon: ClipboardList, description: "Data collection methods" },
+  { id: 4, title: "Milestones", icon: Target, description: "Project timeline" },
+  { id: 5, title: "Review", icon: Eye, description: "Review & finalize" },
+];
+
+// Contract wizard steps (no Forms, Dashboard, Export)
+const CONTRACT_WIZARD_STEPS = [
+  { id: 1, title: "Contract Details", icon: FileText, description: "Contract information & template" },
+  { id: 2, title: "Parties", icon: Users, description: "Contract parties" },
+  { id: 3, title: "Terms", icon: ClipboardList, description: "Contract terms & conditions" },
+  { id: 4, title: "Review", icon: Eye, description: "Review & finalize" },
+  { id: 5, title: "Sign & Send", icon: FileSignature, description: "Send for signature" },
+];
+
+// Agreement wizard steps (no Forms, Dashboard, Export)
+const AGREEMENT_WIZARD_STEPS = [
+  { id: 1, title: "Agreement Details", icon: FileText, description: "Agreement information & template" },
+  { id: 2, title: "Parties", icon: Users, description: "Agreement parties" },
+  { id: 3, title: "Terms", icon: ClipboardList, description: "Agreement terms" },
+  { id: 4, title: "Review", icon: Eye, description: "Review & finalize" },
+  { id: 5, title: "Sign & Send", icon: FileSignature, description: "Send for signature" },
+];
+
+// MOU wizard steps (no Forms, Dashboard, Export)
+const MOU_WIZARD_STEPS = [
+  { id: 1, title: "MOU Details", icon: FileText, description: "MOU information & template" },
+  { id: 2, title: "Parties", icon: Users, description: "MOU parties" },
+  { id: 3, title: "Understanding", icon: ClipboardList, description: "Terms of understanding" },
+  { id: 4, title: "Review", icon: Eye, description: "Review & finalize" },
+  { id: 5, title: "Sign & Send", icon: FileSignature, description: "Send for signature" },
+];
+
 // Mock list of OEMs with agreements
 const OEM_AGREEMENTS = [
   { id: "oem-1", name: "Toyota Battery Manufacturing NC (TBMNC)", location: "Liberty, NC" },
@@ -198,13 +234,68 @@ export default function ProposalsPage() {
   const [documentTemplates, setDocumentTemplates] = useState<DocumentTemplate[]>([]);
   const [selectedTemplateType, setSelectedTemplateType] = useState<TemplateType>("nda");
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
+  
+  // Document metadata state (aligned with Documents page)
+  const [documentMetadata, setDocumentMetadata] = useState({
+    category: "Proposal",
+    description: "",
+    version: "1.0",
+    folder: "Proposals",
+  });
+
+  // Document categories and folders (aligned with Documents page)
+  const DOCUMENT_CATEGORIES = [
+    "Proposal",
+    "Contract",
+    "Agreement",
+    "Template",
+    "Report",
+    "Presentation",
+    "Training Material",
+    "Policy",
+    "Procedure",
+    "RFI Response",
+    "RFP Response",
+    "MOU",
+    "NDA",
+    "Other",
+  ];
+
+  const DOCUMENT_FOLDERS = [
+    "Proposals",
+    "Contracts",
+    "Templates",
+    "Reports",
+    "Training",
+    "Policies",
+    "Marketing",
+    "Projects",
+    "RFI-RFP",
+    "Agreements",
+    "Uncategorized",
+  ];
 
   // Get the appropriate wizard steps based on proposal type
-  const activeWizardSteps = proposalData.type === "oem_supplier_readiness" 
-    ? OEM_WIZARD_STEPS 
-    : proposalData.type === "nda" 
-      ? NDA_WIZARD_STEPS 
-      : WIZARD_STEPS;
+  const getWizardStepsForType = (type: string) => {
+    switch (type) {
+      case "oem_supplier_readiness":
+        return OEM_WIZARD_STEPS;
+      case "nda":
+        return NDA_WIZARD_STEPS;
+      case "rfi_response":
+      case "rfp_response":
+        return RFI_RFP_WIZARD_STEPS;
+      case "contract":
+        return CONTRACT_WIZARD_STEPS;
+      case "agreement":
+        return AGREEMENT_WIZARD_STEPS;
+      case "mou":
+        return MOU_WIZARD_STEPS;
+      default:
+        return WIZARD_STEPS;
+    }
+  };
+  const activeWizardSteps = getWizardStepsForType(proposalData.type || "grant");
 
   // Extract placeholders from template content (finds {{placeholder_name}} patterns)
   const extractPlaceholders = (content: string): string[] => {
@@ -1605,6 +1696,126 @@ Make it clear, professional, and highlight the value proposition and expected ou
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Document Metadata Fields (aligned with Documents page) */}
+                  {uploadedFile && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <FolderOpen className="h-4 w-4" />
+                          Document Metadata
+                        </CardTitle>
+                        <CardDescription>
+                          Categorize this document for easy retrieval
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label>Document Category</Label>
+                            <Select
+                              value={documentMetadata.category}
+                              onValueChange={(v) => setDocumentMetadata({ ...documentMetadata, category: v })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DOCUMENT_CATEGORIES.map((cat) => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Folder</Label>
+                            <Select
+                              value={documentMetadata.folder}
+                              onValueChange={(v) => setDocumentMetadata({ ...documentMetadata, folder: v })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DOCUMENT_FOLDERS.map((folder) => (
+                                  <SelectItem key={folder} value={folder}>{folder}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Version</Label>
+                            <Input
+                              placeholder="e.g., 1.0"
+                              value={documentMetadata.version}
+                              onChange={(e) => setDocumentMetadata({ ...documentMetadata, version: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Document Description</Label>
+                          <Textarea
+                            placeholder="Brief description of this document"
+                            value={documentMetadata.description}
+                            onChange={(e) => setDocumentMetadata({ ...documentMetadata, description: e.target.value })}
+                            rows={2}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Template Selection for Contract/Agreement/MOU types */}
+                  {(proposalData.type === "contract" || proposalData.type === "agreement" || proposalData.type === "mou") && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Select Template
+                        </CardTitle>
+                        <CardDescription>
+                          Choose a template to start from or upload a new document
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {documentTemplates.filter(t => t.type === proposalData.type).length > 0 ? (
+                          <div className="space-y-2">
+                            {documentTemplates.filter(t => t.type === proposalData.type).map((template) => (
+                              <div
+                                key={template.id}
+                                className={cn(
+                                  "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
+                                  selectedTemplate?.id === template.id
+                                    ? "border-primary bg-primary/5"
+                                    : "hover:bg-muted/50"
+                                )}
+                                onClick={() => setSelectedTemplate(template)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <FileText className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <p className="font-medium">{template.name}</p>
+                                    {template.description && (
+                                      <p className="text-sm text-muted-foreground">{template.description}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                {selectedTemplate?.id === template.id && (
+                                  <Check className="h-5 w-5 text-primary" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-muted-foreground">
+                            <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>No templates available for this document type.</p>
+                            <p className="text-sm">Upload a document above or add templates in the Templates tab.</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Basic Info Fields */}
                   <div className="grid grid-cols-2 gap-4">
