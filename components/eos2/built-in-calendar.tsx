@@ -182,12 +182,13 @@ function EventForm({ event, selectedDate, onSave, onCancel }: EventFormProps) {
 
     const [startHour, startMin] = startTime.split(":").map(Number);
     const [endHour, endMin] = endTime.split(":").map(Number);
+    
+    // Parse date parts explicitly to avoid timezone offset issues
+    // new Date("2025-01-20") parses as UTC, causing day shift in local time
+    const [year, month, day] = startDate.split("-").map(Number);
 
-    const start = new Date(startDate);
-    start.setHours(startHour, startMin, 0, 0);
-
-    const end = new Date(startDate);
-    end.setHours(endHour, endMin, 0, 0);
+    const start = new Date(year, month - 1, day, startHour, startMin, 0, 0);
+    const end = new Date(year, month - 1, day, endHour, endMin, 0, 0);
 
     const eventData: Omit<CalendarEventData, "id"> = {
       title,
@@ -201,9 +202,11 @@ function EventForm({ event, selectedDate, onSave, onCancel }: EventFormProps) {
 
     // Add recurring info if enabled
     if (isRecurring) {
+      // Parse recurring until date explicitly to avoid timezone issues
+      const [untilYear, untilMonth, untilDay] = recurringUntil.split("-").map(Number);
       eventData.recurring = {
         frequency: recurringFrequency,
-        until: new Date(recurringUntil),
+        until: new Date(untilYear, untilMonth - 1, untilDay, 23, 59, 59),
         dayOfWeek: start.getDay(),
       };
     }
