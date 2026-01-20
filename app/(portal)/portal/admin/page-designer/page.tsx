@@ -66,7 +66,7 @@ export default function AIPageDesignerPage() {
   const [selectedPage, setSelectedPage] = useState<Page>(PAGES[0]);
   const [selectedSection, setSelectedSection] = useState<PageSection | null>(null);
   const [activeTab, setActiveTab] = useState("chat");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([{ id: "welcome", role: "assistant", content: "Hello! I'm your AI Page Designer assistant. What would you like to work on today?", timestamp: new Date() }]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([{ id: "welcome", role: "assistant", content: "Hello! I am your AI Page Designer assistant. What would you like to work on today?", timestamp: new Date() }]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -80,12 +80,12 @@ export default function AIPageDesignerPage() {
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
-    const userMessage: ChatMessage = { id: msg-+Date.now(), role: "user", content: chatInput, timestamp: new Date() };
+    const userMessage: ChatMessage = { id: "msg-" + Date.now(), role: "user", content: chatInput, timestamp: new Date() };
     setChatMessages((prev) => [...prev, userMessage]);
     setChatInput("");
     setIsTyping(true);
     setTimeout(() => {
-      const aiResponse: ChatMessage = { id: msg-+(Date.now() + 1), role: "assistant", content: generateAIResponse(chatInput), timestamp: new Date() };
+      const aiResponse: ChatMessage = { id: "msg-" + (Date.now() + 1), role: "assistant", content: generateAIResponse(chatInput), timestamp: new Date() };
       setChatMessages((prev) => [...prev, aiResponse]);
       setIsTyping(false);
     }, 1500);
@@ -106,6 +106,39 @@ export default function AIPageDesignerPage() {
   const getScoreColor = (score: number) => { if (score >= 80) return "text-green-500"; if (score >= 60) return "text-yellow-500"; return "text-red-500"; };
   const wizardSteps = [{ title: "Page Type", description: "Select page type" }, { title: "Layout", description: "Choose layout" }, { title: "Sections", description: "Add sections" }, { title: "Content", description: "Add content" }, { title: "Styling", description: "Customize" }, { title: "SEO", description: "Optimize" }, { title: "Review", description: "Publish" }];
 
+  const getSectionClassName = (sectionId: string) => {
+    const base = "w-full text-left px-3 py-2 rounded-md text-sm transition-colors";
+    return selectedSection?.id === sectionId ? base + " bg-blue-100 text-blue-700" : base + " hover:bg-gray-100";
+  };
+
+  const getWizardStepClassName = (index: number) => {
+    const base = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium";
+    if (index < wizardStep) return base + " bg-green-500 text-white";
+    if (index === wizardStep) return base + " bg-blue-500 text-white";
+    return base + " bg-gray-200 text-gray-500";
+  };
+
+  const getWizardLineClassName = (index: number) => {
+    return index < wizardStep ? "w-8 h-0.5 bg-green-500" : "w-8 h-0.5 bg-gray-200";
+  };
+
+  const getMessageContainerClassName = (role: string) => {
+    return role === "user" ? "flex justify-end" : "flex justify-start";
+  };
+
+  const getMessageClassName = (role: string) => {
+    const base = "max-w-[80%] rounded-lg p-4";
+    return role === "user" ? base + " bg-blue-500 text-white" : base + " bg-gray-100";
+  };
+
+  const getScoreClassName = (score: number) => {
+    return "text-4xl font-bold " + getScoreColor(score);
+  };
+
+  const getSeverityClassName = (severity: string) => {
+    return "p-2 rounded-lg " + getSeverityColor(severity);
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       <div className="w-64 border-r bg-gray-50 p-4 overflow-y-auto">
@@ -120,7 +153,7 @@ export default function AIPageDesignerPage() {
           <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-2">Sections</h3>
           <div className="space-y-1">
             {selectedPage.sections.map((section) => (
-              <button key={section.id} onClick={() => setSelectedSection(section)} className={w-full text-left px-3 py-2 rounded-md text-sm transition-colors +(selectedSection?.id === section.id ? "bg-blue-100 text-blue-700" : "hover:bg-gray-100")}>
+              <button key={section.id} onClick={() => setSelectedSection(section)} className={getSectionClassName(section.id)}>
                 <div className="font-medium">{section.name}</div>
                 <div className="text-xs text-gray-500">{section.type}</div>
               </button>
@@ -133,7 +166,12 @@ export default function AIPageDesignerPage() {
             <DialogContent className="max-w-2xl">
               <DialogHeader><DialogTitle>Page Design Wizard</DialogTitle><DialogDescription>Follow these steps to create a new page design</DialogDescription></DialogHeader>
               <div className="flex items-center justify-between mb-6">
-                {wizardSteps.map((step, index) => (<div key={index} className="flex items-center"><div className={w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium +(index < wizardStep ? "bg-green-500 text-white" : index === wizardStep ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500")}>{index < wizardStep ? <Check className="w-4 h-4" /> : index + 1}</div>{index < wizardSteps.length - 1 && <div className={w-8 h-0.5 +(index < wizardStep ? "bg-green-500" : "bg-gray-200")} />}</div>))}
+                {wizardSteps.map((step, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className={getWizardStepClassName(index)}>{index < wizardStep ? <Check className="w-4 h-4" /> : index + 1}</div>
+                    {index < wizardSteps.length - 1 && <div className={getWizardLineClassName(index)} />}
+                  </div>
+                ))}
               </div>
               <div className="min-h-[200px] p-4 bg-gray-50 rounded-lg"><h4 className="font-semibold mb-2">{wizardSteps[wizardStep].title}</h4><p className="text-gray-600 text-sm">{wizardSteps[wizardStep].description}</p><div className="mt-4 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-400">Step {wizardStep + 1} content</div></div>
               <DialogFooter><Button variant="outline" onClick={() => setWizardStep(Math.max(0, wizardStep - 1))} disabled={wizardStep === 0}>Previous</Button><Button onClick={() => { if (wizardStep < wizardSteps.length - 1) { setWizardStep(wizardStep + 1); } else { setShowWizard(false); setWizardStep(0); } }}>{wizardStep === wizardSteps.length - 1 ? "Finish" : "Next"}</Button></DialogFooter>
@@ -144,7 +182,7 @@ export default function AIPageDesignerPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="border-b bg-white p-4">
           <div className="flex items-center justify-between">
-            <div><h1 className="text-xl font-semibold flex items-center gap-2"><Sparkles className="w-5 h-5 text-blue-500" />AI Page Designer</h1><p className="text-sm text-gray-500">{selectedPage.name} {selectedSection && > +selectedSection.name}</p></div>
+            <div><h1 className="text-xl font-semibold flex items-center gap-2"><Sparkles className="w-5 h-5 text-blue-500" />AI Page Designer</h1><p className="text-sm text-gray-500">{selectedPage.name}{selectedSection ? " > " + selectedSection.name : ""}</p></div>
             <div className="flex items-center gap-2"><Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-2" />Preview</Button><Button size="sm">Save Changes</Button></div>
           </div>
         </div>
@@ -158,7 +196,18 @@ export default function AIPageDesignerPage() {
           </div>
           <TabsContent value="chat" className="flex-1 flex flex-col overflow-hidden m-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {chatMessages.map((message) => (<div key={message.id} className={lex +(message.role === "user" ? "justify-end" : "justify-start")}><div className={max-w-[80%] rounded-lg p-4 +(message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100")}><div className="whitespace-pre-wrap">{message.content}</div>{message.role === "assistant" && (<button onClick={() => handleCopy(message.content, message.id)} className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">{copiedId === message.id ? <><Check className="w-3 h-3" />Copied</> : <><Copy className="w-3 h-3" />Copy</>}</button>)}</div></div>))}
+              {chatMessages.map((message) => (
+                <div key={message.id} className={getMessageContainerClassName(message.role)}>
+                  <div className={getMessageClassName(message.role)}>
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    {message.role === "assistant" && (
+                      <button onClick={() => handleCopy(message.content, message.id)} className="mt-2 text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                        {copiedId === message.id ? <><Check className="w-3 h-3" />Copied</> : <><Copy className="w-3 h-3" />Copy</>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
               {isTyping && (<div className="flex justify-start"><div className="bg-gray-100 rounded-lg p-4"><div className="flex space-x-2"><div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" /><div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" /><div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" /></div></div></div>)}
               <div ref={chatEndRef} />
             </div>
@@ -171,10 +220,10 @@ export default function AIPageDesignerPage() {
             <div className="border-t pt-6"><h3 className="font-semibold mb-4 flex items-center gap-2"><Star className="w-5 h-5 text-yellow-500" />Best Practices</h3><div className="space-y-2">{BEST_PRACTICES.map((practice) => (<Collapsible key={practice.category} open={expandedBestPractices.includes(practice.category)} onOpenChange={() => toggleBestPractice(practice.category)}><CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100"><span className="font-medium">{practice.category}</span>{expandedBestPractices.includes(practice.category) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}</CollapsibleTrigger><CollapsibleContent className="p-3 space-y-2">{practice.items.map((item, index) => (<div key={index} className="flex items-start gap-2 text-sm"><CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><span>{item}</span></div>))}</CollapsibleContent></Collapsible>))}</div></div>
           </TabsContent>
           <TabsContent value="ux-review" className="flex-1 overflow-y-auto m-0 p-4">
-            <Card className="mb-6"><CardHeader><CardTitle className="flex items-center justify-between"><span>Overall UX Score</span><span className={	ext-4xl font-bold +getScoreColor(MOCK_UX_REVIEW.overallScore)}>{MOCK_UX_REVIEW.overallScore}</span></CardTitle><CardDescription>Based on performance, accessibility, and best practices</CardDescription></CardHeader></Card>
-            <div className="mb-6"><h3 className="font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5 text-blue-500" />Recommendations</h3><div className="space-y-3">{MOCK_UX_REVIEW.recommendations.map((rec) => (<Card key={rec.id}><CardContent className="p-4"><div className="flex items-start gap-3"><div className={p-2 rounded-lg +getSeverityColor(rec.severity)}>{rec.severity === "high" ? <AlertTriangle className="w-4 h-4" /> : rec.severity === "medium" ? <Info className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}</div><div className="flex-1"><div className="flex items-center gap-2 mb-1"><h4 className="font-semibold">{rec.title}</h4><Badge variant="outline" className="text-xs">{rec.category}</Badge></div><p className="text-sm text-gray-600 mb-2">{rec.description}</p><p className="text-sm text-blue-600"><strong>Suggestion:</strong> {rec.suggestion}</p></div></div></CardContent></Card>))}</div></div>
+            <Card className="mb-6"><CardHeader><CardTitle className="flex items-center justify-between"><span>Overall UX Score</span><span className={getScoreClassName(MOCK_UX_REVIEW.overallScore)}>{MOCK_UX_REVIEW.overallScore}</span></CardTitle><CardDescription>Based on performance, accessibility, and best practices</CardDescription></CardHeader></Card>
+            <div className="mb-6"><h3 className="font-semibold mb-4 flex items-center gap-2"><Zap className="w-5 h-5 text-blue-500" />Recommendations</h3><div className="space-y-3">{MOCK_UX_REVIEW.recommendations.map((rec) => (<Card key={rec.id}><CardContent className="p-4"><div className="flex items-start gap-3"><div className={getSeverityClassName(rec.severity)}>{rec.severity === "high" ? <AlertTriangle className="w-4 h-4" /> : rec.severity === "medium" ? <Info className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}</div><div className="flex-1"><div className="flex items-center gap-2 mb-1"><h4 className="font-semibold">{rec.title}</h4><Badge variant="outline" className="text-xs">{rec.category}</Badge></div><p className="text-sm text-gray-600 mb-2">{rec.description}</p><p className="text-sm text-blue-600"><strong>Suggestion:</strong> {rec.suggestion}</p></div></div></CardContent></Card>))}</div></div>
             <div className="mb-6"><h3 className="font-semibold mb-4 flex items-center gap-2"><Accessibility className="w-5 h-5 text-purple-500" />Accessibility Issues</h3><div className="space-y-3">{MOCK_UX_REVIEW.accessibilityIssues.map((issue) => (<Card key={issue.id}><CardContent className="p-4"><div className="flex items-center gap-2 mb-1"><h4 className="font-semibold">{issue.element}</h4><Badge variant="outline" className="text-xs">WCAG {issue.wcagLevel}</Badge></div><p className="text-sm text-gray-600 mb-2">{issue.issue}</p><p className="text-sm text-green-600"><strong>Fix:</strong> {issue.fix}</p></CardContent></Card>))}</div></div>
-            <div><h3 className="font-semibold mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-green-500" />Brand Consistency</h3><Card><CardContent className="p-4"><div className="flex items-center justify-between mb-4"><span className="text-gray-600">Consistency Score</span><span className={	ext-2xl font-bold +getScoreColor(MOCK_UX_REVIEW.brandConsistency.score)}>{MOCK_UX_REVIEW.brandConsistency.score}%</span></div>{MOCK_UX_REVIEW.brandConsistency.issues.length > 0 && (<div><h5 className="text-sm font-medium mb-2">Issues Found:</h5><ul className="space-y-1">{MOCK_UX_REVIEW.brandConsistency.issues.map((issue, index) => (<li key={index} className="text-sm text-gray-600 flex items-start gap-2"><AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />{issue}</li>))}</ul></div>)}</CardContent></Card></div>
+            <div><h3 className="font-semibold mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-green-500" />Brand Consistency</h3><Card><CardContent className="p-4"><div className="flex items-center justify-between mb-4"><span className="text-gray-600">Consistency Score</span><span className={"text-2xl font-bold " + getScoreColor(MOCK_UX_REVIEW.brandConsistency.score)}>{MOCK_UX_REVIEW.brandConsistency.score}%</span></div>{MOCK_UX_REVIEW.brandConsistency.issues.length > 0 && (<div><h5 className="text-sm font-medium mb-2">Issues Found:</h5><ul className="space-y-1">{MOCK_UX_REVIEW.brandConsistency.issues.map((issue, index) => (<li key={index} className="text-sm text-gray-600 flex items-start gap-2"><AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />{issue}</li>))}</ul></div>)}</CardContent></Card></div>
           </TabsContent>
         </Tabs>
       </div>
