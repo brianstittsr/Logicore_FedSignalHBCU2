@@ -232,11 +232,11 @@ function SettingsPageContent() {
   
   // Available roles for visibility settings
   const VISIBILITY_ROLES = [
+    { value: "superadmin", label: "Super Admin" },
     { value: "admin", label: "Admin" },
-    { value: "team-member", label: "Team Member" },
+    { value: "team", label: "Team Member" },
     { value: "affiliate", label: "Affiliate" },
-    { value: "client", label: "Client" },
-    { value: "viewer", label: "Viewer" },
+    { value: "consultant", label: "Consultant" },
   ];
 
   // Load settings from Firebase on mount
@@ -1707,7 +1707,7 @@ function SettingsPageContent() {
               </div>
 
               {/* Group nav items by section */}
-              {["Navigation", "Work", "Intelligence", "Admin", "Initiatives"].map((section) => {
+              {["Dashboard", "My Work", "Networking", "Sales & CRM", "Resources", "AI Tools", "Admin Tools", "System Settings"].map((section) => {
                 const sectionItems = ALL_NAV_ITEMS.filter(item => item.section === section);
                 if (sectionItems.length === 0) return null;
                 

@@ -69,6 +69,9 @@ import { COLLECTIONS, type TeamMemberDoc, type OneToOneQueueItemDoc } from "@/li
 import { logTeamMemberAdded, logActivity } from "@/lib/activity-logger";
 import Link from "next/link";
 import { syncTeamMemberToUser } from "@/lib/user-team-member-sync";
+import { useUserProfile } from "@/contexts/user-profile-context";
+import { Switch } from "@/components/ui/switch";
+import { AlertTriangle, ShieldAlert, ShieldCheck } from "lucide-react";
 
 // Seed data for Team Members
 const seedTeamMembers: Omit<TeamMemberDoc, "id" | "createdAt" | "updatedAt">[] = [
@@ -118,6 +121,9 @@ const seedTeamMembers: Omit<TeamMemberDoc, "id" | "createdAt" | "updatedAt">[] =
 ];
 
 export default function TeamMembersPage() {
+  const { profile } = useUserProfile();
+  const isAdmin = profile.role === "admin" || profile.role === "superadmin";
+  
   const [members, setMembers] = useState<TeamMemberDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +131,7 @@ export default function TeamMembersPage() {
   const [editingMember, setEditingMember] = useState<TeamMemberDoc | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"card" | "list">("list");
   const [schedulingList, setSchedulingList] = useState<OneToOneQueueItemDoc[]>([]);
   const [showSchedulingPanel, setShowSchedulingPanel] = useState(false);
@@ -344,6 +351,39 @@ export default function TeamMembersPage() {
     }
   };
 
+  // Toggle member status (enable/disable)
+  const handleToggleStatus = async (member: TeamMemberDoc) => {
+    if (!db || !isAdmin) return;
+    
+    const newStatus = member.status === "active" ? "inactive" : "active";
+    const action = newStatus === "active" ? "enable" : "disable";
+    
+    if (!confirm(`Are you sure you want to ${action} ${member.firstName} ${member.lastName}?\n\n${newStatus === "inactive" ? "This will prevent them from accessing the platform." : "This will restore their access to the platform."}`)) return;
+    
+    try {
+      const docRef = doc(db, COLLECTIONS.TEAM_MEMBERS, member.id);
+      await updateDoc(docRef, { 
+        status: newStatus,
+        updatedAt: Timestamp.now(),
+      });
+      
+      // Log activity
+      await logActivity({
+        type: "update",
+        entityType: "team-member",
+        entityId: member.id,
+        entityName: `${member.firstName} ${member.lastName}`,
+        description: `Team member ${action}d: ${member.firstName} ${member.lastName}`,
+      });
+      
+      await fetchMembers();
+      alert(`Successfully ${action}d ${member.firstName} ${member.lastName}`);
+    } catch (error) {
+      console.error("Error toggling member status:", error);
+      alert("Error updating member status. Check console for details.");
+    }
+  };
+
   // Delete member (uses admin endpoint to also delete Firebase Auth account)
   const handleDeleteMember = async (id: string, memberName: string) => {
     if (!confirm(`Are you sure you want to delete ${memberName}?\n\nThis will permanently remove:\n- Team member record\n- User profile\n- Firebase Auth account (if exists)\n\nThis action cannot be undone.`)) return;
@@ -538,8 +578,9 @@ export default function TeamMembersPage() {
       member.expertise.toLowerCase().includes(searchLower);
     
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
+    const matchesStatus = statusFilter === "all" || member.status === statusFilter;
     
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -548,6 +589,8 @@ export default function TeamMembersPage() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
+      case "superadmin":
+        return <Badge className="bg-purple-100 text-purple-800">Super Admin</Badge>;
       case "admin":
         return <Badge className="bg-red-100 text-red-800">Admin</Badge>;
       case "team":
@@ -555,11 +598,28 @@ export default function TeamMembersPage() {
       case "affiliate":
         return <Badge className="bg-green-100 text-green-800">Affiliate</Badge>;
       case "consultant":
-        return <Badge className="bg-purple-100 text-purple-800">Consultant</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800">Consultant</Badge>;
       default:
         return <Badge variant="secondary">{role}</Badge>;
     }
   };
+
+  // Access denied for non-admins
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardContent className="py-16 text-center">
+            <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground">
+              You need admin or superadmin privileges to access Team Members management.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -671,7 +731,7 @@ export default function TeamMembersPage() {
                     <Label htmlFor="role">Role *</Label>
                     <Select
                       value={formData.role}
-                      onValueChange={(value: "admin" | "team" | "affiliate" | "consultant") => 
+                      onValueChange={(value: "admin" | "superadmin" | "team" | "affiliate" | "consultant") => 
                         setFormData({ ...formData, role: value })
                       }
                     >
@@ -679,6 +739,7 @@ export default function TeamMembersPage() {
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="superadmin">Super Admin</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="team">Team</SelectItem>
                         <SelectItem value="affiliate">Affiliate</SelectItem>
@@ -921,10 +982,22 @@ export default function TeamMembersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="superadmin">Super Admin</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="team">Team</SelectItem>
                 <SelectItem value="affiliate">Affiliate</SelectItem>
                 <SelectItem value="consultant">Consultant</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Disabled</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center gap-1 border rounded-md p-1">
@@ -1075,10 +1148,11 @@ export default function TeamMembersPage() {
                           value={member.role}
                           onValueChange={(newRole) => handleUpdateRole(member.id, `${member.firstName} ${member.lastName}`, newRole)}
                         >
-                          <SelectTrigger className="w-[120px] h-8">
+                          <SelectTrigger className="w-[130px] h-8">
                             <SelectValue>{getRoleBadge(member.role)}</SelectValue>
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="superadmin">Super Admin</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                             <SelectItem value="team">Team</SelectItem>
                             <SelectItem value="affiliate">Affiliate</SelectItem>
@@ -1087,21 +1161,35 @@ export default function TeamMembersPage() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        {member.status === "active" ? (
-                          <Badge variant="outline" className="text-green-600 border-green-600">
-                            <UserCheck className="h-3 w-3 mr-1" />
-                            Active
-                          </Badge>
-                        ) : member.status === "pending" ? (
-                          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                            Pending
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-gray-600">
-                            <UserX className="h-3 w-3 mr-1" />
-                            Inactive
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {member.status === "active" ? (
+                            <Badge variant="outline" className="text-green-600 border-green-600">
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              Active
+                            </Badge>
+                          ) : member.status === "pending" ? (
+                            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                              Pending
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-red-600 border-red-600">
+                              <UserX className="h-3 w-3 mr-1" />
+                              Disabled
+                            </Badge>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleStatus(member)}
+                            title={member.status === "active" ? "Disable member" : "Enable member"}
+                          >
+                            {member.status === "active" ? (
+                              <UserX className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <UserCheck className="h-4 w-4 text-green-500" />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
