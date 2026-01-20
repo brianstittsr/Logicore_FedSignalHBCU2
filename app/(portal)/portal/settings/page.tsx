@@ -208,6 +208,11 @@ function SettingsPageContent() {
     browserEnabled: false,
     soundEnabled: false,
   });
+  
+  // AI Features settings
+  const [aiFeatureSettings, setAiFeatureSettings] = useState({
+    networkingMatchingEnabled: true,
+  });
   const [browserPermission, setBrowserPermission] = useState<string>("default");
   
   // Navigation settings - role-based visibility
@@ -323,6 +328,11 @@ function SettingsPageContent() {
               },
             });
           }
+          
+          // Load AI feature settings
+          if (data.aiFeatureSettings) {
+            setAiFeatureSettings(prev => ({ ...prev, ...data.aiFeatureSettings }));
+          }
         }
       } catch (error) {
         console.error("Error loading settings:", error);
@@ -387,6 +397,7 @@ function SettingsPageContent() {
         notificationSettings: notificationSettings,
         socialLinks: socialLinks,
         navigationSettings: navigationSettings,
+        aiFeatureSettings: aiFeatureSettings,
         updatedAt: Timestamp.now(),
       };
       
@@ -1405,6 +1416,47 @@ function SettingsPageContent() {
               </div>
               <p className="text-sm text-muted-foreground">
                 These test notifications demonstrate how different event types will appear in your browser.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* AI Features */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-500/10">
+                  <Brain className="h-6 w-6 text-purple-500" />
+                </div>
+                <div>
+                  <CardTitle>AI Features</CardTitle>
+                  <CardDescription>
+                    Configure AI-powered features and automation
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Zap className="h-5 w-5 text-purple-500" />
+                  <div>
+                    <Label>AI Networking Matching</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Use AI to automatically suggest networking matches based on expertise, interests, and goals
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={aiFeatureSettings.networkingMatchingEnabled}
+                  onCheckedChange={(checked) => {
+                    setAiFeatureSettings(prev => ({ ...prev, networkingMatchingEnabled: checked }));
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                When enabled, the platform will analyze member profiles and suggest optimal networking connections 
+                for one-to-one meetings and collaboration opportunities.
               </p>
             </CardContent>
           </Card>

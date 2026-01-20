@@ -1289,6 +1289,10 @@ export interface PlatformSettingsDoc {
     hiddenItems: string[]; // Array of nav item hrefs that are hidden
     roleVisibility?: Record<string, string[]>; // Role -> array of visible nav item hrefs
   };
+  // AI Feature Settings
+  aiFeatureSettings?: {
+    networkingMatchingEnabled: boolean; // Toggle for AI networking matching feature
+  };
   updatedAt: Timestamp;
   updatedBy?: string;
 }
