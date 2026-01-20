@@ -170,16 +170,6 @@ const networkingItems = [
     icon: Handshake,
   },
   {
-    title: "Member Directory",
-    href: "/portal/member-directory",
-    icon: Users,
-  },
-  {
-    title: "Team Members",
-    href: "/portal/team-members",
-    icon: UserCog,
-  },
-  {
     title: "Affiliates",
     href: "/portal/affiliates",
     icon: Network,
@@ -219,11 +209,6 @@ const salesCrmItems = [
     title: "Strategic Partners",
     href: "/portal/admin/strategic-partners",
     icon: Building2,
-  },
-  {
-    title: "Book Call Leads",
-    href: "/portal/admin/book-call-leads",
-    icon: Phone,
   },
   {
     title: "GoHighLevel",
@@ -433,7 +418,6 @@ export function PortalSidebar() {
       window.location.href = "/";
     }
   };
-  const [bookCallLeadsCount, setBookCallLeadsCount] = useState(0);
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
   const [roleVisibility, setRoleVisibility] = useState<Record<string, string[]>>({});
   const [previewRole, setPreviewRole] = useState<string | null>(null);
@@ -442,29 +426,6 @@ export function PortalSidebar() {
   // The effective role for filtering (either preview role or actual role)
   const effectiveRole = previewRole || profile.role;
 
-  // Subscribe to BookCallLeads count (new leads only)
-  useEffect(() => {
-    if (!db) return;
-    
-    const q = query(
-      collection(db, COLLECTIONS.BOOK_CALL_LEADS),
-      where("status", "==", "new")
-    );
-    
-    const unsubscribe = onSnapshot(
-      q, 
-      (snapshot) => {
-        setBookCallLeadsCount(snapshot.size);
-      },
-      (error) => {
-        // Silently handle permission errors - user may not have access to this collection
-        console.warn("BookCallLeads snapshot error (may be permission-related):", error.code);
-      }
-    );
-    
-    return () => unsubscribe();
-  }, []);
-  
   // Load navigation settings from Firebase with real-time listener
   useEffect(() => {
     if (!db) return;
@@ -596,7 +557,6 @@ export function PortalSidebar() {
                     <SidebarMenu>
                       {filteredItems.map((item) => {
                         const hidden = isItemHidden(item.href);
-                        const isBookCallLeads = item.href === "/portal/admin/book-call-leads";
                         return (
                           <SidebarMenuItem key={item.href} className={cn(hidden && isAdmin && !previewRole && "opacity-50")}>
                             <SidebarMenuButton
@@ -612,13 +572,7 @@ export function PortalSidebar() {
                                 )}
                               </Link>
                             </SidebarMenuButton>
-                            {/* Show dynamic count badge for Book Call Leads */}
-                            {isBookCallLeads && bookCallLeadsCount > 0 && !hidden && (
-                              <SidebarMenuBadge className="bg-red-500 text-white">
-                                {bookCallLeadsCount}
-                              </SidebarMenuBadge>
-                            )}
-                            {item.badge && !hidden && !isBookCallLeads && (
+                            {item.badge && !hidden && (
                               <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
                             )}
                           </SidebarMenuItem>

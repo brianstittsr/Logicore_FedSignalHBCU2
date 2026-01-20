@@ -117,13 +117,14 @@ export default function AffiliatesPage() {
         const affiliateList: AffiliateDisplay[] = [];
         snapshot.docs.forEach((doc) => {
           const data = doc.data() as TeamMemberDoc;
-          // Include all team members (affiliates, consultants, clients, team, admin)
+          // Only include affiliates and consultants
+          if (data.role !== "affiliate" && data.role !== "consultant") return;
           const firstName = data.firstName || "";
           const lastName = data.lastName || "";
           affiliateList.push({
             id: doc.id,
             name: `${firstName} ${lastName}`.trim() || "Unknown",
-            title: data.expertise || data.role || "Team Member",
+            title: data.expertise || data.role || "Affiliate",
             initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "??",
             location: data.location || "",
             availability: data.status || "active",
@@ -228,9 +229,9 @@ export default function AffiliatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Affiliates & Team</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Affiliates</h1>
           <p className="text-muted-foreground">
-            Your network of affiliates, consultants, clients, and team members
+            Your network of affiliates and consultants
           </p>
         </div>
         <Button onClick={() => setShowAddDialog(true)}>

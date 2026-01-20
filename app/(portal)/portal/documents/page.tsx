@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,11 +53,14 @@ import {
   User,
   Loader2,
   FolderOpen,
+  Plus,
+  Pencil,
+  X,
 } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, deleteDoc, doc, addDoc, Timestamp } from "firebase/firestore";
-import { ref, deleteObject, getDownloadURL } from "firebase/storage";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy, deleteDoc, doc, addDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { useUserProfile } from "@/contexts/user-profile-context";
+import { toast } from "sonner";
 
 interface Document {
   id: string;
@@ -57,12 +69,50 @@ interface Document {
   size: string;
   sizeBytes: number;
   folder: string;
+  category: string;
+  description: string;
+  version: string;
   uploadedBy: string;
   uploadedAt: string;
   shared: boolean;
   storagePath?: string;
   downloadUrl?: string;
+  base64Data?: string;
 }
+
+interface DocumentFormData {
+  name: string;
+  category: string;
+  description: string;
+  version: string;
+  folder: string;
+  shared: boolean;
+}
+
+const DOCUMENT_CATEGORIES = [
+  "Proposal",
+  "Contract",
+  "Agreement",
+  "Template",
+  "Report",
+  "Presentation",
+  "Training Material",
+  "Policy",
+  "Procedure",
+  "Other",
+];
+
+const DOCUMENT_FOLDERS = [
+  "Proposals",
+  "Contracts",
+  "Templates",
+  "Reports",
+  "Training",
+  "Policies",
+  "Marketing",
+  "Projects",
+  "Uncategorized",
+];
 
 interface FolderCount {
   name: string;
@@ -114,6 +164,15 @@ function getFileType(fileName: string): string {
   return "other";
 }
 
+const emptyFormData: DocumentFormData = {
+  name: "",
+  category: "Other",
+  description: "",
+  version: "1.0",
+  folder: "Uncategorized",
+  shared: false,
+};
+
 export default function DocumentsPage() {
   const { getDisplayName } = useUserProfile();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -123,6 +182,15 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  
+  // Upload/Edit dialog state
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
+  const [formData, setFormData] = useState<DocumentFormData>(emptyFormData);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileBase64, setFileBase64] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch documents from Firestore
   useEffect(() => {
@@ -137,20 +205,24 @@ export default function DocumentsPage() {
         const q = query(docsRef, orderBy("uploadedAt", "desc"));
         const snapshot = await getDocs(q);
         
-        const docs: Document[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
+        const docs: Document[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
           return {
-            id: doc.id,
+            id: docSnap.id,
             name: data.name || "Untitled",
             type: data.type || getFileType(data.name || ""),
             size: data.size || formatFileSize(data.sizeBytes || 0),
             sizeBytes: data.sizeBytes || 0,
             folder: data.folder || "Uncategorized",
+            category: data.category || "Other",
+            description: data.description || "",
+            version: data.version || "1.0",
             uploadedBy: data.uploadedBy || "Unknown",
             uploadedAt: data.uploadedAt?.toDate?.()?.toISOString() || data.uploadedAt || "",
             shared: data.shared || false,
             storagePath: data.storagePath,
             downloadUrl: data.downloadUrl,
+            base64Data: data.base64Data,
           };
         });
 
@@ -192,44 +264,148 @@ export default function DocumentsPage() {
     });
 
   // Delete document
-  const handleDelete = async (docId: string, storagePath?: string) => {
+  const handleDelete = async (docId: string) => {
     if (!db) return;
     if (!confirm("Are you sure you want to delete this document?")) return;
 
     try {
-      // Delete from Firestore
       await deleteDoc(doc(db, "documents", docId));
-
-      // Delete from Storage if path exists
-      if (storage && storagePath) {
-        try {
-          const storageRef = ref(storage, storagePath);
-          await deleteObject(storageRef);
-        } catch (storageError) {
-          console.error("Error deleting from storage:", storageError);
-        }
-      }
-
-      // Update local state
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
+      toast.success("Document deleted successfully");
     } catch (error) {
       console.error("Error deleting document:", error);
-      alert("Failed to delete document");
+      toast.error("Failed to delete document");
     }
   };
 
-  // Download document
-  const handleDownload = async (doc: Document) => {
-    if (doc.downloadUrl) {
-      window.open(doc.downloadUrl, "_blank");
-    } else if (storage && doc.storagePath) {
-      try {
-        const url = await getDownloadURL(ref(storage, doc.storagePath));
-        window.open(url, "_blank");
-      } catch (error) {
-        console.error("Error getting download URL:", error);
-        alert("Failed to download document");
+  // Download document (base64 or URL)
+  const handleDownload = (document: Document) => {
+    if (document.base64Data) {
+      // Create download link from base64
+      const link = window.document.createElement("a");
+      link.href = document.base64Data;
+      link.download = document.name;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+    } else if (document.downloadUrl) {
+      window.open(document.downloadUrl, "_blank");
+    } else {
+      toast.error("No download available for this document");
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 10MB for base64)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+
+    setSelectedFile(file);
+    setFormData(prev => ({
+      ...prev,
+      name: prev.name || file.name,
+    }));
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Open dialog for editing
+  const handleEdit = (document: Document) => {
+    setEditingDocument(document);
+    setFormData({
+      name: document.name,
+      category: document.category,
+      description: document.description,
+      version: document.version,
+      folder: document.folder,
+      shared: document.shared,
+    });
+    setFileBase64(document.base64Data || "");
+    setUploadDialogOpen(true);
+  };
+
+  // Reset dialog state
+  const resetDialog = () => {
+    setUploadDialogOpen(false);
+    setEditingDocument(null);
+    setFormData(emptyFormData);
+    setSelectedFile(null);
+    setFileBase64("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Save document (create or update)
+  const handleSave = async () => {
+    if (!db) return;
+    if (!formData.name.trim()) {
+      toast.error("Please enter a document name");
+      return;
+    }
+    if (!editingDocument && !fileBase64) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const documentData = {
+        name: formData.name.trim(),
+        type: selectedFile ? getFileType(selectedFile.name) : (editingDocument?.type || "other"),
+        sizeBytes: selectedFile?.size || editingDocument?.sizeBytes || 0,
+        size: selectedFile ? formatFileSize(selectedFile.size) : (editingDocument?.size || "0 Bytes"),
+        folder: formData.folder,
+        category: formData.category,
+        description: formData.description,
+        version: formData.version,
+        shared: formData.shared,
+        uploadedBy: getDisplayName(),
+        updatedAt: Timestamp.now(),
+        ...(fileBase64 && { base64Data: fileBase64 }),
+      };
+
+      if (editingDocument) {
+        // Update existing document
+        await updateDoc(doc(db, "documents", editingDocument.id), documentData);
+        setDocuments(prev => prev.map(d => 
+          d.id === editingDocument.id 
+            ? { ...d, ...documentData, uploadedAt: d.uploadedAt }
+            : d
+        ));
+        toast.success("Document updated successfully");
+      } else {
+        // Create new document
+        const docRef = await addDoc(collection(db, "documents"), {
+          ...documentData,
+          uploadedAt: Timestamp.now(),
+        });
+        const newDoc: Document = {
+          id: docRef.id,
+          ...documentData,
+          uploadedAt: new Date().toISOString(),
+        };
+        setDocuments(prev => [newDoc, ...prev]);
+        toast.success("Document uploaded successfully");
       }
+
+      resetDialog();
+    } catch (error) {
+      console.error("Error saving document:", error);
+      toast.error("Failed to save document");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -243,11 +419,9 @@ export default function DocumentsPage() {
             Manage proposals, templates, and project documents
           </p>
         </div>
-        <Button asChild>
-          <Link href="/portal/documents/upload">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload
-          </Link>
+        <Button onClick={() => setUploadDialogOpen(true)}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Document
         </Button>
       </div>
 
@@ -393,7 +567,11 @@ export default function DocumentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => doc.downloadUrl && window.open(doc.downloadUrl, "_blank")}>
+                            <DropdownMenuItem onClick={() => handleEdit(doc)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => doc.base64Data && window.open(doc.base64Data, "_blank")}>
                               <Eye className="mr-2 h-4 w-4" />
                               View
                             </DropdownMenuItem>
@@ -401,13 +579,9 @@ export default function DocumentsPage() {
                               <Download className="mr-2 h-4 w-4" />
                               Download
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Share2 className="mr-2 h-4 w-4" />
-                              Share
-                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive"
-                              onClick={() => handleDelete(doc.id, doc.storagePath)}
+                              onClick={() => handleDelete(doc.id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
@@ -424,6 +598,143 @@ export default function DocumentsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Upload/Edit Document Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={(open) => !open && resetDialog()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingDocument ? "Edit Document" : "Upload Document"}</DialogTitle>
+            <DialogDescription>
+              {editingDocument 
+                ? "Update the document details below."
+                : "Upload a new document with metadata."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* File Upload */}
+            {!editingDocument && (
+              <div className="space-y-2">
+                <Label>File</Label>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  {selectedFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      {getFileIcon(getFileType(selectedFile.name))}
+                      <span className="font-medium">{selectedFile.name}</span>
+                      <span className="text-muted-foreground">({formatFileSize(selectedFile.size)})</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          setFileBase64("");
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to select a file (max 10MB)
+                      </p>
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Document Name */}
+            <div className="space-y-2">
+              <Label htmlFor="doc-name">Document Name *</Label>
+              <Input
+                id="doc-name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter document name"
+              />
+            </div>
+
+            {/* Category & Folder */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Folder</Label>
+                <Select
+                  value={formData.folder}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, folder: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_FOLDERS.map((folder) => (
+                      <SelectItem key={folder} value={folder}>{folder}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Version */}
+            <div className="space-y-2">
+              <Label htmlFor="doc-version">Version</Label>
+              <Input
+                id="doc-version"
+                value={formData.version}
+                onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
+                placeholder="e.g., 1.0, 2.1"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="doc-description">Description</Label>
+              <Textarea
+                id="doc-description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Brief description of the document"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetDialog}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingDocument ? "Save Changes" : "Upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
