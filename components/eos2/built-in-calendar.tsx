@@ -44,7 +44,7 @@ export interface CalendarEventData {
   startDate: Date;
   endDate: Date;
   allDay?: boolean;
-  type: "meeting" | "rock" | "todo" | "issue" | "custom";
+  type: "meeting" | "rock" | "todo" | "issue" | "custom" | "one-to-one";
   color?: string;
   attendees?: string[];
   location?: string;
@@ -232,6 +232,7 @@ function EventForm({ event, selectedDate, onSave, onCancel }: EventFormProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="one-to-one">1-to-1 Meeting</SelectItem>
               <SelectItem value="rock">Rock Milestone</SelectItem>
               <SelectItem value="todo">To-Do</SelectItem>
               <SelectItem value="issue">Issue</SelectItem>
