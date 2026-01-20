@@ -49,7 +49,35 @@ import {
   List,
   Video,
   X,
+  ClipboardList,
+  Calendar,
+  Loader2,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+
+interface PartnerRegistration {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  programName: string;
+  programType: "event" | "training" | "certification" | "partnership" | "other";
+  registrationDate: string;
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+  notes?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
 import { 
   collection, 
   getDocs, 
@@ -132,6 +160,24 @@ export default function StrategicPartnersPage() {
   const [editingPartner, setEditingPartner] = useState<StrategicPartnerDoc | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "list">("list");
+  const [activeTab, setActiveTab] = useState("partners");
+  
+  // Registration state
+  const [registrations, setRegistrations] = useState<PartnerRegistration[]>([]);
+  const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
+  const [editingRegistration, setEditingRegistration] = useState<PartnerRegistration | null>(null);
+  const [deleteRegDialogOpen, setDeleteRegDialogOpen] = useState(false);
+  const [registrationToDelete, setRegistrationToDelete] = useState<PartnerRegistration | null>(null);
+  const [isRegSubmitting, setIsRegSubmitting] = useState(false);
+  const [registrationForm, setRegistrationForm] = useState({
+    partnerId: "",
+    programName: "",
+    programType: "event" as "event" | "training" | "certification" | "partnership" | "other",
+    registrationDate: new Date().toISOString().split("T")[0],
+    status: "pending" as "pending" | "confirmed" | "completed" | "cancelled",
+    notes: "",
+  });
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -169,8 +215,38 @@ export default function StrategicPartnersPage() {
     }
   };
 
+  // Fetch registrations from Firebase
+  const fetchRegistrations = async () => {
+    if (!db) return;
+    try {
+      const querySnapshot = await getDocs(collection(db, "strategic_partner_registrations"));
+      const regsData: PartnerRegistration[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        regsData.push({
+          id: docSnap.id,
+          partnerId: data.partnerId,
+          partnerName: data.partnerName,
+          programName: data.programName,
+          programType: data.programType,
+          registrationDate: data.registrationDate,
+          status: data.status,
+          notes: data.notes,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        });
+      });
+      // Sort by date descending
+      regsData.sort((a, b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime());
+      setRegistrations(regsData);
+    } catch (error) {
+      console.error("Error fetching registrations:", error);
+    }
+  };
+
   useEffect(() => {
     fetchPartners();
+    fetchRegistrations();
   }, []);
 
   // Seed initial data
@@ -335,6 +411,100 @@ export default function StrategicPartnersPage() {
       partner.expertise.toLowerCase().includes(searchLower)
     );
   });
+
+  // Registration handlers
+  const resetRegistrationForm = () => {
+    setEditingRegistration(null);
+    setRegistrationForm({
+      partnerId: "",
+      programName: "",
+      programType: "event",
+      registrationDate: new Date().toISOString().split("T")[0],
+      status: "pending",
+      notes: "",
+    });
+  };
+
+  const handleSaveRegistration = async () => {
+    if (!db || !registrationForm.partnerId || !registrationForm.programName) {
+      toast.error("Please select a partner and enter a program name");
+      return;
+    }
+
+    setIsRegSubmitting(true);
+    try {
+      const partner = partners.find(p => p.id === registrationForm.partnerId);
+      const partnerName = partner ? `${partner.firstName} ${partner.lastName}` : "Unknown";
+
+      if (editingRegistration) {
+        // Update existing
+        await updateDoc(doc(db, "strategic_partner_registrations", editingRegistration.id), {
+          ...registrationForm,
+          partnerName,
+          updatedAt: Timestamp.now(),
+        });
+        toast.success("Registration updated successfully");
+      } else {
+        // Create new
+        await addDoc(collection(db, "strategic_partner_registrations"), {
+          ...registrationForm,
+          partnerName,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+        toast.success("Registration created successfully");
+      }
+
+      setRegistrationDialogOpen(false);
+      resetRegistrationForm();
+      await fetchRegistrations();
+    } catch (error) {
+      console.error("Error saving registration:", error);
+      toast.error("Failed to save registration");
+    } finally {
+      setIsRegSubmitting(false);
+    }
+  };
+
+  const handleEditRegistration = (reg: PartnerRegistration) => {
+    setEditingRegistration(reg);
+    setRegistrationForm({
+      partnerId: reg.partnerId,
+      programName: reg.programName,
+      programType: reg.programType,
+      registrationDate: reg.registrationDate,
+      status: reg.status,
+      notes: reg.notes || "",
+    });
+    setRegistrationDialogOpen(true);
+  };
+
+  const handleDeleteRegistration = async () => {
+    if (!db || !registrationToDelete) return;
+
+    setIsRegSubmitting(true);
+    try {
+      await deleteDoc(doc(db, "strategic_partner_registrations", registrationToDelete.id));
+      setRegistrations(prev => prev.filter(r => r.id !== registrationToDelete.id));
+      toast.success("Registration deleted successfully");
+    } catch (error) {
+      console.error("Error deleting registration:", error);
+      toast.error("Failed to delete registration");
+    } finally {
+      setIsRegSubmitting(false);
+      setDeleteRegDialogOpen(false);
+      setRegistrationToDelete(null);
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "confirmed": return "default";
+      case "completed": return "secondary";
+      case "cancelled": return "destructive";
+      default: return "outline";
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -619,44 +789,66 @@ export default function StrategicPartnersPage() {
         </Card>
       </div>
 
-      {/* Search and View Toggle */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search partners by name, company, or expertise..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-1 border rounded-md p-1">
-              <Button
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="px-3"
-              >
-                <List className="h-4 w-4 mr-1" />
-                List
-              </Button>
-              <Button
-                variant={viewMode === "card" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("card")}
-                className="px-3"
-              >
-                <LayoutGrid className="h-4 w-4 mr-1" />
-                Cards
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs for Partners and Registrations */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="partners">
+              <Users className="h-4 w-4 mr-2" />
+              Partners
+            </TabsTrigger>
+            <TabsTrigger value="registrations">
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Registrations ({registrations.length})
+            </TabsTrigger>
+          </TabsList>
+          {activeTab === "registrations" && (
+            <Button onClick={() => { resetRegistrationForm(); setRegistrationDialogOpen(true); }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Registration
+            </Button>
+          )}
+        </div>
 
-      {/* Partners Content */}
+        <TabsContent value="partners" className="space-y-4 mt-4">
+          {/* Search and View Toggle */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search partners by name, company, or expertise..."
+                    className="pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-1 border rounded-md p-1">
+                  <Button
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="px-3"
+                  >
+                    <List className="h-4 w-4 mr-1" />
+                    List
+                  </Button>
+                  <Button
+                    variant={viewMode === "card" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("card")}
+                    className="px-3"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-1" />
+                    Cards
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Partners Content */}
       {loading ? (
         <Card>
           <CardContent className="py-8">
@@ -861,6 +1053,234 @@ export default function StrategicPartnersPage() {
           ))}
         </div>
       )}
+        </TabsContent>
+
+        {/* Registrations Tab */}
+        <TabsContent value="registrations" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Partner Registrations</CardTitle>
+              <CardDescription>
+                Track registrations for events, training, certifications, and partnership programs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {registrations.length === 0 ? (
+                <div className="text-center py-8">
+                  <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No registrations yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start tracking partner registrations for programs and events
+                  </p>
+                  <Button onClick={() => { resetRegistrationForm(); setRegistrationDialogOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add First Registration
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Partner</TableHead>
+                      <TableHead>Program</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {registrations.map((reg) => (
+                      <TableRow key={reg.id}>
+                        <TableCell className="font-medium">{reg.partnerName}</TableCell>
+                        <TableCell>{reg.programName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {reg.programType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            {new Date(reg.registrationDate).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusBadgeVariant(reg.status)} className="capitalize">
+                            {reg.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditRegistration(reg)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setRegistrationToDelete(reg);
+                                setDeleteRegDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Registration Dialog */}
+      <Dialog open={registrationDialogOpen} onOpenChange={(open) => {
+        setRegistrationDialogOpen(open);
+        if (!open) resetRegistrationForm();
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingRegistration ? "Edit Registration" : "Add Registration"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingRegistration 
+                ? "Update the registration details below."
+                : "Register a partner for a program or event."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reg-partner">Partner *</Label>
+              <Select
+                value={registrationForm.partnerId}
+                onValueChange={(value) => setRegistrationForm({ ...registrationForm, partnerId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a partner" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partners.map((partner) => (
+                    <SelectItem key={partner.id} value={partner.id}>
+                      {partner.firstName} {partner.lastName} - {partner.company}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reg-program">Program Name *</Label>
+              <Input
+                id="reg-program"
+                value={registrationForm.programName}
+                onChange={(e) => setRegistrationForm({ ...registrationForm, programName: e.target.value })}
+                placeholder="e.g., Q1 Partner Summit, ISO Certification Training"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="reg-type">Program Type</Label>
+                <Select
+                  value={registrationForm.programType}
+                  onValueChange={(value: "event" | "training" | "certification" | "partnership" | "other") => 
+                    setRegistrationForm({ ...registrationForm, programType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="training">Training</SelectItem>
+                    <SelectItem value="certification">Certification</SelectItem>
+                    <SelectItem value="partnership">Partnership</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-date">Registration Date</Label>
+                <Input
+                  id="reg-date"
+                  type="date"
+                  value={registrationForm.registrationDate}
+                  onChange={(e) => setRegistrationForm({ ...registrationForm, registrationDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reg-status">Status</Label>
+              <Select
+                value={registrationForm.status}
+                onValueChange={(value: "pending" | "confirmed" | "completed" | "cancelled") => 
+                  setRegistrationForm({ ...registrationForm, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reg-notes">Notes</Label>
+              <Textarea
+                id="reg-notes"
+                value={registrationForm.notes}
+                onChange={(e) => setRegistrationForm({ ...registrationForm, notes: e.target.value })}
+                placeholder="Additional notes about this registration..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRegistrationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveRegistration} disabled={isRegSubmitting}>
+              {isRegSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingRegistration ? "Update" : "Add"} Registration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Registration Confirmation */}
+      <AlertDialog open={deleteRegDialogOpen} onOpenChange={setDeleteRegDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Registration</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the registration for "{registrationToDelete?.partnerName}" - "{registrationToDelete?.programName}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRegSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRegistration}
+              disabled={isRegSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isRegSubmitting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
