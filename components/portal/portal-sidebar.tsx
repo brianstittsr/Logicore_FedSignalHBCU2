@@ -421,7 +421,7 @@ export function PortalSidebar() {
   const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([]);
   const [roleVisibility, setRoleVisibility] = useState<Record<string, string[]>>({});
   const [previewRole, setPreviewRole] = useState<string | null>(null);
-  const isAdmin = profile.role === "admin";
+  const isAdmin = profile.role === "admin" || profile.role === "superadmin";
   
   // The effective role for filtering (either preview role or actual role)
   const effectiveRole = previewRole || profile.role;
@@ -526,8 +526,8 @@ export function PortalSidebar() {
           { key: "salesCrm" as const, label: "Sales & CRM", items: salesCrmItems, roles: ["admin", "team"] },
           { key: "resources" as const, label: "Resources", items: resourcesItems, roles: ["admin", "team", "affiliate", "consultant"] },
           { key: "aiTools" as const, label: "AI Tools", items: aiToolsItems, roles: ["admin", "team", "affiliate", "consultant"] },
-          { key: "adminTools" as const, label: "Admin Tools", items: adminToolsItems, roles: ["admin"] },
-          { key: "systemSettings" as const, label: "System Settings", items: systemSettingsItems, roles: ["admin"] },
+          { key: "adminTools" as const, label: "Admin Tools", items: adminToolsItems, roles: ["admin", "superadmin"] },
+          { key: "systemSettings" as const, label: "System Settings", items: systemSettingsItems, roles: ["admin", "superadmin"] },
         ]).map(({ key, label, items, roles }) => {
           // Skip sections that the user's role doesn't have access to
           if (!roles.includes(effectiveRole) && !isAdmin) return null;

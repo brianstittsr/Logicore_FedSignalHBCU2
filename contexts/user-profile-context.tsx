@@ -22,7 +22,7 @@ export interface UserProfile {
   location: string;
   bio: string;
   avatarUrl: string;
-  role: "admin" | "affiliate" | "customer" | "team_member";
+  role: "admin" | "superadmin" | "affiliate" | "customer" | "team_member";
   
   // Affiliate-specific fields
   isAffiliate: boolean;
