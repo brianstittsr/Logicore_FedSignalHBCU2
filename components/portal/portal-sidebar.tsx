@@ -139,11 +139,6 @@ const myWorkItems = [
     icon: Calendar,
   },
   {
-    title: "Meetings",
-    href: "/portal/meetings",
-    icon: Users,
-  },
-  {
     title: "Availability",
     href: "/portal/availability",
     icon: CalendarDays,
@@ -520,12 +515,12 @@ export function PortalSidebar() {
       <SidebarContent>
         {/* Reusable Section Renderer - Organized by Role */}
         {([
-          { key: "dashboard" as const, label: "Dashboard", items: dashboardItems, roles: ["admin", "team", "affiliate", "consultant"] },
-          { key: "myWork" as const, label: "My Work", items: myWorkItems, roles: ["admin", "team", "affiliate", "consultant"] },
-          { key: "networking" as const, label: "Networking", items: networkingItems, roles: ["admin", "team", "affiliate", "consultant"] },
-          { key: "salesCrm" as const, label: "Sales & CRM", items: salesCrmItems, roles: ["admin", "team"] },
-          { key: "resources" as const, label: "Resources", items: resourcesItems, roles: ["admin", "team", "affiliate", "consultant"] },
-          { key: "aiTools" as const, label: "AI Tools", items: aiToolsItems, roles: ["admin", "team", "affiliate", "consultant"] },
+          { key: "dashboard" as const, label: "Dashboard", items: dashboardItems, roles: ["admin", "team", "team_member", "affiliate", "consultant", "superadmin"] },
+          { key: "myWork" as const, label: "My Work", items: myWorkItems, roles: ["admin", "team", "team_member", "affiliate", "consultant", "superadmin"] },
+          { key: "networking" as const, label: "Networking", items: networkingItems, roles: ["admin", "team", "team_member", "affiliate", "consultant", "superadmin"] },
+          { key: "salesCrm" as const, label: "Sales & CRM", items: salesCrmItems, roles: ["admin", "team", "team_member", "superadmin"] },
+          { key: "resources" as const, label: "Resources", items: resourcesItems, roles: ["admin", "team", "team_member", "affiliate", "consultant", "superadmin"] },
+          { key: "aiTools" as const, label: "AI Tools", items: aiToolsItems, roles: ["admin", "team", "team_member", "affiliate", "consultant", "superadmin"] },
           { key: "adminTools" as const, label: "Admin Tools", items: adminToolsItems, roles: ["admin", "superadmin"] },
           { key: "systemSettings" as const, label: "System Settings", items: systemSettingsItems, roles: ["admin", "superadmin"] },
         ]).map(({ key, label, items, roles }) => {
