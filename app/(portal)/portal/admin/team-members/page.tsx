@@ -344,14 +344,16 @@ export default function TeamMembersPage() {
     }
   };
 
-  // Delete member
+  // Delete member (uses admin endpoint to also delete Firebase Auth account)
   const handleDeleteMember = async (id: string, memberName: string) => {
-    if (!confirm(`Are you sure you want to delete ${memberName}?`)) return;
+    if (!confirm(`Are you sure you want to delete ${memberName}?\n\nThis will permanently remove:\n- Team member record\n- User profile\n- Firebase Auth account (if exists)\n\nThis action cannot be undone.`)) return;
     
     try {
-      // Use the new team-members API endpoint
-      const response = await fetch(`/api/team-members/${id}`, {
+      // Use the admin delete endpoint that also deletes Firebase Auth
+      const response = await fetch(`/api/admin/delete-team-member`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamMemberId: id }),
       });
 
       const result = await response.json();
@@ -366,14 +368,50 @@ export default function TeamMembersPage() {
         entityType: "team-member",
         entityId: id,
         entityName: memberName,
-        description: `Team member removed: ${memberName}`,
+        description: `Team member removed: ${memberName}${result.authDeleted ? " (Auth account deleted)" : ""}`,
       });
 
       await fetchMembers();
+      alert(`Successfully deleted ${memberName}${result.authDeleted ? " and their login account" : ""}`);
       console.log(`Deleted team member: ${memberName}`, result);
     } catch (error: any) {
       console.error("Error deleting member:", error);
       alert(`Failed to delete team member: ${error.message}`);
+    }
+  };
+
+  // Update member role
+  const handleUpdateRole = async (id: string, memberName: string, newRole: string) => {
+    try {
+      const member = members.find(m => m.id === id);
+      if (!member) return;
+
+      const response = await fetch(`/api/admin/update-role`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: member.emailPrimary, role: newRole }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update role");
+      }
+
+      // Log activity
+      await logActivity({
+        type: "update",
+        entityType: "team-member",
+        entityId: id,
+        entityName: memberName,
+        description: `Role updated to ${newRole} for ${memberName}`,
+      });
+
+      await fetchMembers();
+      console.log(`Updated role for ${memberName} to ${newRole}`, result);
+    } catch (error: any) {
+      console.error("Error updating role:", error);
+      alert(`Failed to update role: ${error.message}`);
     }
   };
 
@@ -1032,7 +1070,22 @@ export default function TeamMembersPage() {
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
                       </TableCell>
-                      <TableCell>{getRoleBadge(member.role)}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={member.role}
+                          onValueChange={(newRole) => handleUpdateRole(member.id, `${member.firstName} ${member.lastName}`, newRole)}
+                        >
+                          <SelectTrigger className="w-[120px] h-8">
+                            <SelectValue>{getRoleBadge(member.role)}</SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="team">Team</SelectItem>
+                            <SelectItem value="affiliate">Affiliate</SelectItem>
+                            <SelectItem value="consultant">Consultant</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
                       <TableCell>
                         {member.status === "active" ? (
                           <Badge variant="outline" className="text-green-600 border-green-600">
