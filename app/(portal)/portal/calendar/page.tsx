@@ -367,7 +367,7 @@ export default function CalendarPage() {
           attendees: newEvent.attendees || [],
           location: newEvent.location || '',
           allDay: newEvent.allDay || false,
-          recurringParentId: newEvent.recurringParentId,
+          ...(newEvent.recurringParentId ? { recurringParentId: newEvent.recurringParentId } : {}),
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         };
