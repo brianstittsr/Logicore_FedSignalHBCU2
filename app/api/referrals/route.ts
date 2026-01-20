@@ -49,14 +49,12 @@ export async function GET(request: NextRequest) {
     if (type === "given") {
       referralsQuery = query(
         collection(db, COLLECTIONS.REFERRALS),
-        where("referrerId", "==", affiliateId),
-        orderBy("createdAt", "desc")
+        where("referrerId", "==", affiliateId)
       );
     } else if (type === "received") {
       referralsQuery = query(
         collection(db, COLLECTIONS.REFERRALS),
-        where("recipientId", "==", affiliateId),
-        orderBy("createdAt", "desc")
+        where("recipientId", "==", affiliateId)
       );
     } else {
       // Get both given and received
@@ -109,6 +107,9 @@ export async function GET(request: NextRequest) {
       updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString(),
       dealClosedDate: doc.data().dealClosedDate?.toDate?.()?.toISOString(),
     }));
+
+    // Sort by createdAt descending
+    referrals.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     return NextResponse.json({ success: true, referrals });
   } catch (error) {

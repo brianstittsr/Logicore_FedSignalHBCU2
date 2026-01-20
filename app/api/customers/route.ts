@@ -26,10 +26,12 @@ export async function GET(request: NextRequest) {
     }
 
     const customersRef = collection(db, COLLECTIONS.CUSTOMERS);
-    let q = query(customersRef, orderBy("createdAt", "desc"));
+    let q;
 
     if (status && status !== "all") {
-      q = query(customersRef, where("status", "==", status), orderBy("createdAt", "desc"));
+      q = query(customersRef, where("status", "==", status));
+    } else {
+      q = query(customersRef);
     }
 
     const snapshot = await getDocs(q);
@@ -37,6 +39,13 @@ export async function GET(request: NextRequest) {
       id: doc.id,
       ...doc.data(),
     })) as CustomerDoc[];
+
+    // Sort by createdAt descending
+    customers.sort((a, b) => {
+      const aDate = a.createdAt?.toDate?.() || new Date(0);
+      const bDate = b.createdAt?.toDate?.() || new Date(0);
+      return bDate.getTime() - aDate.getTime();
+    });
 
     // Client-side search filtering (Firestore doesn't support full-text search)
     if (search) {
