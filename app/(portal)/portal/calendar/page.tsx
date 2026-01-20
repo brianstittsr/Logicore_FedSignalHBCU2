@@ -146,6 +146,41 @@ export default function CalendarPage() {
     }
   };
 
+  // Fetch saved calendar events from Firebase
+  const fetchCalendarEvents = async () => {
+    if (!db) return;
+    try {
+      const querySnapshot = await getDocs(collection(db, COLLECTIONS.CALENDAR_EVENTS));
+      const calendarEvents: CalendarEventData[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        calendarEvents.push({
+          id: docSnap.id,
+          title: data.title,
+          description: data.description || '',
+          startDate: data.startDate?.toDate() || new Date(),
+          endDate: data.endDate?.toDate() || new Date(),
+          type: data.type || 'custom',
+          color: data.color || '#3b82f6',
+          attendees: data.attendees || [],
+          location: data.location || '',
+          allDay: data.allDay || false,
+          recurringParentId: data.recurringParentId,
+        });
+      });
+      // Sort by start date
+      calendarEvents.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+      setEvents(prev => {
+        // Keep GHL events, replace local events
+        const ghlEvents = prev.filter(e => e.id.startsWith("ghl-"));
+        return [...ghlEvents, ...calendarEvents];
+      });
+      console.log(`Loaded ${calendarEvents.length} calendar events from Firebase`);
+    } catch (error) {
+      console.error("Error fetching calendar events from Firebase:", error);
+    }
+  };
+
   // Fetch 1-to-1 queue from Firebase
   const fetchOneToOneQueue = async () => {
     if (!db) return;
@@ -168,8 +203,10 @@ export default function CalendarPage() {
     }
   };
 
-  // Initial load: Do full historical sync first time, then incremental syncs
+  // Initial load: Fetch saved events from Firebase, then sync GHL events
   useEffect(() => {
+    // Load saved calendar events from Firebase first
+    fetchCalendarEvents();
     fetchOneToOneQueue();
     
     // Check if we need to do a full historical sync (first time)
