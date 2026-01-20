@@ -181,7 +181,7 @@ export default function AvailabilityPage() {
     return `${window.location.origin}/book/${slug || bookingSlug}`;
   };
 
-  // Fetch team members with role "team"
+  // Fetch team members (all roles that can have availability)
   const fetchTeamMembers = async () => {
     if (!db) return;
     try {
@@ -189,7 +189,8 @@ export default function AvailabilityPage() {
       const members: TeamMemberDoc[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data() as TeamMemberDoc;
-        if (data.role === 'team' || data.role === 'admin') {
+        // Include team, admin, superadmin, and consultant roles for availability
+        if (data.role === 'team' || data.role === 'admin' || data.role === 'superadmin' || data.role === 'consultant') {
           members.push({ ...data, id: docSnap.id });
         }
       });

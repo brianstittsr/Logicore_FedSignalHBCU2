@@ -35,6 +35,7 @@ import {
   Users,
   Award,
   Loader2,
+  CalendarPlus,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, query, orderBy, Timestamp } from "firebase/firestore";
@@ -418,7 +419,12 @@ export default function AffiliatesPage() {
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <Link href={`/portal/admin/team-members?view=${affiliate.id}`}>View Profile</Link>
                   </Button>
-                  <Button size="sm" className="flex-1">Request</Button>
+                  <Button size="sm" className="flex-1" asChild>
+                    <Link href={`/portal/calendar?schedule=${affiliate.id}`}>
+                      <CalendarPlus className="mr-1 h-3 w-3" />
+                      Schedule 1-to-1
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
