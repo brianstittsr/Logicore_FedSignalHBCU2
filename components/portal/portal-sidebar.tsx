@@ -232,11 +232,6 @@ const resourcesItems = [
     href: "/portal/proposals",
     icon: FileSignature,
   },
-  {
-    title: "Agreements",
-    href: "/portal/agreements",
-    icon: FileText,
-  },
 ];
 
 // ============================================================================
