@@ -237,7 +237,10 @@ export default function CalendarPage() {
     if (!db || !selectedQueueItem) return;
     
     try {
-      const scheduledDate = new Date(`${scheduleForm.date}T${scheduleForm.time}`);
+      // Parse date parts explicitly to avoid timezone offset issues
+      const [year, month, day] = scheduleForm.date.split("-").map(Number);
+      const [hour, minute] = scheduleForm.time.split(":").map(Number);
+      const scheduledDate = new Date(year, month - 1, day, hour, minute, 0, 0);
       const endDate = new Date(scheduledDate.getTime() + parseInt(scheduleForm.duration) * 60000);
       
       // Create calendar event

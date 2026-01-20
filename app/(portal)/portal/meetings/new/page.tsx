@@ -84,7 +84,10 @@ export default function NewMeetingPage() {
 
     setIsSubmitting(true);
     try {
-      const meetingDate = new Date(`${formData.date}T${formData.time}`);
+      // Parse date parts explicitly to avoid timezone offset issues
+      const [year, month, day] = formData.date.split("-").map(Number);
+      const [hour, minute] = formData.time.split(":").map(Number);
+      const meetingDate = new Date(year, month - 1, day, hour, minute, 0, 0);
       
       const meetingData = {
         title: formData.title,
