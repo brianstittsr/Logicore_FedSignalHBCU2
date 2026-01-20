@@ -174,6 +174,7 @@ function mapTeamMemberToProfile(teamMember: TeamMemberDoc): Partial<UserProfile>
     bio: teamMember.bio || "",
     avatarUrl: teamMember.avatar || "",
     role: teamMember.role === "admin" ? "admin" : 
+          teamMember.role === "superadmin" ? "superadmin" :
           teamMember.role === "affiliate" ? "affiliate" : 
           teamMember.role === "consultant" ? "affiliate" : "team_member",
     isAffiliate: teamMember.role === "affiliate" || teamMember.role === "consultant",
