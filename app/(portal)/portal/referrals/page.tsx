@@ -33,6 +33,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowUpRight,
   ArrowDownLeft,
   Plus,
@@ -46,7 +56,9 @@ import {
   Mail,
   Phone,
   Loader2,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Referral {
   id: string;
@@ -86,6 +98,11 @@ export default function ReferralsPage() {
   const [isReportDealOpen, setIsReportDealOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [referralToDelete, setReferralToDelete] = useState<Referral | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { profile } = useUserProfile();
+  const canDelete = profile.role === "admin" || profile.role === "superadmin";
 
   // Form state for new referral
   const [newReferral, setNewReferral] = useState({
@@ -212,6 +229,31 @@ export default function ReferralsPage() {
       fetchReferrals();
     } catch (error) {
       console.error("Failed to update status:", error);
+    }
+  };
+
+  const handleDeleteReferral = async () => {
+    if (!referralToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/referrals?referralId=${referralToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setReferrals(prev => prev.filter(r => r.id !== referralToDelete.id));
+        toast.success("Referral deleted successfully");
+      } else {
+        toast.error("Failed to delete referral");
+      }
+    } catch (error) {
+      console.error("Failed to delete referral:", error);
+      toast.error("Failed to delete referral");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setReferralToDelete(null);
     }
   };
 
@@ -410,6 +452,19 @@ export default function ReferralsPage() {
                               <DollarSign className="h-3 w-3 mr-1" />
                               Report
                             </Button>
+                            {canDelete && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setReferralToDelete(referral);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>
@@ -620,6 +675,32 @@ export default function ReferralsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Referral</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the referral for "{referralToDelete?.prospectName}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteReferral}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -64,6 +64,7 @@ interface MeetingDisplay {
   time: string;
   duration: string;
   attendees: number;
+  joinUrl?: string;
 }
 
 interface ActionItemDisplay {
@@ -235,6 +236,7 @@ export default function CommandCenterPage() {
               time: startDate ? startDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "",
               duration: `${durationMins} min`,
               attendees: data.attendees?.length || 0,
+              joinUrl: data.location || undefined,
             });
           });
           setMeetings(meetingsData);
@@ -598,9 +600,19 @@ export default function CommandCenterPage() {
                         <span>{meeting.duration}</span>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline">
-                      Join
-                    </Button>
+                    {meeting.joinUrl ? (
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={meeting.joinUrl} target="_blank" rel="noopener noreferrer">
+                          Join
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={`/portal/calendar`}>
+                          View
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

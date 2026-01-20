@@ -26,6 +26,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Plus,
   Search,
   MapPin,
@@ -36,11 +46,13 @@ import {
   Award,
   Loader2,
   CalendarPlus,
+  Trash2,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, addDoc, query, orderBy, Timestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, query, orderBy, Timestamp, deleteDoc, doc } from "firebase/firestore";
 import { COLLECTIONS, type TeamMemberDoc } from "@/lib/schema";
 import { toast } from "sonner";
+import { useUserProfile } from "@/contexts/user-profile-context";
 
 interface AffiliateDisplay {
   id: string;
@@ -88,6 +100,7 @@ function getAvailabilityBadge(availability: string) {
 
 export default function AffiliatesPage() {
   const router = useRouter();
+  const { profile } = useUserProfile();
   const [affiliates, setAffiliates] = useState<AffiliateDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,6 +108,10 @@ export default function AffiliatesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [affiliateToDelete, setAffiliateToDelete] = useState<AffiliateDisplay | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const canDelete = profile.role === "admin" || profile.role === "superadmin";
 
   // New affiliate form state
   const [newAffiliate, setNewAffiliate] = useState({
@@ -182,6 +199,24 @@ export default function AffiliatesPage() {
       toast.error("Failed to add affiliate");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAffiliate = async () => {
+    if (!db || !affiliateToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.TEAM_MEMBERS, affiliateToDelete.id));
+      setAffiliates(prev => prev.filter(a => a.id !== affiliateToDelete.id));
+      toast.success("Affiliate deleted successfully");
+    } catch (error) {
+      console.error("Error deleting affiliate:", error);
+      toast.error("Failed to delete affiliate");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setAffiliateToDelete(null);
     }
   };
 
@@ -416,6 +451,19 @@ export default function AffiliatesPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2">
+                  {canDelete && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setAffiliateToDelete(affiliate);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <Link href={`/portal/admin/team-members?view=${affiliate.id}`}>View Profile</Link>
                   </Button>
@@ -515,6 +563,32 @@ export default function AffiliatesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Affiliate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{affiliateToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAffiliate}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

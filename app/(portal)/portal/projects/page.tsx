@@ -8,10 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Calendar, CheckCircle, FolderKanban } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Calendar, CheckCircle, FolderKanban, Trash2, Loader2 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, Timestamp, deleteDoc, doc } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/schema";
+import { toast } from "sonner";
+import { useUserProfile } from "@/contexts/user-profile-context";
 
 interface ProjectDisplay {
   id: string;
@@ -52,6 +64,11 @@ function formatDate(date: Date | Timestamp | undefined): string {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<ProjectDisplay | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { profile } = useUserProfile();
+  const canDelete = profile.role === "admin" || profile.role === "superadmin";
 
   useEffect(() => {
     async function fetchProjects() {
@@ -92,6 +109,24 @@ export default function ProjectsPage() {
     
     fetchProjects();
   }, []);
+
+  const handleDeleteProject = async () => {
+    if (!db || !projectToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.PROJECTS, projectToDelete.id));
+      setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+      toast.success("Project deleted successfully");
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    }
+  };
 
   const activeCount = projects.filter((p) => p.status === "active").length;
   const atRiskCount = projects.filter((p) => p.status === "at-risk").length;
@@ -255,15 +290,56 @@ export default function ProjectsPage() {
                       </Avatar>
                     )}
                   </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/portal/projects/${project.id}`}>View Details</Link>
-                  </Button>
+                  <div className="flex gap-2">
+                    {canDelete && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setProjectToDelete(project);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/portal/projects/${project.id}`}>View Details</Link>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{projectToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProject}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

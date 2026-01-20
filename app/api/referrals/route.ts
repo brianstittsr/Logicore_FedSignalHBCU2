@@ -1,7 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { COLLECTIONS } from "@/lib/schema";
-import { collection, getDocs, query, where, addDoc, updateDoc, doc, Timestamp, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where, addDoc, updateDoc, doc, Timestamp, orderBy, deleteDoc } from "firebase/firestore";
+
+// Helper function to create notification for SVP referrals
+async function createSvpReferralNotification(referralData: {
+  prospectName: string;
+  prospectCompany?: string;
+  referrerId: string;
+  svpServiceInterest?: string;
+}) {
+  if (!db) return;
+  
+  try {
+    // Create notification for admins/superadmins
+    const notificationData = {
+      type: "svp_referral",
+      title: "New SVP Services Referral",
+      message: `New referral for SVP services: ${referralData.prospectName}${referralData.prospectCompany ? ` from ${referralData.prospectCompany}` : ""}${referralData.svpServiceInterest ? ` - Interested in: ${referralData.svpServiceInterest}` : ""}`,
+      referrerId: referralData.referrerId,
+      targetRoles: ["admin", "superadmin"],
+      isRead: false,
+      createdAt: Timestamp.now(),
+    };
+    
+    await addDoc(collection(db, "notifications"), notificationData);
+  } catch (error) {
+    console.error("Failed to create SVP referral notification:", error);
+  }
+}
 
 // GET - Fetch referrals for an affiliate
 export async function GET(request: NextRequest) {
@@ -147,6 +174,16 @@ export async function POST(request: NextRequest) {
 
     const docRef = await addDoc(collection(db, COLLECTIONS.REFERRALS), referralData);
 
+    // Create notification for SVP referrals
+    if (isSvpReferral) {
+      await createSvpReferralNotification({
+        prospectName,
+        prospectCompany,
+        referrerId,
+        svpServiceInterest,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       referralId: docRef.id,
@@ -206,5 +243,32 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error("Update referral error:", error);
     return NextResponse.json({ error: "Failed to update referral" }, { status: 500 });
+  }
+}
+
+// DELETE - Delete a referral
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const referralId = searchParams.get("referralId");
+
+    if (!referralId) {
+      return NextResponse.json({ error: "referralId is required" }, { status: 400 });
+    }
+
+    if (!db) {
+      return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
+    }
+
+    const referralRef = doc(db, COLLECTIONS.REFERRALS, referralId);
+    await deleteDoc(referralRef);
+
+    return NextResponse.json({
+      success: true,
+      message: "Referral deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete referral error:", error);
+    return NextResponse.json({ error: "Failed to delete referral" }, { status: 500 });
   }
 }
