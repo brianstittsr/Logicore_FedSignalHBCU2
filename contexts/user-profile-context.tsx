@@ -410,8 +410,11 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
           
           // STEP 4: Set profile data - prioritize User Profile, fall back to Team Member
           if (userProfileData) {
-            // Use User Profile as primary source
+            // Use User Profile as primary source, but use Team Member role as authoritative
             const networkingProfileData = userProfileData.networkingProfile || defaultProfile.networkingProfile;
+            
+            // Get role from team member if available (team_members is the authoritative source for role)
+            const authorativeRole = teamMember ? mapTeamMemberToProfile(teamMember).role : (userProfileData.role || "team_member");
             
             setProfile({
               ...defaultProfile,
@@ -425,7 +428,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
               location: userProfileData.location || "",
               bio: userProfileData.bio || "",
               avatarUrl: userProfileData.avatarUrl || "",
-              role: userProfileData.role || "team_member",
+              role: authorativeRole,
               isAffiliate: userProfileData.isAffiliate || false,
               affiliateOnboardingComplete: userProfileData.affiliateOnboardingComplete || false,
               affiliateAgreementSigned: userProfileData.affiliateAgreementSigned || false,
