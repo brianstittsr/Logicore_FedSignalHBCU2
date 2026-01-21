@@ -84,18 +84,22 @@ Brian is passionate about making advanced technologies accessible to small and m
   "keith-moore": {
     member: {
       name: "Keith Moore",
-      title: "Strategic Partner",
+      title: "KDM & Associates CEO",
       category: "partner",
-      expertise: ["Business Development", "Strategic Partnerships"],
+      expertise: ["Government Affairs", "Small Business Advocacy", "Community Development", "Public Policy"],
       slug: "keith-moore",
       order: 1,
       isActive: true,
     },
-    fullBio: `Keith Moore is a Strategic Partner at Strategic Value Plus Solutions, LLC, bringing extensive experience in business development and strategic partnership cultivation.
+    fullBio: `The CEO of both KDM and Associates, and Founder of Open GovTV, leads a team of experts to provide government, institutions, communities, and companies technical solutions to some of the nation's most pressing societal challenges. Keith Moore brings to the team, knowledge of Government, Community, Small Business, and the historical challenges associated with Government meeting socio economic goals, and job expansion, and revenue growth for small businesses.
 
-Keith specializes in identifying and developing mutually beneficial relationships that create value for all stakeholders. His network spans multiple industries and includes connections with key decision-makers at major OEMs and tier-one suppliers.
+In 2003-KDM was issued a two year marketing Agreement to represent a minority owned Engineering government contracting information technology small business. In 2005-the firm was awarded a $1 Billion dollar contract thanks to strategic relationship building and KDM helping the firm develop a teaming strategy to partner with DOE. Keith's command of public policy has benefited communities, businesses, government agencies, and has empowered those most vulnerable, and least financed.
 
-His approach to business development focuses on long-term relationship building rather than transactional sales, ensuring sustainable growth for Strategic Value Plus and its partners.`,
+Keith as a result of his success in the waterfront community of Asbury Park, became a frequent guest on NJN Network and Comcast, and was characterized as a community leader, and one who believed in the development of innovative approaches to community development. EXODUS House offered drug and alcohol rehabilitation services to addicted men and women for six months with housing, education, job training, and a second chance at a productive life. In 1997, the State of New Jersey agreed to purchase the facility located one block from the Asbury Park beach. Once the EXODUS House was purchased, Keith was appointed in 1997 by the Governor of New Jersey and Secretary of Commerce to the position of Account Executive to the New Jersey Commerce & Economic Growth Commission.
+
+His appointment led to a position as Director of Public Affairs and Community Relations working directly for Governor Christie Todd Whitman in the Governor's Camden New Jersey office helping to advance the allocation of over $250 million dollars of revitalization funds into the city of Camden. Today, Keith Moore, a nationally renowned community activist, small business advocate, and government affairs expert communicates his firm's grasp of public policy as OGTV leads the nation by example.
+
+OGTV, founded by Keith Moore December 31, 2009, is the first internet TV program in America to film, and promote the White House's Executive Order on the Open Government Directive by concentrating on the policy's attention on small business. OGTV as a Division of KDM, and web based video platform, engages large businesses, and helps small businesses succeed in government contracting. KDM, thanks to OGTV, is well positioned to help government, and large businesses meet their small business diversity goals, and NGO's to meet their mission by using innovative online approaches to education and outreach.`,
   },
   "icy-williams": {
     member: {

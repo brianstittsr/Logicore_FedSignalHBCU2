@@ -59,9 +59,9 @@ const defaultLeadership: Omit<TeamMember, "id">[] = [
 const defaultPartners: Omit<TeamMember, "id">[] = [
   {
     name: "Keith Moore",
-    title: "Strategic Partner",
+    title: "KDM & Associates CEO",
     category: "partner",
-    expertise: ["Business Development", "Strategic Partnerships"],
+    expertise: ["Government Affairs", "Small Business Advocacy", "Community Development", "Public Policy"],
     slug: "keith-moore",
     order: 1,
     isActive: true,
