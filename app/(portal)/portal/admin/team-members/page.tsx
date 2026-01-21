@@ -105,7 +105,7 @@ const seedTeamMembers: Omit<TeamMemberDoc, "id" | "createdAt" | "updatedAt">[] =
   { firstName: "Mark", lastName: "Osborne", emailPrimary: "mark@ModernRevenueStrategies.com", mobile: "(404) 808-7625", expertise: "Advanced Marketing/Bus Dev", role: "affiliate", status: "active" },
   { firstName: "Marney", lastName: "Lumpkin", emailPrimary: "marney@vasml.com", expertise: "Back Office Support", role: "affiliate", status: "active" },
   { firstName: "Mike", lastName: "Liu", emailPrimary: "mike@freefuse.com", mobile: "(818)-324-0538", expertise: "Multimedia User-Defined Learning Platforms", role: "affiliate", status: "active" },
-  { firstName: "Nate", lastName: "Hallums", emailPrimary: "nhallums@strategicvalueplus.com", emailSecondary: "nate@backyardfishingagency.co", mobile: "(523) 273-7789", expertise: "Net-No-Cost Wellness Plans that Generate Cash Flow", role: "team", status: "active" },
+  { firstName: "Nate", lastName: "Hallums", emailPrimary: "nhallums@strategicvalueplus.com", emailSecondary: "nate@backyardfishingagency.co", mobile: "(523) 273-7789", expertise: "Net-No-Cost Wellness Plans that Generate Cash Flow", role: "admin", status: "active" },
   { firstName: "Nathan", lastName: "Tyler", emailPrimary: "nathan@nsquared.io", expertise: "Executive Dash Boards", role: "affiliate", status: "active" },
   { firstName: "Nelinia", lastName: "Varenas", emailPrimary: "nelinia@strategicvalueplus.com", emailSecondary: "neliniav@gmail.com", mobile: "(310) 650-0725", expertise: "CEO", role: "admin", status: "active" },
   { firstName: "Nicholas", lastName: "Chiselett", emailPrimary: "nicholas@2bytes.com.au", mobile: "61414247540", expertise: "Construction On-line Stores", role: "affiliate", status: "active" },
