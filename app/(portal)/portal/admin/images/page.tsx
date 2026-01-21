@@ -46,12 +46,84 @@ import {
   Eye,
 } from "lucide-react";
 import { useUserProfile } from "@/contexts/user-profile-context";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, setDoc, deleteDoc, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { toast } from "sonner";
 
-const MAX_BASE64_SIZE = 500 * 1024; // 500KB - use Storage for larger files
+const MAX_BASE64_SIZE = 900 * 1024; // 900KB max for Firestore (leaving buffer under 1MB limit)
+const TARGET_QUALITY = 0.8; // JPEG quality for compression
+const MAX_DIMENSION = 1920; // Max width/height in pixels
+
+// Compress image using canvas
+const compressImage = (file: File): Promise<{ blob: Blob; width: number; height: number }> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    
+    img.onload = () => {
+      let { width, height } = img;
+      
+      // Scale down if larger than max dimension
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      // Try to compress to fit under size limit
+      const tryCompress = (quality: number): void => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to compress image"));
+              return;
+            }
+            
+            // If still too large and quality can be reduced, try again
+            if (blob.size > MAX_BASE64_SIZE && quality > 0.3) {
+              tryCompress(quality - 0.1);
+            } else {
+              resolve({ blob, width, height });
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      
+      // Start compression - use original format for small files, JPEG for compression
+      if (file.size <= MAX_BASE64_SIZE) {
+        // File is already small enough, just resize if needed
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve({ blob, width, height });
+            } else {
+              reject(new Error("Failed to process image"));
+            }
+          },
+          file.type.includes("png") ? "image/png" : "image/jpeg",
+          TARGET_QUALITY
+        );
+      } else {
+        // Compress to JPEG
+        tryCompress(TARGET_QUALITY);
+      }
+    };
+    
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 interface ImageAsset {
   id: string;
@@ -162,40 +234,31 @@ export default function ImageManagerPage() {
       const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const folder = selectedFolder === "all" ? "misc" : selectedFolder;
       
-      let imageUrl: string;
-      let storageRef: string | undefined;
+      // Compress image to fit within Firestore limits
+      const { blob: compressedBlob, width, height } = await compressImage(file);
       
-      // Use Firebase Storage for large files, Base64 for small files
-      if (file.size > MAX_BASE64_SIZE && storage) {
-        // Upload to Firebase Storage
-        const storagePath = `images/${folder}/${imageId}-${file.name}`;
-        const storageReference = ref(storage, storagePath);
-        await uploadBytes(storageReference, file);
-        imageUrl = await getDownloadURL(storageReference);
-        storageRef = storagePath;
-      } else {
-        // Use Base64 for small files
-        imageUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-          reader.readAsDataURL(file);
-        });
-      }
+      // Convert compressed blob to Base64
+      const imageUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+        reader.readAsDataURL(compressedBlob);
+      });
       
       const newImage: ImageAsset = {
         id: imageId,
         name: file.name,
         url: imageUrl,
         folder: folder,
-        size: file.size,
-        mimeType: file.type,
+        size: compressedBlob.size,
+        mimeType: compressedBlob.type,
+        width,
+        height,
         alt: "",
         tags: [],
         uploadedBy: profile.id,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        ...(storageRef && { storageRef }), // Track storage path for deletion
       };
 
       await setDoc(doc(db!, "image_assets", newImage.id), newImage);
@@ -205,11 +268,11 @@ export default function ImageManagerPage() {
     try {
       const uploadedImages = await Promise.all(uploadPromises);
       setImages(prev => [...uploadedImages, ...prev]);
-      toast.success(`${uploadedImages.length} image(s) uploaded successfully`);
+      toast.success(`${uploadedImages.length} image(s) uploaded and compressed successfully`);
       setUploadDialogOpen(false);
     } catch (error) {
       console.error("Error uploading images:", error);
-      toast.error("Failed to upload some images. Large images (>500KB) require Firebase Storage.");
+      toast.error("Failed to upload images. Please try smaller images.");
     } finally {
       setIsUploading(false);
     }
@@ -218,20 +281,7 @@ export default function ImageManagerPage() {
   const handleDelete = async (imageId: string) => {
     if (!db || !confirm("Are you sure you want to delete this image?")) return;
     try {
-      // Find the image to check if it has a storage reference
-      const imageToDelete = images.find(img => img.id === imageId);
-      
-      // Delete from Firebase Storage if it has a storage reference
-      if (imageToDelete?.storageRef && storage) {
-        try {
-          const storageReference = ref(storage, imageToDelete.storageRef);
-          await deleteObject(storageReference);
-        } catch (storageError) {
-          console.warn("Could not delete from storage:", storageError);
-        }
-      }
-      
-      // Delete from Firestore
+      // Delete from Firestore (images are stored as Base64, no external storage)
       await deleteDoc(doc(db, "image_assets", imageId));
       setImages(prev => prev.filter(img => img.id !== imageId));
       toast.success("Image deleted");
