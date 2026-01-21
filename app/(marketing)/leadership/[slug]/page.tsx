@@ -245,18 +245,18 @@ export default function BiographyPage() {
           </Button>
           
           <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
-            {/* Image */}
+            {/* Image - fills width, top of head visible, bottom can crop */}
             <div className="w-full md:w-80 shrink-0">
-              <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+              <div className="aspect-[4/5] rounded-xl overflow-hidden">
                 {member.imageUrl ? (
                   <img
                     src={member.imageUrl}
                     alt={member.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-5xl font-bold">
+                  <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-5xl font-bold shadow-lg">
                       {member.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
                     </div>
                   </div>
