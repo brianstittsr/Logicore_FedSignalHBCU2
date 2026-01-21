@@ -282,6 +282,23 @@ export default function AIPageDesignerPage() {
   
   // Page elements for design
   const [pageElements, setPageElements] = useState<PageElement[]>([]);
+
+  // Design Wizard state
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(0);
+  const [wizardData, setWizardData] = useState({
+    pageType: "landing",
+    pageName: "",
+    pageSlug: "",
+    layout: "single-column",
+    sections: [] as string[],
+    heroTitle: "",
+    heroSubtitle: "",
+    primaryColor: "#2563EB",
+    secondaryColor: "#10B981",
+    seoTitle: "",
+    seoDescription: "",
+  });
   
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
