@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import { useUserProfile } from "@/contexts/user-profile-context";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, setDoc, deleteDoc, Timestamp, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
 interface ImageAsset {
@@ -95,16 +95,27 @@ export default function ImageManagerPage() {
   // Fetch images from Firestore
   useEffect(() => {
     const fetchImages = async () => {
-      if (!db) return;
+      if (!db) {
+        console.log("Firebase db not initialized");
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const imagesRef = collection(db, "image_assets");
-        const q = query(imagesRef, orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
+        // Try without orderBy first to avoid index requirement
+        const snapshot = await getDocs(imagesRef);
+        console.log("Fetched images count:", snapshot.docs.length);
         const imagesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
         })) as ImageAsset[];
+        // Sort client-side instead
+        imagesData.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
         setImages(imagesData);
         setFilteredImages(imagesData);
       } catch (error) {

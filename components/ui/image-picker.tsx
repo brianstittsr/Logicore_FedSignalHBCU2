@@ -29,7 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, setDoc, Timestamp, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
 interface ImageAsset {
@@ -108,12 +108,17 @@ export function ImagePicker({
     setIsLoading(true);
     try {
       const imagesRef = collection(db, "image_assets");
-      const q = query(imagesRef, orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(imagesRef);
       const imagesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as ImageAsset[];
+      // Sort client-side
+      imagesData.sort((a: any, b: any) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
       setImages(imagesData);
       setFilteredImages(imagesData);
     } catch (error) {
