@@ -72,6 +72,7 @@ import { syncTeamMemberToUser } from "@/lib/user-team-member-sync";
 import { useUserProfile } from "@/contexts/user-profile-context";
 import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ImagePicker } from "@/components/ui/image-picker";
 
 // Seed data for Team Members
 const seedTeamMembers: Omit<TeamMemberDoc, "id" | "createdAt" | "updatedAt">[] = [
@@ -149,6 +150,7 @@ export default function TeamMembersPage() {
     bio: "",
     linkedIn: "",
     website: "",
+    avatar: "",
     role: "affiliate" as "admin" | "superadmin" | "team" | "affiliate" | "consultant",
     status: "active" as "active" | "inactive" | "pending",
     // Leadership flags
@@ -471,6 +473,7 @@ export default function TeamMembersPage() {
       bio: member.bio || "",
       linkedIn: member.linkedIn || "",
       website: member.website || "",
+      avatar: member.avatar || "",
       role: member.role,
       status: member.status,
       isCEO: member.isCEO || false,
@@ -496,6 +499,7 @@ export default function TeamMembersPage() {
       bio: "",
       linkedIn: "",
       website: "",
+      avatar: "",
       role: "affiliate",
       status: "active",
       isCEO: false,
@@ -675,6 +679,18 @@ export default function TeamMembersPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                {/* Avatar / Profile Photo */}
+                <ImagePicker
+                  value={formData.avatar}
+                  onChange={(url) => setFormData({ ...formData, avatar: url })}
+                  label="Profile Photo"
+                  avatarMode={true}
+                  avatarFallback={formData.firstName && formData.lastName 
+                    ? `${formData.firstName[0]}${formData.lastName[0]}` 
+                    : "?"}
+                  folder="team"
+                />
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name *</Label>

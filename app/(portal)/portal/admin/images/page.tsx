@@ -142,39 +142,49 @@ export default function ImageManagerPage() {
     if (!files || files.length === 0 || !db) return;
 
     setIsUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        // Convert to base64 for storage (in production, use Firebase Storage)
+    
+    const uploadPromises = Array.from(files).map((file) => {
+      return new Promise<ImageAsset>((resolve, reject) => {
         const reader = new FileReader();
+        
         reader.onloadend = async () => {
-          const base64 = reader.result as string;
-          
-          const newImage: ImageAsset = {
-            id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            name: file.name,
-            url: base64,
-            folder: selectedFolder === "all" ? "misc" : selectedFolder,
-            size: file.size,
-            mimeType: file.type,
-            alt: "",
-            tags: [],
-            uploadedBy: profile.id,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-          };
+          try {
+            const base64 = reader.result as string;
+            
+            const newImage: ImageAsset = {
+              id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              name: file.name,
+              url: base64,
+              folder: selectedFolder === "all" ? "misc" : selectedFolder,
+              size: file.size,
+              mimeType: file.type,
+              alt: "",
+              tags: [],
+              uploadedBy: profile.id,
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now(),
+            };
 
-          if (db) {
-            await setDoc(doc(db, "image_assets", newImage.id), newImage);
+            await setDoc(doc(db!, "image_assets", newImage.id), newImage);
+            resolve(newImage);
+          } catch (error) {
+            reject(error);
           }
-          setImages(prev => [newImage, ...prev]);
         };
+        
+        reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
         reader.readAsDataURL(file);
-      }
-      toast.success("Images uploaded successfully");
+      });
+    });
+
+    try {
+      const uploadedImages = await Promise.all(uploadPromises);
+      setImages(prev => [...uploadedImages, ...prev]);
+      toast.success(`${uploadedImages.length} image(s) uploaded successfully`);
       setUploadDialogOpen(false);
     } catch (error) {
       console.error("Error uploading images:", error);
-      toast.error("Failed to upload images");
+      toast.error("Failed to upload some images");
     } finally {
       setIsUploading(false);
     }
