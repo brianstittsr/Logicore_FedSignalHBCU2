@@ -2,149 +2,208 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, User, Loader2 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 
-const leadershipTeam = [
+// Interface for team members stored in Firestore
+interface TeamMember {
+  id: string;
+  name: string;
+  title: string;
+  category: "leadership" | "partner";
+  imageUrl?: string;
+  expertise: string[];
+  bio?: string;
+  slug?: string;
+  order: number;
+  email?: string;
+  linkedin?: string;
+  isActive: boolean;
+}
+
+// Default team members (used as fallback and for initial seeding)
+const defaultLeadership: Omit<TeamMember, "id">[] = [
   {
     name: "Nelinia Varenas",
     title: "V+ CEO",
-    imageKey: "nelinia",
-    expertise: [
-      "AI, Automation, & Digital Twins",
-      "Reshoring",
-      "Sales & Marketing",
-      "ISO",
-      "Six Sigma",
-      "Affiliate Marketing",
-    ],
+    category: "leadership",
+    expertise: ["AI, Automation, & Digital Twins", "Reshoring", "Sales & Marketing", "ISO", "Six Sigma", "Affiliate Marketing"],
+    slug: "nelinia-varenas",
+    order: 1,
+    isActive: true,
   },
   {
     name: "Roy Dickan",
     title: "V+ CRO",
-    imageKey: "roy",
-    expertise: [
-      "AI Optimization Architect",
-      "Automations",
-      "Sales & Marketing",
-      "Lead Generation",
-      "Int/Ext Communication",
-    ],
+    category: "leadership",
+    expertise: ["AI Optimization Architect", "Automations", "Sales & Marketing", "Lead Generation", "Int/Ext Communication"],
+    slug: "roy-dickan",
+    order: 2,
+    isActive: true,
   },
   {
     name: "Brian Stitt",
     title: "V+ CTO",
-    imageKey: "brian",
-    expertise: [
-      "AI Visionary & Developer",
-      "Digital Transformation Expert",
-      "Robotics and Digital Twins Innovator",
-    ],
+    category: "leadership",
+    expertise: ["AI Visionary & Developer", "Digital Transformation Expert", "Robotics and Digital Twins Innovator"],
+    slug: "brian-stitt",
+    order: 3,
+    isActive: true,
   },
 ];
 
-const strategicPartners = [
+const defaultPartners: Omit<TeamMember, "id">[] = [
   {
     name: "Keith Moore",
     title: "Strategic Partner",
-    imageKey: "keith",
-    expertise: [
-      "Business Development",
-      "Strategic Partnerships",
-    ],
+    category: "partner",
+    expertise: ["Business Development", "Strategic Partnerships"],
+    slug: "keith-moore",
+    order: 1,
+    isActive: true,
   },
   {
     name: "Icy Williams",
     title: "Strategic Partner",
-    imageKey: "icy",
-    expertise: [
-      "Operations Excellence",
-      "Process Improvement",
-    ],
+    category: "partner",
+    expertise: ["Operations Excellence", "Process Improvement"],
+    slug: "icy-williams",
+    order: 2,
+    isActive: true,
   },
   {
     name: "Nate Hallums",
     title: "Strategic Partner",
-    imageKey: "nate",
-    expertise: [
-      "Manufacturing Solutions",
-      "Supply Chain",
-    ],
+    category: "partner",
+    expertise: ["Manufacturing Solutions", "Supply Chain"],
+    slug: "nate-hallums",
+    order: 3,
+    isActive: true,
   },
 ];
 
 export default function LeadershipPage() {
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [leadershipTeam, setLeadershipTeam] = useState<TeamMember[]>([]);
+  const [strategicPartners, setStrategicPartners] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchImages = async () => {
-      if (!db) return;
+    const fetchTeamMembers = async () => {
+      if (!db) {
+        // Use defaults if no DB
+        setLeadershipTeam(defaultLeadership.map((m, i) => ({ ...m, id: `default-${i}` })));
+        setStrategicPartners(defaultPartners.map((m, i) => ({ ...m, id: `default-partner-${i}` })));
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const imagesRef = collection(db, "image_assets");
-        const snapshot = await getDocs(imagesRef);
-        const urls: Record<string, string> = {};
+        // Fetch team members from Firestore
+        const membersRef = collection(db, "leadership_members");
+        const snapshot = await getDocs(membersRef);
         
-        snapshot.docs.forEach((doc) => {
+        if (snapshot.empty) {
+          // No data in Firestore, use defaults
+          setLeadershipTeam(defaultLeadership.map((m, i) => ({ ...m, id: `default-${i}` })));
+          setStrategicPartners(defaultPartners.map((m, i) => ({ ...m, id: `default-partner-${i}` })));
+        } else {
+          const members = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as TeamMember[];
+
+          // Filter and sort by category
+          const leadership = members
+            .filter(m => m.category === "leadership" && m.isActive)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+          
+          const partners = members
+            .filter(m => m.category === "partner" && m.isActive)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+          setLeadershipTeam(leadership.length > 0 ? leadership : defaultLeadership.map((m, i) => ({ ...m, id: `default-${i}` })));
+          setStrategicPartners(partners.length > 0 ? partners : defaultPartners.map((m, i) => ({ ...m, id: `default-partner-${i}` })));
+        }
+
+        // Also fetch images to match with members
+        const imagesRef = collection(db, "image_assets");
+        const imagesSnapshot = await getDocs(imagesRef);
+        const imageMap: Record<string, string> = {};
+        
+        imagesSnapshot.docs.forEach((doc) => {
           const data = doc.data();
           const name = data.name?.toLowerCase() || "";
           
           // Match images by name keywords
-          if (name.includes("nelinia") || name.includes("varenas") || name.includes("nel")) {
-            urls["nelinia"] = data.url;
+          if (name.includes("nelinia") || name.includes("varenas")) {
+            imageMap["nelinia-varenas"] = data.url;
           } else if (name.includes("roy") || name.includes("dickan")) {
-            urls["roy"] = data.url;
+            imageMap["roy-dickan"] = data.url;
           } else if (name.includes("brian") || name.includes("stitt")) {
-            urls["brian"] = data.url;
+            imageMap["brian-stitt"] = data.url;
           } else if (name.includes("keith") || name.includes("moore")) {
-            urls["keith"] = data.url;
+            imageMap["keith-moore"] = data.url;
           } else if (name.includes("icy") || name.includes("williams")) {
-            urls["icy"] = data.url;
+            imageMap["icy-williams"] = data.url;
           } else if (name.includes("nate") || name.includes("hallums")) {
-            urls["nate"] = data.url;
+            imageMap["nate-hallums"] = data.url;
           }
         });
-        
-        setImageUrls(urls);
+
+        // Update members with matched images
+        setLeadershipTeam(prev => prev.map(m => ({
+          ...m,
+          imageUrl: m.imageUrl || imageMap[m.slug || ""] || undefined,
+        })));
+        setStrategicPartners(prev => prev.map(m => ({
+          ...m,
+          imageUrl: m.imageUrl || imageMap[m.slug || ""] || undefined,
+        })));
+
       } catch (error) {
-        console.error("Error fetching images:", error);
+        console.error("Error fetching team members:", error);
+        // Use defaults on error
+        setLeadershipTeam(defaultLeadership.map((m, i) => ({ ...m, id: `default-${i}` })));
+        setStrategicPartners(defaultPartners.map((m, i) => ({ ...m, id: `default-partner-${i}` })));
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    fetchImages();
+    fetchTeamMembers();
   }, []);
 
-  const renderMemberCard = (member: typeof leadershipTeam[0]) => (
-    <Card key={member.name} className="overflow-hidden">
+  const renderMemberCard = (member: TeamMember) => (
+    <Card key={member.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
       <CardContent className="p-0">
-        <div className="flex flex-col sm:flex-row">
+        <div className="flex flex-col">
           {/* Image */}
-          <div className="sm:w-48 sm:h-auto h-64 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0 overflow-hidden">
-            {imageUrls[member.imageKey] ? (
+          <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center overflow-hidden relative">
+            {member.imageUrl ? (
               <img
-                src={imageUrls[member.imageKey]}
+                src={member.imageUrl}
                 alt={member.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-4xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-bold">
                 {member.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
               </div>
             )}
           </div>
           
           {/* Content */}
-          <div className="p-6 flex-1">
-            <h3 className="text-2xl font-bold">{member.name}</h3>
-            <p className="text-lg text-primary font-semibold mt-1">{member.title}</p>
+          <div className="p-5">
+            <h3 className="text-xl font-bold">{member.name}</h3>
+            <p className="text-primary font-semibold mt-1">{member.title}</p>
             
-            <div className="mt-4">
-              <div className="flex flex-wrap gap-2">
-                {member.expertise.map((skill) => (
+            <div className="mt-3">
+              <div className="flex flex-wrap gap-1.5">
+                {member.expertise.slice(0, 3).map((skill) => (
                   <Badge 
                     key={skill} 
                     variant="secondary" 
@@ -153,8 +212,24 @@ export default function LeadershipPage() {
                     {skill}
                   </Badge>
                 ))}
+                {member.expertise.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{member.expertise.length - 3} more
+                  </Badge>
+                )}
               </div>
             </div>
+
+            {/* Biography Link */}
+            {member.slug && (
+              <Link 
+                href={`/leadership/${member.slug}`}
+                className="mt-4 inline-flex items-center text-sm text-primary hover:underline font-medium"
+              >
+                View Full Biography
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            )}
           </div>
         </div>
       </CardContent>
