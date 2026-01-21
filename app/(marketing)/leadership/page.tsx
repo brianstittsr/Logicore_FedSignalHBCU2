@@ -181,17 +181,19 @@ export default function LeadershipPage() {
     <Card key={member.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 bg-white border-0 shadow-md">
       <CardContent className="p-0">
         <div className="flex flex-col">
-          {/* Image - square aspect ratio to show full headshot */}
-          <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden">
+          {/* Image - fills card width, top of head visible, bottom can crop */}
+          <div className="aspect-[4/5] overflow-hidden">
             {member.imageUrl ? (
               <img
                 src={member.imageUrl}
                 alt={member.name}
-                className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-300"
+                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                {member.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
+              <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                  {member.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                </div>
               </div>
             )}
           </div>
