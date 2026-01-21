@@ -178,42 +178,41 @@ export default function LeadershipPage() {
   }, []);
 
   const renderMemberCard = (member: TeamMember) => (
-    <Card key={member.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+    <Card key={member.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 bg-white border-0 shadow-md">
       <CardContent className="p-0">
         <div className="flex flex-col">
-          {/* Image */}
-          <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center overflow-hidden relative">
+          {/* Image - square aspect ratio to show full headshot */}
+          <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden">
             {member.imageUrl ? (
               <img
                 src={member.imageUrl}
                 alt={member.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-300"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-bold">
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
                 {member.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
               </div>
             )}
           </div>
           
           {/* Content */}
-          <div className="p-5">
-            <h3 className="text-xl font-bold">{member.name}</h3>
-            <p className="text-primary font-semibold mt-1">{member.title}</p>
+          <div className="p-6 bg-white">
+            <h3 className="text-xl font-bold text-gray-900">{member.name}</h3>
+            <p className="text-blue-600 font-semibold mt-1">{member.title}</p>
             
-            <div className="mt-3">
-              <div className="flex flex-wrap gap-1.5">
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-2">
                 {member.expertise.slice(0, 3).map((skill) => (
                   <Badge 
                     key={skill} 
-                    variant="secondary" 
-                    className="text-xs"
+                    className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 border-0"
                   >
                     {skill}
                   </Badge>
                 ))}
                 {member.expertise.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="text-xs bg-gray-100 text-gray-600 border-0">
                     +{member.expertise.length - 3} more
                   </Badge>
                 )}
@@ -224,10 +223,10 @@ export default function LeadershipPage() {
             {member.slug && (
               <Link 
                 href={`/leadership/${member.slug}`}
-                className="mt-4 inline-flex items-center text-sm text-primary hover:underline font-medium"
+                className="mt-5 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium group/link"
               >
                 View Full Biography
-                <ArrowRight className="ml-1 h-4 w-4" />
+                <ArrowRight className="ml-1 h-4 w-4 group-hover/link:translate-x-1 transition-transform" />
               </Link>
             )}
           </div>
