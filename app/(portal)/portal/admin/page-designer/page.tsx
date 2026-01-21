@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -459,6 +459,10 @@ export default function AIPageDesignerPage() {
         </ScrollArea>
         
         <div className="p-4 border-t space-y-2">
+          <Button className="w-full" onClick={() => setShowWizard(true)}>
+            <Wand2 className="w-4 h-4 mr-2" />
+            Design Wizard
+          </Button>
           <Button className="w-full" variant="outline" onClick={() => setShowLandingPageDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             New Landing Page
