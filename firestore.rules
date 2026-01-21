@@ -578,5 +578,17 @@ service cloud.firestore {
       allow update: if true;
       allow delete: if true;
     }
+
+    // =========================================================================
+    // Image Assets Collection
+    // =========================================================================
+
+    // Image Assets - for Image Manager
+    match /image_assets/{imageId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
   }
 }

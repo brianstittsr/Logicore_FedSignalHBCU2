@@ -46,9 +46,12 @@ import {
   Eye,
 } from "lucide-react";
 import { useUserProfile } from "@/contexts/user-profile-context";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { collection, getDocs, doc, setDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { toast } from "sonner";
+
+const MAX_BASE64_SIZE = 500 * 1024; // 500KB - use Storage for larger files
 
 interface ImageAsset {
   id: string;
@@ -60,6 +63,7 @@ interface ImageAsset {
   mimeType: string;
   width?: number;
   height?: number;
+  storageRef?: string;
   alt?: string;
   tags: string[];
   uploadedBy: string;
@@ -154,38 +158,48 @@ export default function ImageManagerPage() {
 
     setIsUploading(true);
     
-    const uploadPromises = Array.from(files).map((file) => {
-      return new Promise<ImageAsset>((resolve, reject) => {
-        const reader = new FileReader();
-        
-        reader.onloadend = async () => {
-          try {
-            const base64 = reader.result as string;
-            
-            const newImage: ImageAsset = {
-              id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              name: file.name,
-              url: base64,
-              folder: selectedFolder === "all" ? "misc" : selectedFolder,
-              size: file.size,
-              mimeType: file.type,
-              alt: "",
-              tags: [],
-              uploadedBy: profile.id,
-              createdAt: Timestamp.now(),
-              updatedAt: Timestamp.now(),
-            };
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const folder = selectedFolder === "all" ? "misc" : selectedFolder;
+      
+      let imageUrl: string;
+      let storageRef: string | undefined;
+      
+      // Use Firebase Storage for large files, Base64 for small files
+      if (file.size > MAX_BASE64_SIZE && storage) {
+        // Upload to Firebase Storage
+        const storagePath = `images/${folder}/${imageId}-${file.name}`;
+        const storageReference = ref(storage, storagePath);
+        await uploadBytes(storageReference, file);
+        imageUrl = await getDownloadURL(storageReference);
+        storageRef = storagePath;
+      } else {
+        // Use Base64 for small files
+        imageUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+          reader.readAsDataURL(file);
+        });
+      }
+      
+      const newImage: ImageAsset = {
+        id: imageId,
+        name: file.name,
+        url: imageUrl,
+        folder: folder,
+        size: file.size,
+        mimeType: file.type,
+        alt: "",
+        tags: [],
+        uploadedBy: profile.id,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        ...(storageRef && { storageRef }), // Track storage path for deletion
+      };
 
-            await setDoc(doc(db!, "image_assets", newImage.id), newImage);
-            resolve(newImage);
-          } catch (error) {
-            reject(error);
-          }
-        };
-        
-        reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-        reader.readAsDataURL(file);
-      });
+      await setDoc(doc(db!, "image_assets", newImage.id), newImage);
+      return newImage;
     });
 
     try {
@@ -195,7 +209,7 @@ export default function ImageManagerPage() {
       setUploadDialogOpen(false);
     } catch (error) {
       console.error("Error uploading images:", error);
-      toast.error("Failed to upload some images");
+      toast.error("Failed to upload some images. Large images (>500KB) require Firebase Storage.");
     } finally {
       setIsUploading(false);
     }
@@ -204,6 +218,20 @@ export default function ImageManagerPage() {
   const handleDelete = async (imageId: string) => {
     if (!db || !confirm("Are you sure you want to delete this image?")) return;
     try {
+      // Find the image to check if it has a storage reference
+      const imageToDelete = images.find(img => img.id === imageId);
+      
+      // Delete from Firebase Storage if it has a storage reference
+      if (imageToDelete?.storageRef && storage) {
+        try {
+          const storageReference = ref(storage, imageToDelete.storageRef);
+          await deleteObject(storageReference);
+        } catch (storageError) {
+          console.warn("Could not delete from storage:", storageError);
+        }
+      }
+      
+      // Delete from Firestore
       await deleteDoc(doc(db, "image_assets", imageId));
       setImages(prev => prev.filter(img => img.id !== imageId));
       toast.success("Image deleted");
