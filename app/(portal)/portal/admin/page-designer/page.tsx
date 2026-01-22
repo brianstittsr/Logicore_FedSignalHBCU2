@@ -24,15 +24,82 @@ interface ChatMessage { id: string; role: string; content: string; timestamp: Da
 interface UXRec { id: string; type: string; title: string; description: string; fixId?: string; }
 
 const ALL_PAGES: Page[] = [
-  { id: "home", name: "Home Page", path: "/", category: "Marketing", sections: [{ id: "hero", name: "Hero Section", type: "hero", description: "Main banner" }, { id: "features", name: "Features", type: "features", description: "Key features" }] },
-  { id: "about", name: "About", path: "/about", category: "Marketing", sections: [{ id: "intro", name: "Introduction", type: "text", description: "Company intro" }] },
-  { id: "contact", name: "Contact", path: "/contact", category: "Marketing", sections: [{ id: "form", name: "Contact Form", type: "form", description: "Contact form" }] },
-  { id: "v-edge", name: "V-Edge", path: "/v-edge", category: "Marketing", sections: [{ id: "hero", name: "Hero", type: "hero", description: "V-Edge hero" }] },
-  { id: "portal", name: "Portal Dashboard", path: "/portal", category: "Portal", sections: [{ id: "welcome", name: "Welcome", type: "hero", description: "Welcome" }] },
-  { id: "calendar", name: "Calendar", path: "/portal/calendar", category: "Portal", sections: [{ id: "cal", name: "Calendar View", type: "calendar", description: "Calendar" }] },
+  // Marketing Pages
+  { id: "home", name: "Home Page", path: "/", category: "Marketing", sections: [
+    { id: "hero-carousel", name: "Hero Carousel", type: "hero", description: "Main rotating banner with headlines and CTAs" },
+    { id: "services-overview", name: "Services Overview", type: "features", description: "Grid of service offerings" },
+    { id: "stats-section", name: "Stats Section", type: "stats", description: "Key metrics and achievements" },
+    { id: "how-it-works", name: "How It Works", type: "process", description: "Step-by-step process explanation" },
+    { id: "testimonials", name: "Testimonials", type: "testimonials", description: "Client testimonials and reviews" },
+    { id: "cta-section", name: "CTA Section", type: "cta", description: "Call-to-action with contact button" },
+  ]},
+  { id: "about", name: "About Us", path: "/about", category: "Marketing", sections: [
+    { id: "about-hero", name: "Hero Section", type: "hero", description: "About Strategic Value+ headline" },
+    { id: "mission-vision", name: "Mission & Vision", type: "cards", description: "Mission and vision statements" },
+    { id: "values", name: "Core Values", type: "features", description: "Results-Driven, Network Empowerment, Partnership, Excellence" },
+    { id: "about-cta", name: "CTA Section", type: "cta", description: "Contact call-to-action" },
+  ]},
+  { id: "contact", name: "Contact", path: "/contact", category: "Marketing", sections: [
+    { id: "contact-hero", name: "Hero Section", type: "hero", description: "Contact page headline" },
+    { id: "contact-form", name: "Contact Form", type: "form", description: "Name, email, company, service interest, message" },
+    { id: "contact-info", name: "Contact Information", type: "info", description: "Email, phone, address, hours" },
+    { id: "book-call", name: "Book a Call", type: "cta", description: "Calendar booking integration" },
+  ]},
+  { id: "v-edge", name: "V+ EDGE Platform", path: "/v-edge", category: "Marketing", sections: [
+    { id: "vedge-hero", name: "Hero Section", type: "hero", description: "V+ EDGE Modular Industry 4.0 Platform" },
+    { id: "vedge-modules", name: "Modules", type: "tabs", description: "Lean, Automation, Quality, Digital, Workforce, Global modules" },
+    { id: "vedge-benefits", name: "Benefits", type: "features", description: "Key benefits of V+ EDGE" },
+    { id: "vedge-cta", name: "CTA Section", type: "cta", description: "Get started with V+ EDGE" },
+  ]},
+  { id: "leadership", name: "Leadership", path: "/leadership", category: "Marketing", sections: [
+    { id: "leadership-hero", name: "Hero Section", type: "hero", description: "Meet Our Leadership Team" },
+    { id: "leadership-grid", name: "Team Grid", type: "grid", description: "Leadership team member cards" },
+  ]},
+  { id: "company", name: "Company", path: "/company", category: "Marketing", sections: [
+    { id: "company-hero", name: "Hero Section", type: "hero", description: "Company overview" },
+    { id: "company-story", name: "Our Story", type: "text", description: "Company history and background" },
+  ]},
+  { id: "affiliates", name: "Affiliates", path: "/affiliates", category: "Marketing", sections: [
+    { id: "affiliates-hero", name: "Hero Section", type: "hero", description: "Affiliate program overview" },
+    { id: "affiliates-benefits", name: "Benefits", type: "features", description: "Affiliate program benefits" },
+    { id: "affiliates-cta", name: "Join CTA", type: "cta", description: "Join affiliate program" },
+  ]},
+  { id: "oem", name: "OEM Services", path: "/oem", category: "Marketing", sections: [
+    { id: "oem-hero", name: "Hero Section", type: "hero", description: "OEM supplier qualification" },
+    { id: "oem-services", name: "Services", type: "features", description: "OEM qualification services" },
+    { id: "oem-process", name: "Process", type: "process", description: "Qualification process steps" },
+  ]},
+  { id: "antifragile", name: "Antifragile", path: "/antifragile", category: "Marketing", sections: [
+    { id: "antifragile-hero", name: "Hero Section", type: "hero", description: "Antifragile manufacturing" },
+    { id: "antifragile-content", name: "Content", type: "text", description: "Antifragile methodology" },
+  ]},
+  // Portal Pages
+  { id: "portal-dashboard", name: "Portal Dashboard", path: "/portal", category: "Portal", sections: [
+    { id: "portal-welcome", name: "Welcome Section", type: "hero", description: "Welcome message and quick stats" },
+    { id: "portal-widgets", name: "Dashboard Widgets", type: "grid", description: "Activity, tasks, calendar widgets" },
+  ]},
+  { id: "portal-calendar", name: "Calendar", path: "/portal/calendar", category: "Portal", sections: [
+    { id: "calendar-view", name: "Calendar View", type: "calendar", description: "Full calendar with events" },
+  ]},
+  { id: "portal-affiliates", name: "Affiliates Portal", path: "/portal/affiliates", category: "Portal", sections: [
+    { id: "affiliates-dashboard", name: "Dashboard", type: "dashboard", description: "Affiliate metrics and stats" },
+  ]},
+  // Admin Pages
+  { id: "admin-hero", name: "Hero Management", path: "/portal/admin/hero", category: "Admin", sections: [
+    { id: "hero-editor", name: "Hero Editor", type: "editor", description: "Edit hero carousel slides" },
+  ]},
+  { id: "admin-images", name: "Image Manager", path: "/portal/admin/images", category: "Admin", sections: [
+    { id: "image-library", name: "Image Library", type: "gallery", description: "Upload and manage images" },
+  ]},
+  { id: "admin-team", name: "Team Members", path: "/portal/admin/team-members", category: "Admin", sections: [
+    { id: "team-list", name: "Team List", type: "table", description: "Manage team members" },
+  ]},
+  { id: "admin-partners", name: "Strategic Partners", path: "/portal/admin/strategic-partners", category: "Admin", sections: [
+    { id: "partners-list", name: "Partners List", type: "table", description: "Manage strategic partners" },
+  ]},
 ];
 
-const CATEGORIES = ["All", "Marketing", "Portal"];
+const CATEGORIES = ["All", "Marketing", "Portal", "Admin"];
 const ELEMENTS = [{ id: "heading", name: "Heading", icon: Type }, { id: "text", name: "Text", icon: FileText }, { id: "image", name: "Image", icon: Image }, { id: "button", name: "Button", icon: MousePointer }];
 const BTN_TYPES = [{ id: "link", name: "External Link", icon: ExternalLink }, { id: "page", name: "Internal Page", icon: Link }, { id: "stripe", name: "Stripe", icon: CreditCard }];
 
