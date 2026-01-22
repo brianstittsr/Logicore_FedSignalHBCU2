@@ -334,7 +334,7 @@ const systemSettingsItems = [
     icon: Paintbrush,
   },
   {
-    title: "Navigation Manager",
+    title: "Header & Footer Manager",
     href: "/portal/admin/navigation-manager",
     icon: LayoutGrid,
     badge: "NEW",
