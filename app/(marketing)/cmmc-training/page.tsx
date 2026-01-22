@@ -254,7 +254,7 @@ export default function CMMCTrainingPage() {
         <div className="container">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <Image
-              src="/cmmc/white_KDMAssocLogo.png"
+              src="/cmmc/blue_KDMAssocLogo.png"
               alt="KDM & Associates - A Team Approach to Your Success"
               width={400}
               height={100}
@@ -532,7 +532,7 @@ export default function CMMCTrainingPage() {
         <div className="container">
           <div className="max-w-4xl mx-auto text-center">
             <Image
-              src="/cmmc/blue_KDMAssocLogo.png"
+              src="/cmmc/white_KDMAssocLogo.png"
               alt="KDM & Associates"
               width={300}
               height={75}
