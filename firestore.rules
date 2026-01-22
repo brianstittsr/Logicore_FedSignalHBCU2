@@ -598,5 +598,25 @@ service cloud.firestore {
       allow update: if isAuthenticated();
       allow delete: if isAuthenticated();
     }
+
+    // =========================================================================
+    // Page Designer Collections
+    // =========================================================================
+
+    // Page Designs - for AI Page Designer
+    match /page_designs/{pageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Navigation Config - for Navigation Manager
+    match /navigation_config/{configId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
   }
 }
