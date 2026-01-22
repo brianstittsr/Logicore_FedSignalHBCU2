@@ -21,7 +21,7 @@ interface PageElement { id: string; type: string; content: string; }
 interface ButtonConfig { id: string; text: string; type: string; destination: string; variant: string; size: string; }
 interface PageDesign { id: string; pageId: string; sections: PageSection[]; elements: PageElement[]; buttons: ButtonConfig[]; seoTitle: string; seoDescription: string; }
 interface ChatMessage { id: string; role: string; content: string; timestamp: Date; image?: string; }
-interface UXRec { id: string; type: string; title: string; description: string; autoFix?: () => void; }
+interface UXRec { id: string; type: string; title: string; description: string; fixId?: string; }
 
 const ALL_PAGES: Page[] = [
   { id: "home", name: "Home Page", path: "/", category: "Marketing", sections: [{ id: "hero", name: "Hero Section", type: "hero", description: "Main banner" }, { id: "features", name: "Features", type: "features", description: "Key features" }] },
@@ -133,13 +133,27 @@ export default function AIPageDesignerPage() {
     }, 1500);
   };
 
+  const applyAutoFix = (fixId: string) => {
+    if (fixId === "meta") {
+      setPageDesign(p => ({ ...p, seoDescription: `${selectedPage.name} - Strategic Value Plus` }));
+      setHasChanges(true);
+    } else if (fixId === "cta") {
+      setPageDesign(p => ({ ...p, buttons: [...p.buttons, { id: `btn-${Date.now()}`, text: "Get Started", type: "page", destination: "/contact", variant: "default", size: "default" }] }));
+      setHasChanges(true);
+    } else if (fixId === "heading") {
+      setPageDesign(p => ({ ...p, elements: [...p.elements, { id: `el-${Date.now()}`, type: "heading", content: "Main Heading" }] }));
+      setHasChanges(true);
+    }
+    setShowUXDialog(false);
+  };
+
   const genUX = () => {
     setIsAnalyzing(true); setShowUXDialog(true);
     setTimeout(() => {
       setUxRecs([
-        { id: "1", type: "warning", title: "Missing Meta Description", description: "Add a meta description for SEO.", autoFix: () => { setPageDesign(p => ({ ...p, seoDescription: `${selectedPage.name} - Strategic Value Plus` })); setHasChanges(true); } },
-        { id: "2", type: "suggestion", title: "Add CTA", description: "Add a call-to-action button." },
-        { id: "3", type: "improvement", title: "Heading Hierarchy", description: "Use proper H1, H2, H3 structure." },
+        { id: "1", type: "warning", title: "Missing Meta Description", description: "Add a meta description for SEO.", fixId: "meta" },
+        { id: "2", type: "suggestion", title: "Add CTA", description: "Add a call-to-action button.", fixId: "cta" },
+        { id: "3", type: "improvement", title: "Heading Hierarchy", description: "Use proper H1, H2, H3 structure.", fixId: "heading" },
       ]);
       setIsAnalyzing(false);
     }, 1500);
@@ -362,7 +376,7 @@ export default function AIPageDesignerPage() {
                       {rec.type === "improvement" && <CheckCircle className="w-5 h-5 text-green-500" />}
                       <div><h4 className="font-medium">{rec.title}</h4><p className="text-sm text-gray-600 mt-1">{rec.description}</p></div>
                     </div>
-                    {rec.autoFix && <Button size="sm" variant="outline" onClick={rec.autoFix}>Auto-Fix</Button>}
+                    {rec.fixId && <Button size="sm" variant="outline" onClick={() => applyAutoFix(rec.fixId!)}>Auto-Fix</Button>}
                   </div>
                 </div>
               ))}
