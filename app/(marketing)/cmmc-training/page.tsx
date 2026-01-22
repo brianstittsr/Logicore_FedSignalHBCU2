@@ -159,8 +159,8 @@ export default function CMMCTrainingPage() {
       <section className="relative min-h-screen flex items-center justify-center text-white overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src="/cmmc/cyber-team.jpg"
-            alt="Cybersecurity Team with US Flag"
+            src="/cmmc/agefis-qh-mar1Tzo8-unsplash.jpg"
+            alt="Cybersecurity Team"
             fill
             className="object-cover"
             priority
@@ -401,7 +401,7 @@ export default function CMMCTrainingPage() {
             </div>
             <div className="relative h-[300px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="/cmmc/keyboard-cloud.jpg"
+                src="/cmmc/karim-ben-van-F2reN77g_gg-unsplash.jpg"
                 alt="Cloud Security Keyboard"
                 fill
                 className="object-cover"
