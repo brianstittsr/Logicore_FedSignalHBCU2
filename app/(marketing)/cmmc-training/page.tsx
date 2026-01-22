@@ -155,62 +155,96 @@ const faqs = [
 export default function CMMCTrainingPage() {
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative py-20 md:py-28 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+      {/* Hero Section - Full Screen with Lock Background */}
+      <section className="relative min-h-screen flex items-center justify-center text-white overflow-hidden">
+        <div className="absolute inset-0">
           <Image
             src="/cmmc/cyber-lock.jpg"
-            alt="Cybersecurity"
+            alt="Cybersecurity Lock"
             fill
             className="object-cover"
             priority
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90" />
-        <div className="container relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-red-600 text-white border-0 px-4 py-2 text-sm font-semibold animate-pulse">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              PHASE 1 ENFORCEMENT NOW ACTIVE
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="container relative z-10 py-20">
+          <div className="max-w-5xl mx-auto text-center">
+            <Badge className="mb-6 bg-red-600 text-white border-0 px-6 py-3 text-base font-bold animate-pulse shadow-lg shadow-red-500/50">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              ⚠️ PHASE 1 ENFORCEMENT NOW ACTIVE - NOVEMBER 2025
             </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl mb-6">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-7xl mb-8">
               Register for the Next{" "}
-              <span className="text-primary">CMMC Training Cohort</span>
+              <span className="text-primary drop-shadow-lg">CMMC Training Cohort</span>
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              <strong>Don't lose your DoD contracts.</strong> The CMMC Program enforcement is now active. 
-              Join the KDM Consortium Cohort Program and get certified in 90-180 days.
+            
+            {/* Risk Highlight Box */}
+            <div className="bg-red-900/80 border-2 border-red-500 rounded-xl p-6 mb-8 max-w-3xl mx-auto backdrop-blur-sm">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-400" />
+                <h2 className="text-2xl font-bold text-red-300">IMMEDIATE RISKS</h2>
+                <AlertTriangle className="w-8 h-8 text-red-400" />
+              </div>
+              <ul className="text-left space-y-3 text-lg">
+                <li className="flex items-start gap-3">
+                  <span className="text-red-400 font-bold">❌</span>
+                  <span><strong className="text-red-300">Contract Disqualification</strong> — Without proper SPRS scores</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-red-400 font-bold">❌</span>
+                  <span><strong className="text-red-300">Immediate Ineligibility</strong> — For new contract awards</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-red-400 font-bold">❌</span>
+                  <span><strong className="text-red-300">Lost Business</strong> — Risk to existing relationships</span>
+                </li>
+              </ul>
+            </div>
+
+            <p className="text-xl text-gray-200 max-w-3xl mx-auto mb-10">
+              <strong className="text-white text-2xl">Don't lose your DoD contracts.</strong><br />
+              Join the KDM Consortium Cohort Program and get certified in <span className="text-primary font-bold">90-180 days</span>.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-6" asChild>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-xl px-10 py-7 font-bold shadow-lg shadow-primary/50 animate-pulse" asChild>
                 <Link href="#register">
-                  <Calendar className="w-5 h-5 mr-2" />
-                  REGISTER FOR NEXT COHORT
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 text-lg px-8 py-6" asChild>
-                <Link href="#timeline">
-                  View Compliance Timeline
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <Calendar className="w-6 h-6 mr-2" />
+                  REGISTER FOR THE NEXT CMMC COHORT
                 </Link>
               </Button>
             </div>
+            <Button size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/10 text-lg px-8 py-6" asChild>
+              <Link href="#timeline">
+                View Compliance Timeline
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Urgency Banner */}
-      <section className="bg-red-600 text-white py-6">
+      {/* Urgency Banner - Enhanced */}
+      <section className="bg-gradient-to-r from-red-700 via-red-600 to-red-700 text-white py-8">
         <div className="container">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
-            <AlertTriangle className="w-8 h-8 flex-shrink-0" />
-            <div>
-              <p className="font-bold text-lg">The Defense Contracting Landscape Has Changed</p>
-              <p className="text-red-100">
-                Without current SPRS scores, validated readiness documentation, and auditable evidence, 
-                your organization faces <strong>immediate ineligibility</strong> for contract awards.
-              </p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-full">
+                <AlertTriangle className="w-10 h-10" />
+              </div>
+              <div>
+                <p className="font-bold text-2xl">The Defense Contracting Landscape Has Changed</p>
+                <p className="text-red-100 text-lg">
+                  Without current SPRS scores and auditable evidence, your organization faces{" "}
+                  <strong className="text-white underline">immediate ineligibility</strong> for contract awards.
+                </p>
+              </div>
             </div>
+            <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100 font-bold px-8 py-6 text-lg whitespace-nowrap" asChild>
+              <Link href="#register">
+                ACT NOW →
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
