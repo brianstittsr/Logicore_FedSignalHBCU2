@@ -91,7 +91,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { GraduationCap, Paintbrush, BookOpen, Network, Briefcase, Ticket } from "lucide-react";
+import { GraduationCap, Paintbrush, BookOpen, Network, Briefcase, Ticket, LayoutGrid } from "lucide-react";
 
 // ============================================================================
 // SECTION DEFINITIONS - Organized by Role Access
@@ -332,6 +332,12 @@ const systemSettingsItems = [
     title: "AI Page Designer",
     href: "/portal/admin/page-designer",
     icon: Paintbrush,
+  },
+  {
+    title: "Navigation Manager",
+    href: "/portal/admin/navigation-manager",
+    icon: LayoutGrid,
+    badge: "NEW",
   },
   {
     title: "Hero Management",
