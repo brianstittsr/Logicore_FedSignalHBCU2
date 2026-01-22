@@ -401,8 +401,8 @@ export default function CMMCTrainingPage() {
             </div>
             <div className="relative h-[300px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="/cmmc/cyber-magnify.jpg"
-                alt="Cybersecurity Assessment"
+                src="/cmmc/team-planning.jpg"
+                alt="Team Planning Compliance Strategy"
                 fill
                 className="object-cover"
               />
