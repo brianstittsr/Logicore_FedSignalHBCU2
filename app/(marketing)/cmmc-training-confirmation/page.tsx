@@ -192,10 +192,10 @@ export default function CMMCTrainingConfirmationPage() {
                       className="bg-primary hover:bg-primary/90 text-lg px-8 py-6 font-bold w-full"
                       asChild
                     >
-                      <Link href="/contact?subject=CMMC%20Cohort%20Registration%20-%20$7500%20Payment">
+                      <a href="https://www.paypal.com/ncp/payment/Y5MWA6CR8NSXQ" target="_blank" rel="noopener noreferrer">
                         <Lock className="w-5 h-5 mr-2" />
                         SECURE YOUR SEAT NOW
-                      </Link>
+                      </a>
                     </Button>
                   </CardContent>
                 </Card>
