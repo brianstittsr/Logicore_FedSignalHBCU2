@@ -175,7 +175,7 @@ export default function CMMCTrainingPage() {
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-7xl mb-8">
               Register for the Next{" "}
-              <span className="text-primary drop-shadow-lg">CMMC Training Cohort</span>
+              <span className="text-primary drop-shadow-lg">CMMC CyberSecurity Compliance Training Cohort</span>
             </h1>
             
             {/* Risk Highlight Box */}
@@ -254,7 +254,7 @@ export default function CMMCTrainingPage() {
         <div className="container">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <Image
-              src="/cmmc/kdm-logo.png"
+              src="/cmmc/white_KDMAssocLogo.png"
               alt="KDM & Associates - A Team Approach to Your Success"
               width={400}
               height={100}
@@ -532,11 +532,11 @@ export default function CMMCTrainingPage() {
         <div className="container">
           <div className="max-w-4xl mx-auto text-center">
             <Image
-              src="/cmmc/kdm-logo.png"
+              src="/cmmc/blue_KDMAssocLogo.png"
               alt="KDM & Associates"
               width={300}
               height={75}
-              className="mx-auto mb-8 brightness-0 invert"
+              className="mx-auto mb-8"
             />
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               Contact the KDM Consortium CMMC Team Today
