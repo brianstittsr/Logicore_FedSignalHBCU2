@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -156,7 +157,16 @@ export default function CMMCTrainingPage() {
     <>
       {/* Hero Section */}
       <section className="relative py-20 md:py-28 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+        <div className="absolute inset-0 opacity-20">
+          <Image
+            src="/cmmc/cyber-lock.jpg"
+            alt="Cybersecurity"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90" />
         <div className="container relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <Badge className="mb-6 bg-red-600 text-white border-0 px-4 py-2 text-sm font-semibold animate-pulse">
@@ -208,7 +218,14 @@ export default function CMMCTrainingPage() {
       {/* KDM Consortium Section */}
       <section className="py-20 md:py-28 bg-white">
         <div className="container">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <Image
+              src="/cmmc/kdm-logo.png"
+              alt="KDM & Associates - A Team Approach to Your Success"
+              width={400}
+              height={100}
+              className="mx-auto mb-8"
+            />
             <Badge variant="outline" className="mb-6 border-primary/50 text-primary">
               KDM Consortium + Strategic Value+
             </Badge>
@@ -335,17 +352,27 @@ export default function CMMCTrainingPage() {
       {/* Process Section */}
       <section className="py-20 md:py-28 bg-white">
         <div className="container">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <Badge variant="outline" className="mb-6 border-primary/50 text-primary">
-              Turnkey Solution
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Turnkey Compliance for Defense Contractors
-            </h2>
-            <p className="text-xl text-gray-600">
-              KDM & Associates leverages the power of the <strong>CMMC Accelerator</strong> to deliver 
-              the Cohort Program — a turnkey solution purpose-built for small and mid-sized contractors.
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-16">
+            <div>
+              <Badge variant="outline" className="mb-6 border-primary/50 text-primary">
+                Turnkey Solution
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                Turnkey Compliance for Defense Contractors
+              </h2>
+              <p className="text-xl text-gray-600">
+                KDM & Associates leverages the power of the <strong>CMMC Accelerator</strong> to deliver 
+                the Cohort Program — a turnkey solution purpose-built for small and mid-sized contractors.
+              </p>
+            </div>
+            <div className="relative h-[300px] rounded-2xl overflow-hidden shadow-2xl">
+              <Image
+                src="/cmmc/cyber-magnify.jpg"
+                alt="Cybersecurity Assessment"
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -375,9 +402,18 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* CTA Section */}
-      <section id="register" className="py-20 md:py-28 bg-gradient-to-br from-primary to-primary/80 text-white">
-        <div className="container">
-          <div className="max-w-4xl mx-auto text-center">
+      <section id="register" className="relative py-20 md:py-28 overflow-hidden">
+        <div className="absolute inset-0">
+          <Image
+            src="/cmmc/cyber-shield.jpg"
+            alt="Cybersecurity Protection"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary/80" />
+        </div>
+        <div className="container relative z-10">
+          <div className="max-w-4xl mx-auto text-center text-white">
             <Shield className="w-16 h-16 mx-auto mb-6 opacity-80" />
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               Protect Your Contracts. Protect Your Future.
@@ -461,6 +497,13 @@ export default function CMMCTrainingPage() {
       <section className="py-20 md:py-28 bg-slate-900 text-white">
         <div className="container">
           <div className="max-w-4xl mx-auto text-center">
+            <Image
+              src="/cmmc/kdm-logo.png"
+              alt="KDM & Associates"
+              width={300}
+              height={75}
+              className="mx-auto mb-8 brightness-0 invert"
+            />
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               Contact the KDM Consortium CMMC Team Today
             </h2>
