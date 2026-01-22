@@ -401,8 +401,8 @@ export default function CMMCTrainingPage() {
             </div>
             <div className="relative h-[300px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="/cmmc/team-planning.jpg"
-                alt="Team Planning Compliance Strategy"
+                src="/cmmc/keyboard-cloud.jpg"
+                alt="Cloud Security Keyboard"
                 fill
                 className="object-cover"
               />
