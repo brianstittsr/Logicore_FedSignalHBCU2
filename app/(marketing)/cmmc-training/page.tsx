@@ -166,7 +166,7 @@ export default function CMMCTrainingPage() {
             priority
           />
         </div>
-        <div className="absolute inset-0 bg-black/70" />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="container relative z-10 py-20">
           <div className="max-w-5xl mx-auto text-center">
             <Badge className="mb-6 bg-red-600 text-white border-0 px-6 py-3 text-base font-bold animate-pulse shadow-lg shadow-red-500/50">
