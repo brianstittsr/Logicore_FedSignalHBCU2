@@ -453,7 +453,7 @@ export default function CMMCTrainingPage() {
               className="bg-primary text-white hover:bg-primary/90 text-lg px-10 py-6 font-bold"
               asChild
             >
-              <Link href="/contact?subject=CMMC%20Cohort%20Registration">
+              <Link href="/cmmc-training-confirmation">
                 <Calendar className="w-5 h-5 mr-2" />
                 REGISTER FOR THE NEXT CMMC COHORT
               </Link>
@@ -544,7 +544,7 @@ export default function CMMCTrainingPage() {
               className="bg-primary hover:bg-primary/90 text-lg px-10 py-6 font-bold"
               asChild
             >
-              <Link href="/contact?subject=CMMC%20Cohort%20Registration">
+              <Link href="/cmmc-training-confirmation">
                 <Calendar className="w-5 h-5 mr-2" />
                 REGISTER FOR THE NEXT CMMC COHORT
               </Link>
