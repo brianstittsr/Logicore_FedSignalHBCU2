@@ -164,17 +164,39 @@ export default function CMMCTrainingConfirmationPage() {
                 </Card>
 
                 {/* Investment Card */}
-                <Card className="mt-8 border-4 border-primary bg-gradient-to-br from-primary/10 to-primary/5">
+                <Card className="mt-8 border-4 border-red-500 bg-gradient-to-br from-slate-900 to-slate-800 text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-4 py-1 rotate-0">
+                    LIMITED SPOTS
+                  </div>
                   <CardContent className="p-8 text-center">
-                    <p className="text-gray-600 mb-2 uppercase tracking-wide font-semibold">
+                    <div className="bg-red-600/20 border border-red-500 rounded-lg px-4 py-2 mb-4 inline-block">
+                      <p className="text-red-400 font-bold text-sm flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        ONLY 15 SEATS PER COHORT — ACT NOW
+                      </p>
+                    </div>
+                    <p className="text-gray-300 mb-2 uppercase tracking-wide font-semibold">
                       Your CMMC Accelerator Investment
                     </p>
-                    <div className="text-5xl font-bold text-primary mb-4">
+                    <div className="text-6xl font-bold text-white mb-2">
                       $7,500
                     </div>
-                    <p className="text-gray-500 text-sm">
-                      One-time payment • Includes all materials & platform access
+                    <p className="text-green-400 font-semibold mb-4">
+                      Save thousands vs. individual consulting
                     </p>
+                    <p className="text-gray-400 text-sm mb-6">
+                      One-time payment • Includes all materials & 4 months platform access
+                    </p>
+                    <Button 
+                      size="lg" 
+                      className="bg-primary hover:bg-primary/90 text-lg px-8 py-6 font-bold w-full"
+                      asChild
+                    >
+                      <Link href="/contact?subject=CMMC%20Cohort%20Registration%20-%20$7500%20Payment">
+                        <Lock className="w-5 h-5 mr-2" />
+                        SECURE YOUR SEAT NOW
+                      </Link>
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
