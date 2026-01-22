@@ -436,30 +436,21 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* CTA Section */}
-      <section id="register" className="relative py-20 md:py-28 overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="/cmmc/cyber-shield.jpg"
-            alt="Cybersecurity Protection"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-primary/80" />
-        </div>
-        <div className="container relative z-10">
+      <section id="register" className="py-20 md:py-28 bg-slate-800">
+        <div className="container">
           <div className="max-w-4xl mx-auto text-center text-white">
-            <Shield className="w-16 h-16 mx-auto mb-6 opacity-80" />
+            <Shield className="w-16 h-16 mx-auto mb-6 text-primary" />
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               Protect Your Contracts. Protect Your Future.
             </h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
               Join us for a clear, practical roadmap to CMMC readiness and certification. 
               Click the button below to join the next CMMC Cohort and learn how to acquire, 
               retain, and level-up your CMMC status.
             </p>
             <Button 
               size="lg" 
-              className="bg-white text-primary hover:bg-gray-100 text-lg px-10 py-6 font-bold"
+              className="bg-primary text-white hover:bg-primary/90 text-lg px-10 py-6 font-bold"
               asChild
             >
               <Link href="/contact?subject=CMMC%20Cohort%20Registration">
@@ -467,7 +458,7 @@ export default function CMMCTrainingPage() {
                 REGISTER FOR THE NEXT CMMC COHORT
               </Link>
             </Button>
-            <p className="mt-6 text-white/70 text-sm">
+            <p className="mt-6 text-gray-400 text-sm">
               Limited spots available per cohort. Secure your place today.
             </p>
           </div>
