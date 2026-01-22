@@ -78,7 +78,7 @@ export default function CMMCTrainingConfirmationPage() {
             
             <div className="mb-8">
               <Image
-                src="/cmmc/blue_KDMAssocLogo.png"
+                src="/cmmc/white_KDMAssocLogo.png"
                 alt="KDM & Associates"
                 width={300}
                 height={75}
