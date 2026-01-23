@@ -61,6 +61,7 @@ const defaultPartners: Omit<TeamMember, "id">[] = [
     name: "Keith Moore",
     title: "KDM & Associates CEO",
     category: "partner",
+    imageUrl: "/Affiliartes/Keith_Moore3.png",
     expertise: ["Government Affairs", "Small Business Advocacy", "Community Development", "Public Policy"],
     slug: "keith-moore",
     order: 1,
