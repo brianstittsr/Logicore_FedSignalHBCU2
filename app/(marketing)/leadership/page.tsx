@@ -71,6 +71,7 @@ const defaultPartners: Omit<TeamMember, "id">[] = [
     name: "Icy Williams",
     title: "Strategic Partner",
     category: "partner",
+    imageUrl: "/Williams_Icy.png",
     expertise: ["Operations Excellence", "Process Improvement"],
     slug: "icy-williams",
     order: 2,

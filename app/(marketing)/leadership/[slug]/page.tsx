@@ -107,6 +107,7 @@ OGTV, founded by Keith Moore December 31, 2009, is the first internet TV program
       name: "Icy Williams",
       title: "Strategic Partner",
       category: "partner",
+      imageUrl: "/Williams_Icy.png",
       expertise: ["Operations Excellence", "Process Improvement"],
       slug: "icy-williams",
       order: 2,
