@@ -274,16 +274,6 @@ export default function CMMCTrainingPage() {
       <section className="py-20 md:py-28 bg-white">
         <div className="container">
           <div className="max-w-4xl mx-auto text-center mb-12">
-            <Image
-              src="/cmmc/blue_KDMAssocLogo.png"
-              alt="KDM & Associates - A Team Approach to Your Success"
-              width={400}
-              height={100}
-              className="mx-auto mb-8"
-            />
-            <Badge variant="outline" className="mb-6 border-primary/50 text-primary">
-              KDM Consortium + Strategic Value+
-            </Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               CMMC Cohort Program
             </h2>
