@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +74,11 @@ interface ContactPopupProps {
   config?: PopupConfig;
 }
 
+// Pages where the popup should be completely hidden
+const EXCLUDED_PAGES = ["/cmmc-training"];
+
 export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -81,9 +86,12 @@ export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps)
   const [customProduct, setCustomProduct] = useState("");
   const [showTriggerButton, setShowTriggerButton] = useState(true);
 
+  // Check if current page is excluded
+  const isExcludedPage = EXCLUDED_PAGES.some(page => pathname === page || pathname?.startsWith(`${page}/`));
+
   useEffect(() => {
     const isBrowser = typeof window !== "undefined";
-    if (!isBrowser) return;
+    if (!isBrowser || isExcludedPage) return;
 
     const shownKey = "svp_booking_popup_shown";
     if (sessionStorage.getItem(shownKey) === "true") {
@@ -99,9 +107,9 @@ export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps)
     );
 
     return () => clearTimeout(timer);
-  }, [config.triggerDelay]);
+  }, [config.triggerDelay, isExcludedPage]);
 
-  if (!config.enabled) return null;
+  if (!config.enabled || isExcludedPage) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
