@@ -14,11 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, MessageCircle, Send, Factory } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { X, MessageCircle, Send, Factory, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { db } from "@/lib/firebase";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
-import { COLLECTIONS } from "@/lib/schema";
 
 export interface PopupField {
   id: string;
@@ -81,6 +79,9 @@ export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps)
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState("");
   const [customProduct, setCustomProduct] = useState("");
@@ -117,40 +118,62 @@ export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps)
     const persona = selectedProduct;
     if (!persona) return;
 
-    try {
-      if (db) {
-        const name = (formData.name || "").trim();
-        const [firstName, ...rest] = name.split(" ");
-        const lastName = rest.join(" ").trim();
+    setIsSubmitting(true);
+    setSubmitError("");
+    setSubmitSuccess(false);
 
-        await addDoc(collection(db, COLLECTIONS.BOOK_CALL_LEADS), {
-          firstName: firstName || null,
-          lastName: lastName || null,
+    try {
+      const name = (formData.name || "").trim();
+      const [firstName, ...rest] = name.split(" ");
+      const lastName = rest.join(" ").trim();
+
+      // Call the API route instead of direct Firebase write
+      const response = await fetch("/api/contact/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          formType: "assessment_request",
+          firstName: firstName || "",
+          lastName: lastName || "",
           email: (formData.email || "").trim(),
-          phone: (formData.phone || "").trim(),
+          phone: (formData.phone || "").trim() || null,
           company: null,
-          jobTitle: null,
-          preferredDate: null,
-          preferredTime: null,
+          jobTitle: persona, // Store the persona (Supplier/OEM) as job title
+          companySize: null,
+          industry: null,
+          serviceOfInterest: persona,
           message: null,
           source: "popup",
-          status: "new",
-          persona,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-        });
+          pageUrl: pathname,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to submit form");
       }
 
+      // Success!
+      setSubmitSuccess(true);
       setIsSubmitted(true);
+
+      // Close after showing success message
       setTimeout(() => {
         setIsOpen(false);
         setIsSubmitted(false);
+        setSubmitSuccess(false);
         setFormData({});
         setSelectedProduct("");
         setCustomProduct("");
       }, 3000);
     } catch (error) {
       console.error("Popup submit error:", error);
+      setSubmitError(error instanceof Error ? error.message : "Failed to submit. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -200,14 +223,23 @@ export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps)
           {isSubmitted ? (
             <div className="py-8 text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
               <p className="text-lg font-medium text-green-600">
                 {config.successMessage}
               </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                We&apos;ve sent a confirmation to your email.
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {submitError && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{submitError}</AlertDescription>
+                </Alert>
+              )}
               {enabledFields.map((field) => (
                 <div key={field.id} className="space-y-2">
                   <Label htmlFor={field.id}>
@@ -278,8 +310,23 @@ export function ContactPopup({ config = defaultPopupConfig }: ContactPopupProps)
                 </div>
               )}
 
-              <Button type="submit" className="w-full" size="lg" disabled={!selectedProduct}>
-                {config.buttonText}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                size="lg" 
+                disabled={!selectedProduct || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    {config.buttonText}
+                  </>
+                )}
               </Button>
             </form>
           )}

@@ -66,6 +66,7 @@ import {
   FileUp,
   Lightbulb,
   FolderOpen,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -223,11 +224,18 @@ export default function ProposalsPage() {
   const [ndaSignerEmail, setNdaSignerEmail] = useState("");
   const [ndaSignerName, setNdaSignerName] = useState("");
   const [ndaSignerCompany, setNdaSignerCompany] = useState("");
+  const [ndaSignerPhone, setNdaSignerPhone] = useState("");
+  const [ndaSignerAddress, setNdaSignerAddress] = useState("");
+  const [ndaSignerCity, setNdaSignerCity] = useState("");
+  const [ndaSignerState, setNdaSignerState] = useState("");
+  const [ndaSignerZip, setNdaSignerZip] = useState("");
+  const [ndaSignerTitle, setNdaSignerTitle] = useState("");
   const [isSendingNda, setIsSendingNda] = useState(false);
   const [ndaStatus, setNdaStatus] = useState<"draft" | "sent" | "signed" | "countersigned" | "completed">("draft");
   const [ndaTemplateFields, setNdaTemplateFields] = useState<Record<string, string>>({});
   const [ndaSignatureMode, setNdaSignatureMode] = useState<"type" | "draw">("type");
   const [ndaTypedSignature, setNdaTypedSignature] = useState("");
+  const [selfServeMode, setSelfServeMode] = useState(false);
   
   // Template management state
   const [activeTab, setActiveTab] = useState<"proposals" | "templates">("proposals");
@@ -690,10 +698,17 @@ Make it clear, professional, and highlight the value proposition and expected ou
     setNdaSignerEmail("");
     setNdaSignerName("");
     setNdaSignerCompany("");
+    setNdaSignerPhone("");
+    setNdaSignerAddress("");
+    setNdaSignerCity("");
+    setNdaSignerState("");
+    setNdaSignerZip("");
+    setNdaSignerTitle("");
     setNdaStatus("draft");
     setNdaTemplateFields({});
     setNdaSignatureMode("type");
     setNdaTypedSignature("");
+    setSelfServeMode(false);
     setSelectedTemplate(null);
   };
 
@@ -945,25 +960,76 @@ Make it clear, professional, and highlight the value proposition and expected ou
 
   // NDA Signing Workflow
   const sendNdaForSignature = async () => {
-    if (!ndaSignerEmail || !ndaSignerName) {
-      alert("Please enter the signer's name and email address");
+    if (!ndaSignerEmail) {
+      alert("Please enter the signer's email address");
+      return;
+    }
+    
+    // In direct send mode, require name and company
+    if (!selfServeMode && (!ndaSignerName || !ndaSignerCompany)) {
+      alert("Please enter the signer's name and company");
       return;
     }
     
     setIsSendingNda(true);
     
     try {
+      // Prepare NDA data with all fields
+      const ndaData = {
+        name: proposalData.name,
+        description: proposalData.description,
+        effectiveDate: proposalData.startDate || new Date().toISOString().split('T')[0],
+        disclosingParty: {
+          name: "Nelinia Varenas",
+          title: "Co-Founder & CEO",
+          company: "Strategic Value Plus",
+          email: "nel@strategicvalueplus.com",
+        },
+        receivingParty: {
+          name: ndaSignerName,
+          title: ndaSignerTitle,
+          company: ndaSignerCompany,
+          email: ndaSignerEmail,
+          phone: ndaSignerPhone,
+          address: ndaSignerAddress,
+          city: ndaSignerCity,
+          state: ndaSignerState,
+          zip: ndaSignerZip,
+        },
+        templateFields: ndaTemplateFields,
+        signatureMode: ndaSignatureMode,
+        selfServeMode: selfServeMode,
+      };
+      
       // In production, this would:
       // 1. Generate the NDA PDF
-      // 2. Send email with signing link to the signer
+      // 2. Send email with signing link to the signer (or self-serve link)
       // 3. After signing, send to Nelinia for countersignature
-      // 4. After countersigning, store in system and email PDF to associate
+      // 4. After countersigning, store in system and email PDF to signer
       
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
       setNdaStatus("sent");
       
-      alert(`NDA sent to ${ndaSignerName} (${ndaSignerEmail}) for signature.\n\nWorkflow:\n1. ${ndaSignerName} will receive an email with a signing link\n2. After signing, Nelinia Varenas (nelinia@strategicvalueplus.com) will receive the NDA for countersignature\n3. Once countersigned, the NDA will be stored in the system\n4. A PDF copy will be emailed to ${ndaSignerEmail} for their records`);
+      if (selfServeMode) {
+        alert(`Self-serve NDA link sent to ${ndaSignerEmail}.
+
+The recipient will receive an email with a secure link to:
+1. Fill in their information
+2. Review the NDA
+3. Sign electronically
+4. Receive the countersigned NDA automatically
+
+You will be notified when the NDA is completed.`);
+      } else {
+        alert(`NDA sent to ${ndaSignerName} (${ndaSignerEmail}) for signature.
+
+Workflow:
+1. ${ndaSignerName} will receive an email with a signing link
+2. After signing, Nelinia Varenas (nel@strategicvalueplus.com) will receive the NDA for countersignature
+3. Once countersigned, the NDA will be stored in the system
+4. A PDF copy will be emailed to ${ndaSignerEmail} for their records`);
+      }
       
       // Update proposal with NDA details
       setProposalData((prev) => ({
@@ -2112,44 +2178,163 @@ Make it clear, professional, and highlight the value proposition and expected ou
               {/* Step 2: Parties (NDA workflow) */}
               {currentStep === 2 && proposalData.type === "nda" && (
                 <div className="space-y-6">
+                  {/* Self-Serve Mode Toggle */}
+                  <Card className={selfServeMode ? "border-primary" : ""}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        NDA Delivery Mode
+                      </CardTitle>
+                      <CardDescription>
+                        Choose how you want to send the NDA for signature
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex gap-4">
+                        <div
+                          className={cn(
+                            "flex-1 p-4 rounded-lg border-2 cursor-pointer transition-colors",
+                            !selfServeMode ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/50"
+                          )}
+                          onClick={() => setSelfServeMode(false)}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <Send className="h-5 w-5" />
+                            <span className="font-medium">Direct Send</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Enter recipient details and send NDA immediately
+                          </p>
+                        </div>
+                        <div
+                          className={cn(
+                            "flex-1 p-4 rounded-lg border-2 cursor-pointer transition-colors",
+                            selfServeMode ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/50"
+                          )}
+                          onClick={() => setSelfServeMode(true)}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <LinkIcon className="h-5 w-5" />
+                            <span className="font-medium">Self-Serve Link</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Send a link for recipient to fill their own information
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Signing Parties
+                        {selfServeMode ? "Recipient Contact" : "Signing Parties"}
                       </CardTitle>
                       <CardDescription>
-                        Enter the details of the person who will sign this NDA
+                        {selfServeMode 
+                          ? "Enter the email address where the self-serve link will be sent"
+                          : "Enter the details of the person who will sign this NDA"
+                        }
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Signer Full Name *</Label>
-                          <Input
-                            placeholder="e.g., John Smith"
-                            value={ndaSignerName}
-                            onChange={(e) => setNdaSignerName(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Signer Email *</Label>
-                          <Input
-                            type="email"
-                            placeholder="e.g., john.smith@company.com"
-                            value={ndaSignerEmail}
-                            onChange={(e) => setNdaSignerEmail(e.target.value)}
-                          />
-                        </div>
-                      </div>
+                      {/* Email is always required */}
                       <div className="space-y-2">
-                        <Label>Company / Organization</Label>
+                        <Label>Signer Email *</Label>
                         <Input
-                          placeholder="e.g., ABC Manufacturing Inc."
-                          value={ndaSignerCompany}
-                          onChange={(e) => setNdaSignerCompany(e.target.value)}
+                          type="email"
+                          placeholder="e.g., john.smith@company.com"
+                          value={ndaSignerEmail}
+                          onChange={(e) => setNdaSignerEmail(e.target.value)}
                         />
                       </div>
+
+                      {/* Additional fields for Direct Send mode */}
+                      {!selfServeMode && (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Signer Full Name *</Label>
+                              <Input
+                                placeholder="e.g., John Smith"
+                                value={ndaSignerName}
+                                onChange={(e) => setNdaSignerName(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Title / Position</Label>
+                              <Input
+                                placeholder="e.g., CEO, Director"
+                                value={ndaSignerTitle}
+                                onChange={(e) => setNdaSignerTitle(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Phone Number</Label>
+                              <Input
+                                type="tel"
+                                placeholder="(555) 123-4567"
+                                value={ndaSignerPhone}
+                                onChange={(e) => setNdaSignerPhone(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Company / Organization *</Label>
+                              <Input
+                                placeholder="e.g., ABC Manufacturing Inc."
+                                value={ndaSignerCompany}
+                                onChange={(e) => setNdaSignerCompany(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Street Address</Label>
+                            <Input
+                              placeholder="123 Main Street, Suite 100"
+                              value={ndaSignerAddress}
+                              onChange={(e) => setNdaSignerAddress(e.target.value)}
+                            />
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label>City</Label>
+                              <Input
+                                placeholder="Raleigh"
+                                value={ndaSignerCity}
+                                onChange={(e) => setNdaSignerCity(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>State</Label>
+                              <Input
+                                placeholder="NC"
+                                value={ndaSignerState}
+                                onChange={(e) => setNdaSignerState(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>ZIP Code</Label>
+                              <Input
+                                placeholder="27601"
+                                value={ndaSignerZip}
+                                onChange={(e) => setNdaSignerZip(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {selfServeMode && (
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-sm text-blue-700">
+                            <strong>Self-Serve Mode:</strong> The recipient will receive an email with a secure link. 
+                            They will fill in their own information and sign the NDA. You will be notified when completed.
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 

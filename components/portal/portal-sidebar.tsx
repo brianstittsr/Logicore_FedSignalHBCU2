@@ -274,6 +274,12 @@ const aiToolsItems = [
     icon: Sparkles,
     badge: "AI",
   },
+  {
+    title: "Webinar Creator",
+    href: "/portal/admin/webinar-creator",
+    icon: Video,
+    badge: "NEW",
+  },
 ];
 
 // ============================================================================
@@ -329,6 +335,12 @@ const adminToolsItems = [
 // ============================================================================
 const systemSettingsItems = [
   {
+    title: "Site Settings",
+    href: "/portal/admin/site-settings",
+    icon: Settings,
+    badge: "NEW",
+  },
+  {
     title: "AI Page Designer",
     href: "/portal/admin/page-designer",
     icon: Paintbrush,
@@ -337,7 +349,6 @@ const systemSettingsItems = [
     title: "Header & Footer Manager",
     href: "/portal/admin/navigation-manager",
     icon: LayoutGrid,
-    badge: "NEW",
   },
   {
     title: "Hero Management",

@@ -25,6 +25,7 @@ import {
   AlertCircle,
   MoreHorizontal,
   Plus,
+  Mail,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs, Timestamp } from "firebase/firestore";
@@ -80,6 +81,17 @@ interface ActivityDisplay {
   type: string;
   message: string;
   time: string;
+}
+
+interface FormSubmissionDisplay {
+  id: string;
+  formType: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  company?: string;
+  status: string;
+  submittedAt: Date;
 }
 
 function formatCurrency(value: number) {
@@ -155,6 +167,8 @@ export default function CommandCenterPage() {
   const [actionItems, setActionItems] = useState<ActionItemDisplay[]>([]);
   const [recentActivity, setRecentActivity] = useState<ActivityDisplay[]>([]);
   const [teamMembers, setTeamMembers] = useState<{ initials: string; name: string }[]>([]);
+
+  const [formSubmissions, setFormSubmissions] = useState<FormSubmissionDisplay[]>([]);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -326,6 +340,31 @@ export default function CommandCenterPage() {
           });
         } catch {
           // Rocks collection may not exist
+        }
+
+        // Fetch form submissions
+        const submissionsRef = collection(db, COLLECTIONS.CONTACT_FORM_SUBMISSIONS);
+        const submissionsQuery = query(submissionsRef, orderBy("submittedAt", "desc"), limit(5));
+        
+        try {
+          const submissionsSnapshot = await getDocs(submissionsQuery);
+          const submissionsData: FormSubmissionDisplay[] = [];
+          submissionsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            submissionsData.push({
+              id: doc.id,
+              formType: data.formType,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,
+              company: data.company,
+              status: data.status,
+              submittedAt: data.submittedAt?.toDate() || new Date(),
+            });
+          });
+          setFormSubmissions(submissionsData);
+        } catch {
+          setFormSubmissions([]);
         }
 
         // Update stats
@@ -722,6 +761,80 @@ export default function CommandCenterPage() {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No recent activity</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Form Submissions */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Form Submissions</CardTitle>
+              <CardDescription>Recent contact form submissions</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/portal/admin/form-submissions">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {formSubmissions.length > 0 ? (
+              <div className="space-y-3">
+                {formSubmissions.map((submission) => (
+                  <div
+                    key={submission.id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Mail className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {submission.firstName} {submission.lastName}
+                        </p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Badge variant={submission.formType === "book_call" ? "default" : "secondary"} className="text-xs">
+                            {submission.formType === "book_call" ? "Book Call" : "Assessment"}
+                          </Badge>
+                          {submission.company && (
+                            <>
+                              <span>•</span>
+                              <span>{submission.company}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">
+                        {getRelativeTime(submission.submittedAt)}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={
+                          submission.status === "new"
+                            ? "border-blue-500 text-blue-500"
+                            : submission.status === "contacted"
+                            ? "border-yellow-500 text-yellow-500"
+                            : submission.status === "converted"
+                            ? "border-green-500 text-green-500"
+                            : ""
+                        }
+                      >
+                        {submission.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No form submissions yet</p>
               </div>
             )}
           </CardContent>

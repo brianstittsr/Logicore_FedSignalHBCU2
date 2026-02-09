@@ -1917,6 +1917,144 @@ export interface MattermostPlaybookRunDoc {
 }
 
 // ============================================================================
+// Site Settings (Centralized Configuration)
+// ============================================================================
+
+export interface SiteSettingsDoc {
+  id: string; // Always "main" for singleton
+  
+  // Company & Branding
+  company: {
+    name: string;
+    fullName: string;
+    alternateName: string;
+    tagline: string;
+    description: string;
+    foundingDate: string;
+    founderName: string;
+    founderTitle: string;
+  };
+  
+  // Branding Assets
+  branding: {
+    logoPath: string;
+    logoAltText: string;
+    logoUrlSeo: string;
+    faviconPath?: string;
+  };
+  
+  // Contact Information
+  contact: {
+    primaryEmail: string;
+    notificationEmail: string;
+    noReplyEmail: string;
+    mainPhone: string;
+    mainPhoneTel: string; // +1-xxx format for tel: links
+    country: string;
+    countryCode: string;
+    geoLatitude?: number;
+    geoLongitude?: number;
+  };
+  
+  // Business Hours
+  businessHours: {
+    displayText: string; // "Mon-Fri: 8am - 6pm EST"
+    openTime: string; // "09:00"
+    closeTime: string; // "17:00"
+    daysOpen: string[]; // ["Monday", "Tuesday", ...]
+    timezone: string;
+  };
+  
+  // Social Media
+  social: {
+    linkedinUrl: string;
+    linkedinCompanyUrl: string;
+    twitterUrl: string;
+    twitterHandle: string;
+    youtubeUrl: string;
+    youtubeChannel: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+  };
+  
+  // Website URLs
+  website: {
+    mainDomain: string;
+    searchUrl?: string;
+  };
+  
+  // SEO Settings
+  seo: {
+    priceRange: string;
+    aggregateRating: number;
+    reviewCount: number;
+    expertiseAreas: string[];
+  };
+  
+  // Form Settings
+  forms: {
+    serviceOptions: string[];
+    companySizeOptions: string[];
+    responseTimeCommitment: string; // "within 24 hours"
+  };
+  
+  // CTA Settings
+  cta: {
+    primaryButtonText: string;
+    secondaryButtonText: string;
+    assessmentButtonText: string;
+  };
+  
+  // Timestamps
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastModifiedBy?: string;
+}
+
+// ============================================================================
+// Contact Form Submissions
+// ============================================================================
+
+export interface ContactFormSubmissionDoc {
+  id: string;
+  // Form type
+  formType: 'assessment_request' | 'book_call';
+  // Submission status
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'closed';
+  // Contact info
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  // Company info
+  company?: string | null;
+  jobTitle?: string | null;
+  companySize?: string | null;
+  industry?: string | null;
+  // Service/interest info
+  serviceOfInterest?: string | null;
+  message?: string | null;
+  // For book a call
+  preferredDate?: string | null;
+  preferredTime?: string | null; // 'morning', 'afternoon', 'evening'
+  // Source tracking
+  source: string;
+  pageUrl?: string;
+  // Email notification status
+  emailSent: boolean;
+  emailSentAt?: Timestamp;
+  emailError?: string;
+  // Assigned to
+  assignedTo?: string | null; // User ID
+  // Notes
+  adminNotes?: string;
+  // Timestamps
+  submittedAt: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ============================================================================
 // Collection Names
 // ============================================================================
 
@@ -1953,6 +2091,8 @@ export const COLLECTIONS = {
   TEAM_MEMBERS: "teamMembers",
   // Platform Settings
   PLATFORM_SETTINGS: "platformSettings",
+  // Site Settings (centralized configuration)
+  SITE_SETTINGS: "siteSettings",
   // Apollo Purchased Contacts
   APOLLO_PURCHASED_CONTACTS: "apolloPurchasedContacts",
   // Apollo Saved Lists
@@ -1994,6 +2134,8 @@ export const COLLECTIONS = {
   MATTERMOST_PLAYBOOK_RUNS: "mattermostPlaybookRuns",
   // Book a Call Leads
   BOOK_CALL_LEADS: "bookCallLeads",
+  // Contact Form Submissions (unified for assessment requests and book a call)
+  CONTACT_FORM_SUBMISSIONS: "contactFormSubmissions",
   // Events
   EVENTS: "events",
   // NDA Management
@@ -2012,6 +2154,10 @@ export const COLLECTIONS = {
   GOOGLE_DRIVE_TOKENS: "googleDriveTokens",
   // Hero Carousel
   HERO_SLIDES: "heroSlides",
+  // Webinars
+  WEBINARS: "webinars",
+  // Proof Pack Plans
+  PROOF_PACK_PLANS: "proofPackPlans",
 } as const;
 
 // ============================================================================
@@ -2071,6 +2217,17 @@ export const tractionIssuesCollection = () => getCollection<TractionIssueDoc>(CO
 export const tractionTodosCollection = () => getCollection<TractionTodoDoc>(COLLECTIONS.TRACTION_TODOS);
 export const tractionMeetingsCollection = () => getCollection<TractionMeetingDoc>(COLLECTIONS.TRACTION_MEETINGS);
 export const tractionTeamMembersCollection = () => getCollection<TractionTeamMemberDoc>(COLLECTIONS.TRACTION_TEAM_MEMBERS);
+
+// Webinars collection reference
+import type { WebinarDoc } from "./types/webinar";
+export const webinarsCollection = () => getCollection<WebinarDoc>(COLLECTIONS.WEBINARS);
+
+// Proof Pack Plans collection reference
+import type { ProofPackPlanDoc } from "./types/proofPackPlan";
+export const proofPackPlansCollection = () => getCollection<ProofPackPlanDoc>(COLLECTIONS.PROOF_PACK_PLANS);
+
+// Contact Form Submissions collection reference
+export const contactFormSubmissionsCollection = () => getCollection<ContactFormSubmissionDoc>(COLLECTIONS.CONTACT_FORM_SUBMISSIONS);
 
 // ============================================================================
 // Subcollection Helpers

@@ -30,9 +30,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { COLLECTIONS } from "@/lib/schema";
 
 const services = [
   "Supplier Readiness & OEM Qualification",
@@ -72,15 +69,46 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const formData = new FormData(e.target as HTMLFormElement);
+    
+    try {
+      const response = await fetch("/api/contact/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formType: "assessment_request",
+          firstName: formData.get("firstName"),
+          lastName: formData.get("lastName"),
+          email: formData.get("email"),
+          phone: formData.get("phone") || undefined,
+          company: formData.get("company"),
+          jobTitle: formData.get("title") || undefined,
+          companySize: formData.get("size"),
+          industry: formData.get("industry") || undefined,
+          serviceOfInterest: formData.get("service"),
+          message: formData.get("message") || undefined,
+          source: "contact-page",
+        }),
+      });
 
-    toast.success("Thank you for your inquiry!", {
-      description: "We'll get back to you within 24 hours.",
-    });
+      const result = await response.json();
 
-    setIsSubmitting(false);
-    (e.target as HTMLFormElement).reset();
+      if (result.success) {
+        toast.success("Thank you for your inquiry!", {
+          description: "We'll get back to you within 24 hours.",
+        });
+        (e.target as HTMLFormElement).reset();
+      } else {
+        throw new Error(result.error || "Failed to submit");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("Failed to submit request", {
+        description: "Please try again or contact us directly.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBookCall = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -88,42 +116,46 @@ export default function ContactPage() {
     setIsBookingCall(true);
 
     try {
-      if (!db) {
-        throw new Error("Database not configured");
+      const response = await fetch("/api/contact/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formType: "book_call",
+          firstName: bookCallForm.firstName,
+          lastName: bookCallForm.lastName,
+          email: bookCallForm.email,
+          phone: bookCallForm.phone || undefined,
+          company: bookCallForm.company || undefined,
+          jobTitle: bookCallForm.jobTitle || undefined,
+          preferredDate: bookCallForm.preferredDate || undefined,
+          preferredTime: bookCallForm.preferredTime || undefined,
+          message: bookCallForm.message || undefined,
+          source: "contact-page",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Call request submitted!", {
+          description: "We'll contact you shortly to schedule your call.",
+        });
+
+        setBookCallForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          company: "",
+          jobTitle: "",
+          preferredDate: "",
+          preferredTime: "",
+          message: "",
+        });
+        setBookCallOpen(false);
+      } else {
+        throw new Error(result.error || "Failed to submit");
       }
-
-      await addDoc(collection(db, COLLECTIONS.BOOK_CALL_LEADS), {
-        firstName: bookCallForm.firstName,
-        lastName: bookCallForm.lastName,
-        email: bookCallForm.email,
-        phone: bookCallForm.phone || null,
-        company: bookCallForm.company || null,
-        jobTitle: bookCallForm.jobTitle || null,
-        preferredDate: bookCallForm.preferredDate || null,
-        preferredTime: bookCallForm.preferredTime || null,
-        message: bookCallForm.message || null,
-        source: "contact-page",
-        status: "new",
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      });
-
-      toast.success("Call request submitted!", {
-        description: "We'll contact you shortly to schedule your call.",
-      });
-
-      setBookCallForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        company: "",
-        jobTitle: "",
-        preferredDate: "",
-        preferredTime: "",
-        message: "",
-      });
-      setBookCallOpen(false);
     } catch (error) {
       console.error("Error submitting book call request:", error);
       toast.error("Failed to submit request", {
@@ -173,40 +205,40 @@ export default function ContactPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name *</Label>
-                        <Input id="firstName" required placeholder="John" />
+                        <Input id="firstName" name="firstName" required placeholder="John" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="lastName">Last Name *</Label>
-                        <Input id="lastName" required placeholder="Smith" />
+                        <Input id="lastName" name="lastName" required placeholder="Smith" />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="email">Email *</Label>
-                        <Input id="email" type="email" required placeholder="john@company.com" />
+                        <Input id="email" name="email" type="email" required placeholder="john@company.com" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" type="tel" placeholder="(555) 123-4567" />
+                        <Input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="company">Company Name *</Label>
-                        <Input id="company" required placeholder="Your Company Inc." />
+                        <Input id="company" name="company" required placeholder="Your Company Inc." />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="title">Job Title</Label>
-                        <Input id="title" placeholder="VP Operations" />
+                        <Input id="title" name="title" placeholder="VP Operations" />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="size">Company Size *</Label>
-                        <Select required>
+                        <Select name="size" required>
                           <SelectTrigger>
                             <SelectValue placeholder="Select company size" />
                           </SelectTrigger>
@@ -221,13 +253,13 @@ export default function ContactPage() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="industry">Industry</Label>
-                        <Input id="industry" placeholder="e.g., Automotive, Aerospace" />
+                        <Input id="industry" name="industry" placeholder="e.g., Automotive, Aerospace" />
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="service">Service of Interest *</Label>
-                      <Select required>
+                      <Select name="service" required>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a service" />
                         </SelectTrigger>
@@ -245,13 +277,14 @@ export default function ContactPage() {
                       <Label htmlFor="message">Tell us about your goals</Label>
                       <Textarea
                         id="message"
+                        name="message"
                         placeholder="What challenges are you facing? What outcomes are you hoping to achieve?"
                         rows={4}
                       />
                     </div>
 
                     <div className="flex items-start space-x-2">
-                      <Checkbox id="newsletter" />
+                      <Checkbox id="newsletter" name="newsletter" />
                       <Label htmlFor="newsletter" className="text-sm font-normal">
                         Subscribe to our newsletter for manufacturing insights and industry updates
                       </Label>

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
   Shield,
   FileText,
@@ -29,26 +30,38 @@ import { cn } from "@/lib/utils";
 const MOCK_NDA_DATA = {
   id: "2",
   name: "NDA - TechStart Inc",
+  selfServeMode: true, // If true, recipient needs to fill in their info
   disclosingParty: {
     name: "Nelinia Varenas",
-    title: "CEO",
+    title: "Co-Founder & CEO",
     company: "Strategic Value Plus",
+    email: "nel@strategicvalueplus.com",
   },
   receivingParty: {
-    name: "Sarah Johnson",
-    title: "CTO",
-    company: "TechStart Inc",
+    name: "", // Empty in self-serve mode
+    title: "",
+    company: "",
     email: "sjohnson@techstart.com",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
   },
   effectiveDate: "2024-12-15",
   sections: [
     {
       id: "1",
       title: "Parties",
-      content: `This Non-Disclosure Agreement ("Agreement") is entered into as of December 15, 2024 by and between:
+      content: `This Non-Disclosure Agreement ("Agreement") is entered into as of {{effective_date}} by and between:
 
-**Disclosing Party:** Nelinia Varenas, Strategic Value Plus
-**Receiving Party:** Sarah Johnson, TechStart Inc`,
+**Disclosing Party:** {{disclosing_party_name}}, {{disclosing_party_title}} of {{disclosing_party_company}}
+**Receiving Party:** {{receiving_party_name}}, {{receiving_party_title}} of {{receiving_party_company}}
+
+**Contact Information:**
+- Address: {{receiving_party_address}}, {{receiving_party_city}}, {{receiving_party_state}} {{receiving_party_zip}}
+- Phone: {{receiving_party_phone}}
+- Email: {{receiving_party_email}}`,
     },
     {
       id: "2",
@@ -84,9 +97,9 @@ Confidential Information does not include information that:
     {
       id: "4",
       title: "Term and Termination",
-      content: `This Agreement shall remain in effect for a period of 2 years from the Effective Date, unless earlier terminated by either party upon thirty (30) days written notice.
+      content: `This Agreement shall remain in effect for a period of {{term_years}} years from the Effective Date, unless earlier terminated by either party upon thirty (30) days written notice.
 
-The obligations of confidentiality shall survive termination of this Agreement for a period of 5 years.
+The obligations of confidentiality shall survive termination of this Agreement for a period of {{survival_years}} years.
 
 Upon termination or expiration of this Agreement, the Receiving Party shall promptly return or destroy all Confidential Information and any copies thereof.`,
     },
@@ -98,7 +111,7 @@ Upon termination or expiration of this Agreement, the Receiving Party shall prom
     {
       id: "6",
       title: "General Provisions",
-      content: `**Governing Law:** This Agreement shall be governed by and construed in accordance with the laws of the State of North Carolina.
+      content: `**Governing Law:** This Agreement shall be governed by and construed in accordance with the laws of the State of {{governing_state}}.
 
 **Entire Agreement:** This Agreement constitutes the entire agreement between the parties concerning the subject matter hereof.
 
@@ -108,7 +121,38 @@ Upon termination or expiration of this Agreement, the Receiving Party shall prom
 
 **Severability:** If any provision of this Agreement is found to be unenforceable, the remaining provisions shall continue in full force and effect.`,
     },
+    {
+      id: "7",
+      title: "Signatures",
+      content: `IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+**DISCLOSING PARTY:**
+
+Signature: _________________________
+Name: {{disclosing_party_name}}
+Title: {{disclosing_party_title}}
+Company: {{disclosing_party_company}}
+Date: {{disclosing_signature_date}}
+
+**RECEIVING PARTY:**
+
+Signature: _________________________
+Name: {{receiving_party_name}}
+Title: {{receiving_party_title}}
+Company: {{receiving_party_company}}
+Date: {{receiving_signature_date}}`,
+    },
   ],
+  placeholders: {
+    effective_date: "December 15, 2024",
+    term_years: "2",
+    survival_years: "5",
+    governing_state: "North Carolina",
+    disclosing_party_name: "Nelinia Varenas",
+    disclosing_party_title: "Co-Founder & CEO",
+    disclosing_party_company: "Strategic Value Plus",
+    disclosing_signature_date: new Date().toLocaleDateString(),
+  },
 };
 
 export default function NDASigningPage() {
@@ -121,9 +165,17 @@ export default function NDASigningPage() {
   const [error, setError] = useState<string | null>(null);
   const [ndaData, setNdaData] = useState<typeof MOCK_NDA_DATA | null>(null);
   
-  // Signature form state
+  // Self-serve form state
   const [signerName, setSignerName] = useState("");
   const [signerTitle, setSignerTitle] = useState("");
+  const [signerCompany, setSignerCompany] = useState("");
+  const [signerPhone, setSignerPhone] = useState("");
+  const [signerAddress, setSignerAddress] = useState("");
+  const [signerCity, setSignerCity] = useState("");
+  const [signerState, setSignerState] = useState("");
+  const [signerZip, setSignerZip] = useState("");
+  
+  // Signature form state
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   
@@ -141,8 +193,19 @@ export default function NDASigningPage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Validate token
-        if (token === "abc123xyz") {
+        if (token === "abc123xyz" || token) {
           setNdaData(MOCK_NDA_DATA);
+          // Pre-fill if data exists
+          if (MOCK_NDA_DATA.receivingParty.name) {
+            setSignerName(MOCK_NDA_DATA.receivingParty.name);
+            setSignerTitle(MOCK_NDA_DATA.receivingParty.title || "");
+            setSignerCompany(MOCK_NDA_DATA.receivingParty.company || "");
+            setSignerPhone(MOCK_NDA_DATA.receivingParty.phone || "");
+            setSignerAddress(MOCK_NDA_DATA.receivingParty.address || "");
+            setSignerCity(MOCK_NDA_DATA.receivingParty.city || "");
+            setSignerState(MOCK_NDA_DATA.receivingParty.state || "");
+            setSignerZip(MOCK_NDA_DATA.receivingParty.zip || "");
+          }
         } else {
           setError("Invalid or expired signing link. Please contact the sender for a new link.");
         }
@@ -216,8 +279,48 @@ export default function NDASigningPage() {
     setSignatureData(null);
   };
 
+  // Replace placeholders in content
+  const renderContent = (content: string) => {
+    if (!ndaData) return content;
+    
+    let rendered = content;
+    
+    // Replace disclosing party placeholders
+    rendered = rendered.replace(/{{disclosing_party_name}}/g, ndaData.disclosingParty.name);
+    rendered = rendered.replace(/{{disclosing_party_title}}/g, ndaData.disclosingParty.title);
+    rendered = rendered.replace(/{{disclosing_party_company}}/g, ndaData.disclosingParty.company);
+    rendered = rendered.replace(/{{disclosing_signature_date}}/g, new Date().toLocaleDateString());
+    
+    // Replace receiving party placeholders
+    rendered = rendered.replace(/{{receiving_party_name}}/g, signerName || "[Your Name]");
+    rendered = rendered.replace(/{{receiving_party_title}}/g, signerTitle || "[Your Title]");
+    rendered = rendered.replace(/{{receiving_party_company}}/g, signerCompany || "[Your Company]");
+    rendered = rendered.replace(/{{receiving_party_phone}}/g, signerPhone || "[Your Phone]");
+    rendered = rendered.replace(/{{receiving_party_address}}/g, signerAddress || "[Your Address]");
+    rendered = rendered.replace(/{{receiving_party_city}}/g, signerCity || "[City]");
+    rendered = rendered.replace(/{{receiving_party_state}}/g, signerState || "[State]");
+    rendered = rendered.replace(/{{receiving_party_zip}}/g, signerZip || "[ZIP]");
+    rendered = rendered.replace(/{{receiving_party_email}}/g, ndaData.receivingParty.email);
+    rendered = rendered.replace(/{{receiving_signature_date}}/g, new Date().toLocaleDateString());
+    
+    // Replace other placeholders
+    rendered = rendered.replace(/{{effective_date}}/g, ndaData.placeholders.effective_date);
+    rendered = rendered.replace(/{{term_years}}/g, ndaData.placeholders.term_years);
+    rendered = rendered.replace(/{{survival_years}}/g, ndaData.placeholders.survival_years);
+    rendered = rendered.replace(/{{governing_state}}/g, ndaData.placeholders.governing_state);
+    
+    return rendered;
+  };
+
   const handleSubmit = async () => {
-    if (!signerName || !hasSignature || !agreedToTerms) {
+    // Validate required fields
+    if (!signerName || !signerCompany) {
+      alert("Please fill in your name and company");
+      return;
+    }
+    
+    if (!hasSignature || !agreedToTerms) {
+      alert("Please sign and agree to the terms");
       return;
     }
     
@@ -275,17 +378,26 @@ export default function NDASigningPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
-              <h2 className="text-2xl font-semibold mb-2">Signature Submitted!</h2>
+              <h2 className="text-2xl font-semibold mb-2">NDA Signed Successfully!</h2>
               <p className="text-muted-foreground mb-6">
                 Thank you for signing the Non-Disclosure Agreement. The document has been submitted for countersignature.
               </p>
               <div className="p-4 bg-muted rounded-lg text-sm text-left space-y-2">
                 <p><strong>What happens next:</strong></p>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>• The disclosing party will review and countersign</li>
+                  <li>• {ndaData?.disclosingParty.name} will review and countersign</li>
                   <li>• You will receive a copy of the fully executed NDA via email</li>
                   <li>• A PDF copy will be sent to {ndaData?.receivingParty.email}</li>
                 </ul>
+              </div>
+              <div className="mt-6 space-y-2">
+                <p className="text-sm font-medium">Document Summary:</p>
+                <div className="text-sm text-left bg-muted/50 p-3 rounded-lg">
+                  <p><strong>Signed by:</strong> {signerName}, {signerTitle}</p>
+                  <p><strong>Company:</strong> {signerCompany}</p>
+                  <p><strong>Email:</strong> {ndaData?.receivingParty.email}</p>
+                  <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                </div>
               </div>
               <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
@@ -298,11 +410,13 @@ export default function NDASigningPage() {
     );
   }
 
+  const isSelfServe = ndaData?.selfServeMode && !ndaData?.receivingParty.name;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="h-8 w-8 text-primary" />
             <div>
@@ -317,10 +431,10 @@ export default function NDASigningPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Document Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -339,12 +453,14 @@ export default function NDASigningPage() {
                     <p className="font-medium">{ndaData?.disclosingParty.name}</p>
                     <p className="text-sm text-muted-foreground">{ndaData?.disclosingParty.title}</p>
                     <p className="text-sm text-muted-foreground">{ndaData?.disclosingParty.company}</p>
+                    <p className="text-sm text-muted-foreground">{ndaData?.disclosingParty.email}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Receiving Party</p>
-                    <p className="font-medium">{ndaData?.receivingParty.name}</p>
-                    <p className="text-sm text-muted-foreground">{ndaData?.receivingParty.title}</p>
-                    <p className="text-sm text-muted-foreground">{ndaData?.receivingParty.company}</p>
+                    <p className="font-medium">{signerName || "[To be completed]"}</p>
+                    <p className="text-sm text-muted-foreground">{signerTitle || ""}</p>
+                    <p className="text-sm text-muted-foreground">{signerCompany || ""}</p>
+                    {signerPhone && <p className="text-sm text-muted-foreground">{signerPhone}</p>}
                   </div>
                 </div>
 
@@ -357,7 +473,7 @@ export default function NDASigningPage() {
                           {index + 1}. {section.title}
                         </h3>
                         <div className="text-sm whitespace-pre-wrap text-muted-foreground">
-                          {section.content}
+                          {renderContent(section.content)}
                         </div>
                         {index < (ndaData?.sections.length || 0) - 1 && (
                           <Separator className="mt-6" />
@@ -376,108 +492,203 @@ export default function NDASigningPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PenTool className="h-5 w-5" />
-                  Sign Document
+                  {isSelfServe ? "Complete & Sign" : "Sign Document"}
                 </CardTitle>
                 <CardDescription>
-                  Complete the fields below to sign
+                  {isSelfServe 
+                    ? "Fill in your information and sign to complete the NDA"
+                    : "Complete the fields below to sign"
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Signer Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="signerName">Full Legal Name *</Label>
-                  <Input
-                    id="signerName"
-                    placeholder="Enter your full name"
-                    value={signerName}
-                    onChange={(e) => setSignerName(e.target.value)}
-                  />
-                </div>
+                {/* Self-serve info collection */}
+                {isSelfServe && (
+                  <div className="space-y-4 border-b pb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="secondary">Step 1</Badge>
+                      <span className="font-medium">Your Information</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          placeholder="John Smith"
+                          value={signerName}
+                          onChange={(e) => setSignerName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="title">Title / Position</Label>
+                        <Input
+                          id="title"
+                          placeholder="CEO, Director"
+                          value={signerTitle}
+                          onChange={(e) => setSignerTitle(e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-                {/* Signer Title */}
-                <div className="space-y-2">
-                  <Label htmlFor="signerTitle">Title (Optional)</Label>
-                  <Input
-                    id="signerTitle"
-                    placeholder="e.g., CEO, Manager"
-                    value={signerTitle}
-                    onChange={(e) => setSignerTitle(e.target.value)}
-                  />
-                </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="company">Company / Organization *</Label>
+                      <Input
+                        id="company"
+                        placeholder="ABC Manufacturing Inc."
+                        value={signerCompany}
+                        onChange={(e) => setSignerCompany(e.target.value)}
+                      />
+                    </div>
 
-                {/* Signature Canvas */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Signature *</Label>
-                    {hasSignature && (
-                      <Button variant="ghost" size="sm" onClick={clearSignature}>
-                        Clear
-                      </Button>
-                    )}
+                    <div className="space-y-1">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="(555) 123-4567"
+                        value={signerPhone}
+                        onChange={(e) => setSignerPhone(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="address">Street Address</Label>
+                      <Input
+                        id="address"
+                        placeholder="123 Main Street, Suite 100"
+                        value={signerAddress}
+                        onChange={(e) => setSignerAddress(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          placeholder="Raleigh"
+                          value={signerCity}
+                          onChange={(e) => setSignerCity(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="state">State</Label>
+                        <Input
+                          id="state"
+                          placeholder="NC"
+                          value={signerState}
+                          onChange={(e) => setSignerState(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="zip">ZIP</Label>
+                        <Input
+                          id="zip"
+                          placeholder="27601"
+                          value={signerZip}
+                          onChange={(e) => setSignerZip(e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="border-2 border-dashed rounded-lg p-1 bg-white">
-                    <canvas
-                      ref={canvasRef}
-                      width={280}
-                      height={120}
-                      className="w-full cursor-crosshair touch-none"
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
+                )}
+
+                {/* Signature */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{isSelfServe ? "Step 2" : "Step 1"}</Badge>
+                    <span className="font-medium">Electronic Signature</span>
+                  </div>
+
+                  {/* Signer Name (for non-self-serve) */}
+                  {!isSelfServe && (
+                    <div className="space-y-2">
+                      <Label htmlFor="signerName">Full Legal Name *</Label>
+                      <Input
+                        id="signerName"
+                        placeholder="Enter your full name"
+                        value={signerName}
+                        onChange={(e) => setSignerName(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Signature Canvas */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Signature *</Label>
+                      {hasSignature && (
+                        <Button variant="ghost" size="sm" onClick={clearSignature}>
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    <div className="border-2 border-dashed rounded-lg p-1 bg-white">
+                      <canvas
+                        ref={canvasRef}
+                        width={280}
+                        height={120}
+                        className="w-full cursor-crosshair touch-none"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Draw your signature above using mouse or touch
+                    </p>
+                  </div>
+
+                  {/* Timestamp */}
+                  <div className="p-3 bg-muted rounded-lg text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>Timestamp: {new Date().toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Agreement Checkbox */}
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      id="agree"
+                      checked={agreedToTerms}
+                      onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                     />
+                    <label htmlFor="agree" className="text-sm text-muted-foreground cursor-pointer">
+                      I have read and agree to the terms of this Non-Disclosure Agreement. I understand that my electronic signature is legally binding and has the same legal effect as my handwritten signature.
+                    </label>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Draw your signature above using mouse or touch
+
+                  {/* Submit Button */}
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={!signerName || !hasSignature || !agreedToTerms || isSubmitting}
+                    onClick={handleSubmit}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        Sign & Submit NDA
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    By signing, you agree that your electronic signature is the legal equivalent of your manual signature. 
+                    This document will be countersigned by {ndaData?.disclosingParty.name}.
                   </p>
                 </div>
-
-                {/* Timestamp */}
-                <div className="p-3 bg-muted rounded-lg text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>Timestamp: {new Date().toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Agreement Checkbox */}
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    id="agree"
-                    checked={agreedToTerms}
-                    onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                  />
-                  <label htmlFor="agree" className="text-sm text-muted-foreground cursor-pointer">
-                    I have read and agree to the terms of this Non-Disclosure Agreement. I understand that my electronic signature is legally binding.
-                  </label>
-                </div>
-
-                {/* Submit Button */}
-                <Button
-                  className="w-full"
-                  size="lg"
-                  disabled={!signerName || !hasSignature || !agreedToTerms || isSubmitting}
-                  onClick={handleSubmit}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Sign & Submit
-                    </>
-                  )}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  By signing, you agree that your electronic signature is the legal equivalent of your manual signature.
-                </p>
               </CardContent>
             </Card>
           </div>
@@ -486,7 +697,7 @@ export default function NDASigningPage() {
 
       {/* Footer */}
       <footer className="border-t bg-white mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+        <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>Powered by Strategic Value Plus Document Management</p>
           <p className="mt-1">This document is confidential and intended only for the named recipient.</p>
         </div>

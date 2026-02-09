@@ -1,27 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef, useEffect } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles,
   Send,
   User,
-  Users,
-  Target,
-  FolderKanban,
-  Calendar,
-  FileText,
-  TrendingUp,
-  MapPin,
-  Clock,
   ArrowRight,
   Loader2,
+  Database,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -33,55 +27,28 @@ interface Message {
 }
 
 const suggestedQueries = [
-  "Which affiliates have experience with automotive supply chain?",
-  "What's the status of our active proposals?",
-  "Show me opportunities closing this month",
-  "Who has ISO/IATF certification experience?",
-  "What were the key decisions from last week's meetings?",
-  "Which projects are at risk?",
+  "Show me all active opportunities in the pipeline",
+  "Which affiliates are available for consulting work?",
+  "What projects are currently in progress?",
+  "Show me recent contact form submissions",
+  "Who are our team members?",
+  "What are our current quarterly rocks?",
+  "List our customers",
+  "What meetings are scheduled?",
 ];
-
-const mockResponses: Record<string, Message> = {
-  "affiliates automotive": {
-    id: "1",
-    role: "assistant",
-    content: `Based on our affiliate database, I found **3 affiliates** with automotive supply chain experience:\n\n**1. John Smith** - 15 years automotive, IATF Lead Auditor\n- Capacity: Available\n- Location: Detroit, MI\n- Certifications: IATF 16949, ISO 9001\n\n**2. Jane Doe** - Supply chain specialist, ISO consultant\n- Capacity: Partial (2 days/week)\n- Location: Cleveland, OH\n- Certifications: ISO 9001, Six Sigma Black Belt\n\n**3. Robert Chen** - Automotive quality engineer\n- Capacity: Available\n- Location: Chicago, IL\n- Certifications: CQE, IATF 16949`,
-    timestamp: new Date(),
-    sources: ["Affiliate Database", "Capability Matrix"],
-    actions: [
-      { label: "View John Smith", href: "/portal/affiliates/1" },
-      { label: "View Jane Doe", href: "/portal/affiliates/2" },
-      { label: "View Robert Chen", href: "/portal/affiliates/3" },
-    ],
-  },
-  "proposals status": {
-    id: "2",
-    role: "assistant",
-    content: `Here's the status of your **active proposals**:\n\n📋 **5 proposals** currently in progress:\n\n| Company | Value | Sent | Status |\n|---------|-------|------|--------|\n| ABC Manufacturing | $85,000 | 3 days ago | Awaiting response |\n| XYZ Industries | $120,000 | Today | Just sent |\n| Precision Parts | $95,000 | 5 days ago | Follow-up needed |\n| TechForm Inc | $65,000 | 1 week ago | Under review |\n| Metro Components | $45,000 | 2 days ago | Awaiting response |\n\n**Total pipeline value: $410,000**\n\n⚠️ **Action needed:** Precision Parts proposal is 5 days old with no response. Consider scheduling a follow-up call.`,
-    timestamp: new Date(),
-    sources: ["Opportunity Pipeline", "CRM Data"],
-    actions: [
-      { label: "View All Proposals", href: "/portal/opportunities?stage=proposal" },
-      { label: "Follow up with Precision Parts", href: "/portal/opportunities/3" },
-    ],
-  },
-  default: {
-    id: "default",
-    role: "assistant",
-    content: `I understand you're asking about business information. Let me search our systems...\n\nI found relevant information across multiple sources. Here's a summary:\n\n- **Opportunities:** 12 active in pipeline\n- **Projects:** 8 currently running\n- **Affiliates:** 24 in network\n- **Meetings:** 3 scheduled this week\n\nWould you like me to drill down into any specific area?`,
-    timestamp: new Date(),
-    sources: ["Multiple Sources"],
-    actions: [
-      { label: "View Opportunities", href: "/portal/opportunities" },
-      { label: "View Projects", href: "/portal/projects" },
-    ],
-  },
-};
 
 export default function AskPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const handleSubmit = async (query: string) => {
     if (!query.trim()) return;
@@ -97,25 +64,51 @@ export default function AskPage() {
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Call the IntellEDGE API
+      const response = await fetch("/api/ai/intelledge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: query,
+          conversationHistory: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
 
-    // Find matching mock response
-    let response = mockResponses.default;
-    if (query.toLowerCase().includes("affiliate") && query.toLowerCase().includes("automotive")) {
-      response = mockResponses["affiliates automotive"];
-    } else if (query.toLowerCase().includes("proposal") || query.toLowerCase().includes("status")) {
-      response = mockResponses["proposals status"];
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get response");
+      }
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.response,
+        timestamp: new Date(),
+        sources: data.sources || [],
+        actions: data.actions || [],
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("IntellEDGE error:", error);
+      toast.error("Failed to get response. Please try again.");
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I'm sorry, I encountered an error while processing your request. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-
-    const assistantMessage: Message = {
-      ...response,
-      id: (Date.now() + 1).toString(),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-    setIsLoading(false);
   };
 
   const handleSuggestedQuery = (query: string) => {
@@ -256,12 +249,14 @@ export default function AskPage() {
                   </Avatar>
                   <div className="bg-muted rounded-lg p-4">
                     <div className="flex items-center gap-2">
+                      <Database className="h-4 w-4 text-primary animate-pulse" />
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-muted-foreground">Searching...</span>
+                      <span className="text-sm text-muted-foreground">Searching database...</span>
                     </div>
                   </div>
                 </div>
               )}
+              <div ref={scrollRef} />
             </div>
           )}
         </ScrollArea>

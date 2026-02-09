@@ -701,8 +701,14 @@ export interface NDAParty {
   title?: string;
   company: string;
   email: string;
-  address?: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  signature?: string;
+  signedAt?: Date;
+  ipAddress?: string;
 }
 
 export interface NDASignature {
