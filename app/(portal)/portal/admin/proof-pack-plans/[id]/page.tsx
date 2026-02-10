@@ -255,9 +255,10 @@ export default function ProofPackPlanDetailPage() {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
   };
 
-  const formatDate = (date: Date | string | null | undefined) => {
+  const formatDate = (date: Date | string | { toDate: () => Date } | null | undefined) => {
     if (!date) return "-";
-    return new Date(date).toLocaleDateString("en-US", {
+    const d = typeof date === "object" && "toDate" in date ? date.toDate() : new Date(date);
+    return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -691,7 +692,7 @@ export default function ProofPackPlanDetailPage() {
                               {task.dueDate && (
                                 <span className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  Due {formatDate(task.dueDate as unknown as Date)}
+                                  Due {formatDate(task.dueDate)}
                                 </span>
                               )}
                               {task.estimatedHours !== undefined && task.estimatedHours > 0 && (
@@ -844,7 +845,7 @@ export default function ProofPackPlanDetailPage() {
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-medium capitalize">{entry.type.replace("_", " ")}</span>
                             <span className="text-sm text-muted-foreground">
-                              {formatDate(entry.date as unknown as Date)}
+                              {formatDate(entry.date)}
                             </span>
                           </div>
                           <p className="text-sm">{entry.content}</p>
@@ -880,7 +881,7 @@ export default function ProofPackPlanDetailPage() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Received At</Label>
-                  <p className="font-medium">{formatDate(plan.receivedAt as unknown as Date)}</p>
+                  <p className="font-medium">{formatDate(plan.receivedAt)}</p>
                 </div>
                 {plan.sourceIp && (
                   <div>

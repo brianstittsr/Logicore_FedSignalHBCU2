@@ -173,9 +173,10 @@ export default function ProofPackPlansPage() {
     }
   };
 
-  const formatDate = (date: Date | null | undefined) => {
+  const formatDate = (date: Date | string | { toDate: () => Date } | null | undefined) => {
     if (!date) return "-";
-    return new Date(date).toLocaleDateString("en-US", {
+    const d = typeof date === "object" && "toDate" in date ? date.toDate() : new Date(date);
+    return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -397,7 +398,7 @@ export default function ProofPackPlansPage() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {formatDate(plan.createdAt as Date)}
+                          {formatDate(plan.createdAt)}
                         </div>
                       </TableCell>
                       <TableCell>
