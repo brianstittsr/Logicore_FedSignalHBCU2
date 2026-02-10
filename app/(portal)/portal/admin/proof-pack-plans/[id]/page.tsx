@@ -545,13 +545,13 @@ export default function ProofPackPlanDetailPage() {
                     type="date"
                     value={
                       editedPlan.nextFollowUpDate
-                        ? new Date(editedPlan.nextFollowUpDate).toISOString().split("T")[0]
+                        ? new Date(editedPlan.nextFollowUpDate.toDate()).toISOString().split("T")[0]
                         : ""
                     }
                     onChange={(e) =>
                       setEditedPlan((prev) => ({
                         ...prev,
-                        nextFollowUpDate: e.target.value ? new Date(e.target.value) : undefined,
+                        nextFollowUpDate: e.target.value ? Timestamp.fromDate(new Date(e.target.value)) : undefined,
                       }))
                     }
                   />
