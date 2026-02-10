@@ -157,6 +157,7 @@ export interface ProofPackPlanDoc {
   tags?: string[];
   priority: "low" | "medium" | "high";
   estimatedValue?: number;
+  notes?: string;
   
   // Timestamps
   createdAt: Timestamp;

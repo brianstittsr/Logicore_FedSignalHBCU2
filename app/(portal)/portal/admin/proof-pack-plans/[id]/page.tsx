@@ -929,6 +929,19 @@ export default function ProofPackPlanDetailPage() {
 }
 
 // Task Dialog Component
+interface TaskFormData {
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignedTo: string;
+  assignedToName: string;
+  deliverableType: string;
+  estimatedHours: number;
+  dueDate: string;
+  notes: string;
+}
+
 interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -938,7 +951,7 @@ interface TaskDialogProps {
 }
 
 function TaskDialog({ open, onOpenChange, task, onSubmit, onCancel }: TaskDialogProps) {
-  const [formData, setFormData] = useState<Partial<ProofPackTask>>({
+  const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     description: "",
     status: "pending",
@@ -947,23 +960,23 @@ function TaskDialog({ open, onOpenChange, task, onSubmit, onCancel }: TaskDialog
     assignedToName: "",
     deliverableType: "",
     estimatedHours: 0,
-    dueDate: undefined,
+    dueDate: "",
     notes: "",
   });
 
   useEffect(() => {
     if (task) {
       setFormData({
-        title: task.title,
-        description: task.description,
+        title: task.title || "",
+        description: task.description || "",
         status: task.status,
         priority: task.priority,
-        assignedTo: task.assignedTo,
-        assignedToName: task.assignedToName,
-        deliverableType: task.deliverableType,
-        estimatedHours: task.estimatedHours,
-        dueDate: task.dueDate ? new Date(task.dueDate as unknown as Date).toISOString().split("T")[0] : undefined,
-        notes: task.notes,
+        assignedTo: task.assignedTo || "",
+        assignedToName: task.assignedToName || "",
+        deliverableType: task.deliverableType || "",
+        estimatedHours: task.estimatedHours || 0,
+        dueDate: task.dueDate ? task.dueDate.toDate().toISOString().split("T")[0] : "",
+        notes: task.notes || "",
       });
     } else {
       setFormData({
@@ -975,7 +988,7 @@ function TaskDialog({ open, onOpenChange, task, onSubmit, onCancel }: TaskDialog
         assignedToName: "",
         deliverableType: "",
         estimatedHours: 0,
-        dueDate: undefined,
+        dueDate: "",
         notes: "",
       });
     }
@@ -983,7 +996,11 @@ function TaskDialog({ open, onOpenChange, task, onSubmit, onCancel }: TaskDialog
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    const submitData: Partial<ProofPackTask> = {
+      ...formData,
+      dueDate: formData.dueDate ? Timestamp.fromDate(new Date(formData.dueDate)) : undefined,
+    };
+    onSubmit(submitData);
   };
 
   return (
@@ -1075,7 +1092,7 @@ function TaskDialog({ open, onOpenChange, task, onSubmit, onCancel }: TaskDialog
               <Label>Due Date</Label>
               <Input
                 type="date"
-                value={formData.dueDate || ""}
+                value={formData.dueDate}
                 onChange={(e) => setFormData((prev) => ({ ...prev, dueDate: e.target.value }))}
               />
             </div>
