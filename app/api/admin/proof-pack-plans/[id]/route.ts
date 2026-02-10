@@ -159,12 +159,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Fetch updated document
     const updatedSnapshot = await getDoc(docRef);
-    const updatedData = updatedSnapshot.data() as ProofPackPlanDoc;
+    const { id: _docId, ...updatedData } = updatedSnapshot.data() as ProofPackPlanDoc;
 
     return NextResponse.json({
       data: {
-        id: updatedSnapshot.id,
         ...updatedData,
+        id: updatedSnapshot.id,
         receivedAt: updatedData.receivedAt?.toDate?.() || null,
         createdAt: updatedData.createdAt?.toDate?.() || new Date(),
         updatedAt: updatedData.updatedAt?.toDate?.() || new Date(),
