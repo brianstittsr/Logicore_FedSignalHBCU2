@@ -229,7 +229,7 @@ export default function CMMCTrainingPage() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-xl px-10 py-7 font-bold shadow-lg shadow-primary/50 animate-pulse" asChild>
-                <Link href="#register">
+                <Link href="/cmmc-training-confirmation">
                   <Calendar className="w-6 h-6 mr-2" />
                   REGISTER FOR THE NEXT CMMC COHORT
                 </Link>
@@ -385,7 +385,7 @@ export default function CMMCTrainingPage() {
 
           <div className="text-center mt-12">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-6" asChild>
-              <Link href="#register">
+              <Link href="/cmmc-training-confirmation">
                 REGISTER FOR NEXT CMMC COHORT
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>

@@ -226,7 +226,7 @@ export default function CMMCTrainingConfirmationPage() {
               className="bg-primary hover:bg-primary/90 text-xl px-12 py-8 font-bold shadow-lg shadow-primary/50"
               asChild
             >
-              <Link href="/contact?subject=CMMC%20Cohort%20Registration%20-%20$7500%20Payment">
+              <Link href="/cmmc-training-confirmation">
                 <Lock className="w-6 h-6 mr-3" />
                 SECURE YOUR SEAT
               </Link>
