@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import type { WebinarDoc, WebinarDeliverable, WebinarTrustIndicator } from "@/lib/types/webinar";
 import { BenefitListEditor, DynamicListEditor, SimpleListEditor } from "./DynamicListEditor";
 import { IconSelector } from "./IconSelector";
@@ -71,11 +72,24 @@ export function ConfirmationPageStep({ webinar, onChange }: ConfirmationPageStep
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Badge Text</Label>
+            <div className="flex items-center justify-between">
+              <Label>Badge Text</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="badge-text-toggle" className="text-sm text-muted-foreground">
+                  {confirmationPage.hero.badgeEnabled !== false ? "Visible" : "Hidden"}
+                </Label>
+                <Switch
+                  id="badge-text-toggle"
+                  checked={confirmationPage.hero.badgeEnabled !== false}
+                  onCheckedChange={(checked) => updateHero({ badgeEnabled: checked })}
+                />
+              </div>
+            </div>
             <Input
               value={confirmationPage.hero.badgeText || ""}
               onChange={(e) => updateHero({ badgeText: e.target.value })}
               placeholder="e.g., EACH COHORT IS LIMITED TO 15 PARTICIPANTS"
+              disabled={confirmationPage.hero.badgeEnabled === false}
             />
           </div>
 

@@ -146,11 +146,24 @@ export function LandingPageStep({ webinar, onChange }: LandingPageStepProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>Urgency Badge Text</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Urgency Badge Text</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="urgency-badge-toggle" className="text-sm text-muted-foreground">
+                      {landingPage.hero.urgencyBadgeEnabled !== false ? "Visible" : "Hidden"}
+                    </Label>
+                    <Switch
+                      id="urgency-badge-toggle"
+                      checked={landingPage.hero.urgencyBadgeEnabled !== false}
+                      onCheckedChange={(checked) => updateHero({ urgencyBadgeEnabled: checked })}
+                    />
+                  </div>
+                </div>
                 <Input
                   value={landingPage.hero.urgencyBadge || ""}
                   onChange={(e) => updateHero({ urgencyBadge: e.target.value })}
                   placeholder="e.g., ⚠️ PHASE 1 ENFORCEMENT NOW ACTIVE"
+                  disabled={landingPage.hero.urgencyBadgeEnabled === false}
                 />
               </div>
 

@@ -59,7 +59,7 @@ export function WebinarConfirmationTemplate({ webinar }: WebinarConfirmationTemp
         </div>
         <div className="container relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            {hero.badgeText && (
+            {hero.badgeText && hero.badgeEnabled !== false && (
               <Badge className="mb-6 bg-red-600 text-white border-0 px-4 py-2 text-sm font-semibold">
                 <Users className="w-4 h-4 mr-2" />
                 {hero.badgeText}

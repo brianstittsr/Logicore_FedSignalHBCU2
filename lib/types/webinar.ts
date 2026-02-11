@@ -90,6 +90,7 @@ export interface WebinarLandingHero {
   collaborationText?: string;
   /** Use light logos for dark backgrounds, dark logos for light backgrounds */
   logoContrast?: "light" | "dark";
+  urgencyBadgeEnabled?: boolean;
   urgencyBadge?: string;
   headline: string;
   subheadline?: string;
@@ -166,6 +167,7 @@ export interface WebinarLandingPage {
 
 /** Confirmation page hero section */
 export interface WebinarConfirmationHero {
+  badgeEnabled?: boolean;
   badgeText: string;
   logo?: string;
   headline: string;

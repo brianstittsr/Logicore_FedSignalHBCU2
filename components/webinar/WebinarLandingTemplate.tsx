@@ -144,7 +144,7 @@ export function WebinarLandingTemplate({ webinar }: WebinarLandingTemplateProps)
             )}
 
             {/* Urgency Badge */}
-            {hero.urgencyBadge && (
+            {hero.urgencyBadge && hero.urgencyBadgeEnabled !== false && (
               <Badge className="mb-6 bg-red-600 text-white border-0 px-6 py-3 text-base font-bold animate-pulse shadow-lg shadow-red-500/50">
                 <AlertTriangle className="w-5 h-5 mr-2" />
                 {hero.urgencyBadge}
