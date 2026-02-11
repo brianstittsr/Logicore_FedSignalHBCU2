@@ -10,17 +10,13 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/schema";
-import {
-  getAuthUrl,
-  getTokensFromCode,
-  createDriveClient,
-  getOrCreateBackupFolder,
-  uploadBackupToGoogleDrive,
-  listBackupsInGoogleDrive,
-  downloadBackupFromGoogleDrive,
-  deleteBackupFromGoogleDrive,
-  refreshAccessToken,
-} from "@/lib/google-drive";
+
+// Lazy import google-drive utilities to avoid module-level crashes
+// if googleapis has issues in the serverless environment
+async function getGoogleDriveUtils() {
+  const mod = await import("@/lib/google-drive");
+  return mod;
+}
 
 // GET - Get Google Drive connection status or list backups
 export async function GET(request: NextRequest) {
@@ -39,6 +35,7 @@ export async function GET(request: NextRequest) {
     if (action === "auth-url") {
       // Generate OAuth URL for connecting Google Drive
       try {
+        const { getAuthUrl } = await getGoogleDriveUtils();
         const authUrl = getAuthUrl("backup");
         return NextResponse.json({ authUrl });
       } catch (error) {
@@ -74,6 +71,8 @@ export async function GET(request: NextRequest) {
       const tokens = tokensDoc.data();
       
       // Check if token needs refresh
+      const { refreshAccessToken, createDriveClient, getOrCreateBackupFolder, listBackupsInGoogleDrive } = await getGoogleDriveUtils();
+
       let accessToken = tokens.accessToken;
       if (tokens.expiresAt < Date.now()) {
         try {
@@ -110,7 +109,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Google Drive GET error:", error);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to process request", details: message }, { status: 500 });
   }
 }
 
@@ -133,10 +133,11 @@ export async function POST(request: NextRequest) {
       }
 
       try {
+        const { getTokensFromCode, createDriveClient: createDrive } = await getGoogleDriveUtils();
         const tokens = await getTokensFromCode(code);
         
         // Get user info
-        const drive = createDriveClient(tokens.access_token!, tokens.refresh_token || undefined);
+        const drive = createDrive(tokens.access_token!, tokens.refresh_token || undefined);
         const about = await drive.about.get({ fields: "user" });
         const email = about.data.user?.emailAddress;
 
@@ -169,6 +170,8 @@ export async function POST(request: NextRequest) {
       if (!tokensDoc.exists()) {
         return NextResponse.json({ error: "Google Drive not connected" }, { status: 400 });
       }
+
+      const { refreshAccessToken, createDriveClient, getOrCreateBackupFolder, uploadBackupToGoogleDrive } = await getGoogleDriveUtils();
 
       const tokens = tokensDoc.data();
       
@@ -233,6 +236,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Google Drive not connected" }, { status: 400 });
       }
 
+      const { refreshAccessToken, createDriveClient, downloadBackupFromGoogleDrive } = await getGoogleDriveUtils();
+
       const tokens = tokensDoc.data();
       let accessToken = tokens.accessToken;
       if (tokens.expiresAt < Date.now()) {
@@ -284,6 +289,8 @@ export async function DELETE(request: NextRequest) {
       if (!tokensDoc.exists()) {
         return NextResponse.json({ error: "Google Drive not connected" }, { status: 400 });
       }
+
+      const { refreshAccessToken, createDriveClient, deleteBackupFromGoogleDrive } = await getGoogleDriveUtils();
 
       const tokens = tokensDoc.data();
       let accessToken = tokens.accessToken;

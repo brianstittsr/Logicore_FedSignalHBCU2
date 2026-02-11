@@ -106,6 +106,7 @@ interface GoogleDriveStatus {
   connected: boolean;
   connectedEmail?: string;
   connectedAt?: string;
+  error?: string;
 }
 
 export default function BackupsPage() {
@@ -153,10 +154,16 @@ export default function BackupsPage() {
     try {
       const response = await fetch("/api/admin/backups");
       const data = await response.json();
+      if (!response.ok) {
+        console.error("Backup API error:", data);
+        toast.error(data.details || data.error || "Failed to fetch backups");
+        return;
+      }
       setBackups(data.backups || []);
       setStats(data.stats || null);
     } catch (error) {
       console.error("Failed to fetch backups:", error);
+      toast.error("Failed to connect to backup service");
     } finally {
       setLoading(false);
     }
@@ -167,9 +174,15 @@ export default function BackupsPage() {
     try {
       const response = await fetch("/api/admin/backups/google-drive?action=status");
       const data = await response.json();
+      if (!response.ok) {
+        console.error("Google Drive status error:", data);
+        setGoogleDriveStatus({ connected: false, error: data.details || data.error });
+        return;
+      }
       setGoogleDriveStatus(data);
     } catch (error) {
       console.error("Failed to fetch Google Drive status:", error);
+      setGoogleDriveStatus({ connected: false, error: "Failed to connect" });
     }
   };
 

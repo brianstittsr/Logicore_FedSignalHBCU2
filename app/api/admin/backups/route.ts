@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("List backups error:", error);
-    return NextResponse.json({ error: "Failed to list backups" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to list backups", details: message }, { status: 500 });
   }
 }
 
@@ -156,7 +157,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Create backup error:", error);
-    return NextResponse.json({ error: "Failed to create backup" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to create backup", details: message }, { status: 500 });
   }
 }
 
