@@ -1205,11 +1205,11 @@ Make it clear, professional, and highlight the value proposition and expected ou
     setShowPreviewDialog(true);
   };
 
-  // Email proposal
+  // Email proposal for signature
   const openEmailDialog = (proposal: Proposal) => {
     setPreviewProposal(proposal);
     setEmailSubject(`Proposal: ${proposal.name}`);
-    setEmailMessage(`Please find the attached proposal "${proposal.name}" for your review.\n\nType: ${PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type}\nBudget: $${(proposal.totalBudget || 0).toLocaleString()}\n\nBest regards,\n${getDisplayName()}`);
+    setEmailMessage(`Please review and sign this ${PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type}.\n\nOnce signed, you will receive a PDF copy of the fully executed document for your records.`);
     setEmailRecipient("");
     setShowEmailDialog(true);
   };
@@ -1218,17 +1218,49 @@ Make it clear, professional, and highlight the value proposition and expected ou
     if (!emailRecipient || !previewProposal) return;
     setIsSendingEmail(true);
     try {
-      // In production, this would call an email API endpoint with the proposal HTML
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      alert(`Proposal "${previewProposal.name}" sent to ${emailRecipient}.\n\nSubject: ${emailSubject}`);
+      // Generate the branded proposal HTML for the signing page
+      const proposalHtml = generateProposalHTML(previewProposal);
+      const typeLabel = PROPOSAL_TYPES.find(t => t.value === previewProposal.type)?.label || previewProposal.type;
+
+      const response = await fetch("/api/proposals/send-for-signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          proposalName: previewProposal.name,
+          proposalType: typeLabel,
+          recipientEmail: emailRecipient,
+          recipientName: emailRecipient.split("@")[0],
+          senderName: getDisplayName(),
+          senderEmail: profile?.email || "nel@strategicvalueplus.com",
+          message: emailMessage,
+          proposalHtml,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Failed to send signing request");
+        return;
+      }
+
+      // Update proposal status
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === previewProposal.id
+            ? { ...p, status: "pending_signature" as const, signatureStatus: "pending" as const, updatedAt: new Date() }
+            : p
+        )
+      );
+
+      alert(`Signing request sent to ${emailRecipient}.\n\nThe recipient will receive an email with a secure link to review and electronically sign the document.\n\nOnce signed, both parties will receive a PDF copy.`);
       setShowEmailDialog(false);
       setEmailRecipient("");
       setEmailSubject("");
       setEmailMessage("");
     } catch (error) {
-      console.error("Error sending email:", error);
-      alert("Failed to send email. Please try again.");
+      console.error("Error sending signing request:", error);
+      alert("Failed to send signing request. Please try again.");
     } finally {
       setIsSendingEmail(false);
     }
@@ -4569,19 +4601,28 @@ Workflow:
         </DialogContent>
       </Dialog>
 
-      {/* Email Proposal Dialog */}
+      {/* Send for Signature Dialog */}
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="!max-w-[500px]">
+        <DialogContent className="!max-w-[520px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-primary" />
-              Email Proposal
+              <FileSignature className="h-5 w-5 text-primary" />
+              Send for Electronic Signature
             </DialogTitle>
             <DialogDescription>
-              Send &quot;{previewProposal?.name}&quot; via email
+              Send &quot;{previewProposal?.name}&quot; for review and e-signature
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <p className="font-semibold mb-1">How it works:</p>
+              <ol className="list-decimal list-inside space-y-0.5 text-amber-700">
+                <li>Recipient receives an email with a secure signing link</li>
+                <li>They review the full document and sign electronically</li>
+                <li>Both parties receive a signed PDF copy via email</li>
+                <li>The signed document is stored in the system</li>
+              </ol>
+            </div>
             <div className="space-y-2">
               <Label>Recipient Email *</Label>
               <Input
@@ -4592,18 +4633,12 @@ Workflow:
               />
             </div>
             <div className="space-y-2">
-              <Label>Subject</Label>
-              <Input
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Message</Label>
+              <Label>Personal Message (optional)</Label>
               <Textarea
-                rows={6}
+                rows={4}
                 value={emailMessage}
                 onChange={(e) => setEmailMessage(e.target.value)}
+                placeholder="Add a personal note to the recipient..."
               />
             </div>
           </div>
@@ -4622,8 +4657,8 @@ Workflow:
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Email
+                  <FileSignature className="mr-2 h-4 w-4" />
+                  Send for Signature
                 </>
               )}
             </Button>

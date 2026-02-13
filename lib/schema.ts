@@ -2158,6 +2158,8 @@ export const COLLECTIONS = {
   WEBINARS: "webinars",
   // Proof Pack Plans
   PROOF_PACK_PLANS: "proofPackPlans",
+  // Proposal E-Signatures
+  PROPOSAL_SIGNATURES: "proposalSignatures",
 } as const;
 
 // ============================================================================
