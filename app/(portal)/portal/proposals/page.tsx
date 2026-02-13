@@ -237,6 +237,16 @@ export default function ProposalsPage() {
   const [ndaTypedSignature, setNdaTypedSignature] = useState("");
   const [selfServeMode, setSelfServeMode] = useState(false);
   
+  // Proposal action state
+  const [previewProposal, setPreviewProposal] = useState<Proposal | null>(null);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [editingProposalId, setEditingProposalId] = useState<string | null>(null);
+
   // Template management state
   const [activeTab, setActiveTab] = useState<"proposals" | "templates">("proposals");
   const [documentTemplates, setDocumentTemplates] = useState<DocumentTemplate[]>([]);
@@ -591,19 +601,32 @@ Make it clear, professional, and highlight the value proposition and expected ou
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const saveProposal = () => {
-    const newProposal: Proposal = {
-      ...emptyProposal,
-      ...proposalData,
-      id: `proposal-${Date.now()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as Proposal;
-    setProposals((prev) => [newProposal, ...prev]);
+    if (editingProposalId) {
+      // Update existing proposal
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === editingProposalId
+            ? { ...p, ...proposalData, updatedAt: new Date() } as Proposal
+            : p
+        )
+      );
+    } else {
+      // Create new proposal
+      const newProposal: Proposal = {
+        ...emptyProposal,
+        ...proposalData,
+        id: `proposal-${Date.now()}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Proposal;
+      setProposals((prev) => [newProposal, ...prev]);
+    }
     setShowWizard(false);
     setCurrentStep(1);
     setProposalData(emptyProposal);
     setAnalysisResult(null);
     setUploadedFile(null);
+    setEditingProposalId(null);
   };
 
   // Submit proposal for consideration (marks as submitted with timestamp)
@@ -710,6 +733,214 @@ Make it clear, professional, and highlight the value proposition and expected ou
     setNdaTypedSignature("");
     setSelfServeMode(false);
     setSelectedTemplate(null);
+  };
+
+  // Generate proposal as Markdown text
+  const generateProposalMarkdown = (proposal: Proposal): string => {
+    const lines: string[] = [];
+    lines.push(`# ${proposal.name}`);
+    lines.push("");
+    lines.push(`**Type:** ${PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type}`);
+    lines.push(`**Status:** ${proposal.status}`);
+    lines.push(`**Funding Source:** ${proposal.fundingSource || "N/A"}`);
+    lines.push(`**Reference Number:** ${proposal.referenceNumber || "N/A"}`);
+    if (proposal.totalBudget) lines.push(`**Total Budget:** $${proposal.totalBudget.toLocaleString()}`);
+    if (proposal.startDate) lines.push(`**Start Date:** ${proposal.startDate}`);
+    if (proposal.endDate) lines.push(`**End Date:** ${proposal.endDate}`);
+    lines.push(`**Created:** ${new Date(proposal.createdAt).toLocaleDateString()}`);
+    lines.push("");
+
+    if (proposal.description) {
+      lines.push("## Description");
+      lines.push("");
+      lines.push(proposal.description);
+      lines.push("");
+    }
+
+    if (proposal.type === "grant") {
+      if (proposal.grantAmount) lines.push(`**Grant Amount Requested:** $${proposal.grantAmount.toLocaleString()}`);
+      if (proposal.grantingOrganization) lines.push(`**Granting Organization:** ${proposal.grantingOrganization}`);
+      if (proposal.grantProgramName) lines.push(`**Grant Program:** ${proposal.grantProgramName}`);
+      lines.push("");
+    }
+
+    if (proposal.collaboratingEntities?.length) {
+      lines.push("## Collaborating Entities");
+      lines.push("");
+      proposal.collaboratingEntities.forEach((e) => {
+        lines.push(`### ${e.name}`);
+        lines.push(`- **Role:** ${e.role}`);
+        if (e.description) lines.push(`- **Description:** ${e.description}`);
+        if (e.contactName) lines.push(`- **Contact:** ${e.contactName}`);
+        lines.push("");
+      });
+    }
+
+    if (proposal.dataCollectionMethods?.length) {
+      lines.push("## Data Collection Methods");
+      lines.push("");
+      proposal.dataCollectionMethods.forEach((m) => {
+        lines.push(`- **${m.name}** (${m.frequency}): ${m.description}`);
+      });
+      lines.push("");
+    }
+
+    if (proposal.projectMilestones?.length) {
+      lines.push("## Project Milestones");
+      lines.push("");
+      lines.push("| Milestone | Due Date | Status |");
+      lines.push("|-----------|----------|--------|");
+      proposal.projectMilestones.forEach((m) => {
+        lines.push(`| ${m.name} | ${m.dueDate || "TBD"} | ${m.status} |`);
+      });
+      lines.push("");
+    }
+
+    if (proposal.deliverables?.length) {
+      lines.push("## Deliverables");
+      lines.push("");
+      proposal.deliverables.forEach((d) => {
+        lines.push(`- **${d.name}**: ${d.description}`);
+        if (d.dueDate) lines.push(`  - Due: ${d.dueDate}`);
+      });
+      lines.push("");
+    }
+
+    if (proposal.sections?.length) {
+      lines.push("## Proposal Sections");
+      lines.push("");
+      proposal.sections.forEach((s) => {
+        lines.push(`### ${s.title}`);
+        lines.push(s.content || s.responseText || "");
+        lines.push("");
+      });
+    }
+
+    if (proposal.entityRelationshipNotes) {
+      lines.push("## Entity Relationship Notes");
+      lines.push("");
+      lines.push(proposal.entityRelationshipNotes);
+      lines.push("");
+    }
+
+    return lines.join("\n");
+  };
+
+  // Edit proposal - load into wizard
+  const editProposal = (proposal: Proposal) => {
+    setEditingProposalId(proposal.id);
+    setProposalData(proposal);
+    setAnalysisResult(null);
+    setUploadedFile(null);
+    setCurrentStep(1);
+    setShowWizard(true);
+  };
+
+  // Download proposal as Markdown file
+  const downloadProposal = (proposal: Proposal) => {
+    const markdown = generateProposalMarkdown(proposal);
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${proposal.name.replace(/[^a-zA-Z0-9]/g, "_")}_proposal.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Preview proposal
+  const openPreview = (proposal: Proposal) => {
+    setPreviewProposal(proposal);
+    setShowPreviewDialog(true);
+  };
+
+  // Email proposal
+  const openEmailDialog = (proposal: Proposal) => {
+    setPreviewProposal(proposal);
+    setEmailSubject(`Proposal: ${proposal.name}`);
+    setEmailMessage(`Please find the attached proposal "${proposal.name}" for your review.\n\nType: ${PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type}\nBudget: $${(proposal.totalBudget || 0).toLocaleString()}\n\nBest regards,\n${getDisplayName()}`);
+    setEmailRecipient("");
+    setShowEmailDialog(true);
+  };
+
+  const sendProposalEmail = async () => {
+    if (!emailRecipient || !previewProposal) return;
+    setIsSendingEmail(true);
+    try {
+      // Generate the proposal content
+      const markdown = generateProposalMarkdown(previewProposal);
+      
+      // In production, this would call an email API endpoint
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      alert(`Proposal "${previewProposal.name}" sent to ${emailRecipient}.\n\nSubject: ${emailSubject}`);
+      setShowEmailDialog(false);
+      setEmailRecipient("");
+      setEmailSubject("");
+      setEmailMessage("");
+    } catch (error) {
+      console.error("Error sending email:", error);
+      alert("Failed to send email. Please try again.");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  // Export proposal as Markdown (from wizard step 8)
+  const exportAsMarkdown = () => {
+    const proposal = {
+      ...emptyProposal,
+      ...proposalData,
+      id: editingProposalId || `proposal-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Proposal;
+    downloadProposal(proposal);
+  };
+
+  // Export proposal as PDF (generates HTML and triggers print)
+  const exportAsPDF = () => {
+    const proposal = {
+      ...emptyProposal,
+      ...proposalData,
+      id: editingProposalId || `proposal-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Proposal;
+    const markdown = generateProposalMarkdown(proposal);
+    const htmlContent = markdown
+      .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+      .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+      .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n\n/g, "</p><p>")
+      .replace(/\n/g, "<br/>");
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${proposal.name} - Proposal</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }
+            h1 { color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 10px; }
+            h2 { color: #16213e; margin-top: 30px; }
+            h3 { color: #0f3460; }
+            table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            strong { color: #1a1a2e; }
+          </style>
+        </head>
+        <body><p>${htmlContent}</p></body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   // OEM Supplier Readiness Functions
@@ -1449,7 +1680,7 @@ Workflow:
                   <TableHead>Budget</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead className="w-[180px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1467,8 +1698,10 @@ Workflow:
                     <TableCell>{new Date(proposal.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Preview" onClick={() => openPreview(proposal)}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Edit" onClick={() => editProposal(proposal)}><Edit className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Download" onClick={() => downloadProposal(proposal)}><Download className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" title="Email" onClick={() => openEmailDialog(proposal)}><Send className="h-4 w-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -3587,13 +3820,13 @@ Workflow:
                   {/* Export Options */}
                   {slides.length > 0 && (
                     <div className="flex gap-3">
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={exportAsPDF}>
                         <Download className="mr-2 h-4 w-4" />
                         Export as PDF
                       </Button>
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={exportAsMarkdown}>
                         <FileText className="mr-2 h-4 w-4" />
-                        Export as PowerPoint
+                        Export as Markdown
                       </Button>
                     </div>
                   )}
@@ -3655,11 +3888,11 @@ Workflow:
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" className="h-24 flex-col">
+                        <Button variant="outline" className="h-24 flex-col" onClick={exportAsMarkdown}>
                           <FileText className="h-8 w-8 mb-2" />
                           <span>Export as Markdown</span>
                         </Button>
-                        <Button variant="outline" className="h-24 flex-col">
+                        <Button variant="outline" className="h-24 flex-col" onClick={exportAsPDF}>
                           <Download className="h-8 w-8 mb-2" />
                           <span>Export as PDF</span>
                         </Button>
@@ -3852,6 +4085,233 @@ Workflow:
                 )}
               </div>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Proposal Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="!max-w-[800px] !w-[800px] !h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Proposal Preview
+            </DialogTitle>
+            <DialogDescription>
+              {previewProposal?.name || "Proposal"}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="flex-1 pr-4">
+            {previewProposal && (
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold">{previewProposal.name}</h2>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline">
+                      {PROPOSAL_TYPES.find(t => t.value === previewProposal.type)?.label}
+                    </Badge>
+                    {getStatusBadge(previewProposal.status)}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Funding Source</p>
+                    <p className="font-medium">{previewProposal.fundingSource || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Reference Number</p>
+                    <p className="font-medium">{previewProposal.referenceNumber || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Budget</p>
+                    <p className="font-medium">${(previewProposal.totalBudget || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Created</p>
+                    <p className="font-medium">{new Date(previewProposal.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  {previewProposal.startDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Start Date</p>
+                      <p className="font-medium">{previewProposal.startDate}</p>
+                    </div>
+                  )}
+                  {previewProposal.endDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">End Date</p>
+                      <p className="font-medium">{previewProposal.endDate}</p>
+                    </div>
+                  )}
+                </div>
+
+                {previewProposal.description && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Description</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{previewProposal.description}</p>
+                  </div>
+                )}
+
+                {previewProposal.type === "grant" && (previewProposal.grantAmount || previewProposal.grantingOrganization) && (
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h3 className="text-lg font-semibold mb-2 text-green-800">Grant Details</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {previewProposal.grantAmount && (
+                        <div>
+                          <p className="text-green-600">Amount Requested</p>
+                          <p className="font-medium text-green-800">${previewProposal.grantAmount.toLocaleString()}</p>
+                        </div>
+                      )}
+                      {previewProposal.grantingOrganization && (
+                        <div>
+                          <p className="text-green-600">Granting Organization</p>
+                          <p className="font-medium text-green-800">{previewProposal.grantingOrganization}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {previewProposal.collaboratingEntities?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Collaborating Entities</h3>
+                    <div className="space-y-2">
+                      {previewProposal.collaboratingEntities.map((entity, i) => (
+                        <div key={i} className="p-3 border rounded-lg">
+                          <p className="font-medium">{entity.name}</p>
+                          <p className="text-sm text-muted-foreground">Role: {entity.role}</p>
+                          {entity.description && <p className="text-sm mt-1">{entity.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {previewProposal.projectMilestones?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Project Milestones</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Milestone</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {previewProposal.projectMilestones.map((m, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">{m.name}</TableCell>
+                            <TableCell>{m.dueDate || "TBD"}</TableCell>
+                            <TableCell><Badge variant="outline">{m.status}</Badge></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {previewProposal.dataCollectionMethods?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Data Collection Methods</h3>
+                    <div className="space-y-2">
+                      {previewProposal.dataCollectionMethods.map((m, i) => (
+                        <div key={i} className="p-3 border rounded-lg">
+                          <p className="font-medium">{m.name} <span className="text-sm text-muted-foreground">({m.frequency})</span></p>
+                          <p className="text-sm text-muted-foreground">{m.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {previewProposal.entityRelationshipNotes && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Entity Relationship Notes</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{previewProposal.entityRelationshipNotes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+          <DialogFooter className="border-t pt-4">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => previewProposal && downloadProposal(previewProposal)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+              <Button variant="outline" onClick={() => { if (previewProposal) { openEmailDialog(previewProposal); setShowPreviewDialog(false); } }}>
+                <Send className="mr-2 h-4 w-4" />
+                Email
+              </Button>
+              <Button variant="outline" onClick={() => { if (previewProposal) { editProposal(previewProposal); setShowPreviewDialog(false); } }}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+              <Button onClick={() => setShowPreviewDialog(false)}>Close</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Proposal Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="!max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-primary" />
+              Email Proposal
+            </DialogTitle>
+            <DialogDescription>
+              Send &quot;{previewProposal?.name}&quot; via email
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Recipient Email *</Label>
+              <Input
+                type="email"
+                placeholder="recipient@example.com"
+                value={emailRecipient}
+                onChange={(e) => setEmailRecipient(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Subject</Label>
+              <Input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea
+                rows={6}
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={sendProposalEmail}
+              disabled={isSendingEmail || !emailRecipient}
+            >
+              {isSendingEmail ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Email
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
