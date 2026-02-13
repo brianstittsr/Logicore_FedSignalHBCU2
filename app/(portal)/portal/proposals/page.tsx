@@ -735,95 +735,444 @@ Make it clear, professional, and highlight the value proposition and expected ou
     setSelectedTemplate(null);
   };
 
-  // Generate proposal as Markdown text
-  const generateProposalMarkdown = (proposal: Proposal): string => {
-    const lines: string[] = [];
-    lines.push(`# ${proposal.name}`);
-    lines.push("");
-    lines.push(`**Type:** ${PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type}`);
-    lines.push(`**Status:** ${proposal.status}`);
-    lines.push(`**Funding Source:** ${proposal.fundingSource || "N/A"}`);
-    lines.push(`**Reference Number:** ${proposal.referenceNumber || "N/A"}`);
-    if (proposal.totalBudget) lines.push(`**Total Budget:** $${proposal.totalBudget.toLocaleString()}`);
-    if (proposal.startDate) lines.push(`**Start Date:** ${proposal.startDate}`);
-    if (proposal.endDate) lines.push(`**End Date:** ${proposal.endDate}`);
-    lines.push(`**Created:** ${new Date(proposal.createdAt).toLocaleDateString()}`);
-    lines.push("");
+  // Generate professional SVP-branded PDF HTML
+  const generateProposalHTML = (proposal: Proposal): string => {
+    const typeLabel = PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type;
+    const dateStr = new Date(proposal.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const logoUrl = `${window.location.origin}/VPlus_logo.webp`;
 
+    // Build body sections
+    const sections: string[] = [];
+
+    // Description / Scope of Work
     if (proposal.description) {
-      lines.push("## Description");
-      lines.push("");
-      lines.push(proposal.description);
-      lines.push("");
+      sections.push(`
+        <div class="section">
+          <h2>Scope of Work</h2>
+          <div class="body-text">${proposal.description.replace(/\n/g, "<br/>")}</div>
+        </div>
+      `);
     }
 
-    if (proposal.type === "grant") {
-      if (proposal.grantAmount) lines.push(`**Grant Amount Requested:** $${proposal.grantAmount.toLocaleString()}`);
-      if (proposal.grantingOrganization) lines.push(`**Granting Organization:** ${proposal.grantingOrganization}`);
-      if (proposal.grantProgramName) lines.push(`**Grant Program:** ${proposal.grantProgramName}`);
-      lines.push("");
+    // Grant details
+    if (proposal.type === "grant" && (proposal.grantAmount || proposal.grantingOrganization)) {
+      sections.push(`
+        <div class="section">
+          <h2>Grant Details</h2>
+          <table class="info-table">
+            <tbody>
+              ${proposal.grantAmount ? `<tr><td class="label-cell">Amount Requested</td><td>$${proposal.grantAmount.toLocaleString()}</td></tr>` : ""}
+              ${proposal.grantingOrganization ? `<tr><td class="label-cell">Granting Organization</td><td>${proposal.grantingOrganization}</td></tr>` : ""}
+              ${proposal.grantProgramName ? `<tr><td class="label-cell">Grant Program</td><td>${proposal.grantProgramName}</td></tr>` : ""}
+              ${proposal.matchingFundsRequired ? `<tr><td class="label-cell">Matching Funds</td><td>$${(proposal.matchingFundsAmount || 0).toLocaleString()}</td></tr>` : ""}
+            </tbody>
+          </table>
+        </div>
+      `);
     }
 
+    // Collaborating Entities / Parties
     if (proposal.collaboratingEntities?.length) {
-      lines.push("## Collaborating Entities");
-      lines.push("");
-      proposal.collaboratingEntities.forEach((e) => {
-        lines.push(`### ${e.name}`);
-        lines.push(`- **Role:** ${e.role}`);
-        if (e.description) lines.push(`- **Description:** ${e.description}`);
-        if (e.contactName) lines.push(`- **Contact:** ${e.contactName}`);
-        lines.push("");
-      });
+      const entityRows = proposal.collaboratingEntities.map((e) => `
+        <div class="entity-card">
+          <div class="entity-name">${e.name}</div>
+          <div class="entity-role">${ENTITY_ROLES.find(r => r.value === e.role)?.label || e.role}</div>
+          ${e.description ? `<div class="entity-desc">${e.description.replace(/\n/g, "<br/>")}</div>` : ""}
+          ${e.contactName ? `<div class="entity-contact">Contact: ${e.contactName}${(e as any).contactEmail ? ` — ${(e as any).contactEmail}` : ""}</div>` : ""}
+        </div>
+      `).join("");
+      sections.push(`
+        <div class="section">
+          <h2>Parties &amp; Collaborating Entities</h2>
+          ${entityRows}
+        </div>
+      `);
     }
 
-    if (proposal.dataCollectionMethods?.length) {
-      lines.push("## Data Collection Methods");
-      lines.push("");
-      proposal.dataCollectionMethods.forEach((m) => {
-        lines.push(`- **${m.name}** (${m.frequency}): ${m.description}`);
-      });
-      lines.push("");
-    }
-
+    // Milestones
     if (proposal.projectMilestones?.length) {
-      lines.push("## Project Milestones");
-      lines.push("");
-      lines.push("| Milestone | Due Date | Status |");
-      lines.push("|-----------|----------|--------|");
-      proposal.projectMilestones.forEach((m) => {
-        lines.push(`| ${m.name} | ${m.dueDate || "TBD"} | ${m.status} |`);
-      });
-      lines.push("");
+      const milestoneRows = proposal.projectMilestones.map((m) => `
+        <tr>
+          <td>${m.name}</td>
+          <td>${m.dueDate || "TBD"}</td>
+          <td><span class="status-badge">${m.status}</span></td>
+        </tr>
+      `).join("");
+      sections.push(`
+        <div class="section">
+          <h2>Project Milestones</h2>
+          <table class="data-table">
+            <thead><tr><th>Milestone</th><th>Due Date</th><th>Status</th></tr></thead>
+            <tbody>${milestoneRows}</tbody>
+          </table>
+        </div>
+      `);
     }
 
+    // Data Collection Methods
+    if (proposal.dataCollectionMethods?.length) {
+      const methodRows = proposal.dataCollectionMethods.map((m) => `
+        <tr>
+          <td><strong>${m.name}</strong></td>
+          <td>${m.frequency}</td>
+          <td>${m.description}</td>
+        </tr>
+      `).join("");
+      sections.push(`
+        <div class="section">
+          <h2>Data Collection Methods</h2>
+          <table class="data-table">
+            <thead><tr><th>Method</th><th>Frequency</th><th>Description</th></tr></thead>
+            <tbody>${methodRows}</tbody>
+          </table>
+        </div>
+      `);
+    }
+
+    // Deliverables
     if (proposal.deliverables?.length) {
-      lines.push("## Deliverables");
-      lines.push("");
-      proposal.deliverables.forEach((d) => {
-        lines.push(`- **${d.name}**: ${d.description}`);
-        if (d.dueDate) lines.push(`  - Due: ${d.dueDate}`);
-      });
-      lines.push("");
+      const deliverableRows = proposal.deliverables.map((d) => `
+        <tr>
+          <td><strong>${d.name}</strong></td>
+          <td>${d.description}</td>
+          <td>${d.dueDate || "TBD"}</td>
+          <td><span class="status-badge">${d.status}</span></td>
+        </tr>
+      `).join("");
+      sections.push(`
+        <div class="section">
+          <h2>Deliverables</h2>
+          <table class="data-table">
+            <thead><tr><th>Deliverable</th><th>Description</th><th>Due Date</th><th>Status</th></tr></thead>
+            <tbody>${deliverableRows}</tbody>
+          </table>
+        </div>
+      `);
     }
 
+    // Proposal Sections (RFI/RFP content)
     if (proposal.sections?.length) {
-      lines.push("## Proposal Sections");
-      lines.push("");
-      proposal.sections.forEach((s) => {
-        lines.push(`### ${s.title}`);
-        lines.push(s.content || s.responseText || "");
-        lines.push("");
-      });
+      const sectionContent = proposal.sections.map((s) => `
+        <div class="subsection">
+          <h3>${s.title}</h3>
+          <div class="body-text">${(s.content || s.responseText || "").replace(/\n/g, "<br/>")}</div>
+        </div>
+      `).join("");
+      sections.push(`
+        <div class="section">
+          <h2>Proposal Content</h2>
+          ${sectionContent}
+        </div>
+      `);
     }
 
+    // Entity Relationship Notes
     if (proposal.entityRelationshipNotes) {
-      lines.push("## Entity Relationship Notes");
-      lines.push("");
-      lines.push(proposal.entityRelationshipNotes);
-      lines.push("");
+      sections.push(`
+        <div class="section">
+          <h2>Entity Relationship Notes</h2>
+          <div class="body-text">${proposal.entityRelationshipNotes.replace(/\n/g, "<br/>")}</div>
+        </div>
+      `);
     }
 
-    return lines.join("\n");
+    // Budget
+    if (proposal.totalBudget) {
+      sections.push(`
+        <div class="section">
+          <h2>Budget Summary</h2>
+          <table class="info-table">
+            <tbody>
+              <tr><td class="label-cell">Total Budget</td><td class="budget-amount">$${proposal.totalBudget.toLocaleString()}</td></tr>
+              ${proposal.fundingSource ? `<tr><td class="label-cell">Funding Source</td><td>${proposal.fundingSource}</td></tr>` : ""}
+            </tbody>
+          </table>
+        </div>
+      `);
+    }
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${proposal.name} — Strategic Value+</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.75in 0.85in 1in 0.85in;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page-break { page-break-before: always; }
+      .no-break { page-break-inside: avoid; }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.65;
+      font-size: 11pt;
+    }
+
+    /* ── Header / Cover ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 3px solid #C8A951;
+      margin-bottom: 28px;
+    }
+    .header-logo { height: 52px; width: auto; }
+    .header-brand {
+      text-align: right;
+      color: #64748b;
+      font-size: 9pt;
+      line-height: 1.4;
+    }
+    .header-brand strong {
+      display: block;
+      font-size: 11pt;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+    }
+
+    .doc-title {
+      font-size: 22pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
+    }
+    .doc-type {
+      display: inline-block;
+      background: #C8A951;
+      color: #000;
+      font-size: 8.5pt;
+      font-weight: 600;
+      padding: 3px 12px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 32px;
+      padding: 14px 18px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 32px;
+      font-size: 9.5pt;
+    }
+    .meta-grid .meta-label { color: #64748b; font-weight: 500; }
+    .meta-grid .meta-value { color: #1e293b; font-weight: 600; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 28px; }
+    h2 {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #1e293b;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #C8A951;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    h3 {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    .body-text {
+      color: #334155;
+      font-size: 10.5pt;
+      line-height: 1.7;
+      text-align: justify;
+    }
+    .subsection { margin-bottom: 16px; }
+
+    /* ── Tables ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 9.5pt;
+    }
+    .data-table th {
+      background: #1e293b;
+      color: #fff;
+      font-weight: 600;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .data-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .data-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .data-table tbody tr:hover { background: #f1f5f9; }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+    }
+    .info-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .info-table .label-cell {
+      font-weight: 600;
+      color: #64748b;
+      width: 200px;
+      text-transform: uppercase;
+      font-size: 8.5pt;
+      letter-spacing: 0.4px;
+    }
+    .budget-amount {
+      font-size: 14pt;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    /* ── Entity Cards ── */
+    .entity-card {
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #C8A951;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #fefefe;
+    }
+    .entity-name { font-weight: 700; font-size: 11pt; color: #1e293b; }
+    .entity-role {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 8pt;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-top: 2px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+    .entity-desc { margin-top: 8px; font-size: 10pt; color: #334155; line-height: 1.6; }
+    .entity-contact { margin-top: 6px; font-size: 9pt; color: #64748b; }
+
+    .status-badge {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 8pt;
+      padding: 2px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 2px solid #C8A951;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8pt;
+      color: #94a3b8;
+    }
+    .footer-left { }
+    .footer-right { text-align: right; }
+
+    /* ── Signature Block ── */
+    .signature-block {
+      margin-top: 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+    .sig-party { }
+    .sig-line {
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 4px;
+      height: 40px;
+    }
+    .sig-label { font-size: 9pt; color: #64748b; margin-bottom: 2px; }
+    .sig-name { font-size: 9pt; color: #1e293b; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <img src="${logoUrl}" alt="Strategic Value+" class="header-logo" />
+    <div class="header-brand">
+      <strong>Strategic Value+</strong>
+      Transforming U.S. Manufacturing<br/>
+      8 The Green #13351, Dover, DE 19901<br/>
+      strategicvalueplus.com
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div class="doc-title">${proposal.name || "Untitled Proposal"}</div>
+  <div class="doc-type">${typeLabel}</div>
+
+  <!-- Meta Grid -->
+  <div class="meta-grid">
+    ${proposal.referenceNumber ? `<div><span class="meta-label">Reference No.</span></div><div><span class="meta-value">${proposal.referenceNumber}</span></div>` : ""}
+    <div><span class="meta-label">Date</span></div><div><span class="meta-value">${dateStr}</span></div>
+    ${proposal.startDate ? `<div><span class="meta-label">Start Date</span></div><div><span class="meta-value">${proposal.startDate}</span></div>` : ""}
+    ${proposal.endDate ? `<div><span class="meta-label">End Date</span></div><div><span class="meta-value">${proposal.endDate}</span></div>` : ""}
+    ${proposal.fundingSource ? `<div><span class="meta-label">Funding Source</span></div><div><span class="meta-value">${proposal.fundingSource}</span></div>` : ""}
+    ${proposal.totalBudget ? `<div><span class="meta-label">Total Budget</span></div><div><span class="meta-value">$${proposal.totalBudget.toLocaleString()}</span></div>` : ""}
+    <div><span class="meta-label">Status</span></div><div><span class="meta-value">${proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}</span></div>
+    ${proposal.submittedByName ? `<div><span class="meta-label">Prepared By</span></div><div><span class="meta-value">${proposal.submittedByName}</span></div>` : `<div><span class="meta-label">Prepared By</span></div><div><span class="meta-value">${getDisplayName()}</span></div>`}
+  </div>
+
+  <!-- Content Sections -->
+  ${sections.join("\n")}
+
+  <!-- Signature Block -->
+  <div class="signature-block no-break">
+    <div class="sig-party">
+      <div class="sig-label">For Strategic Value+</div>
+      <div class="sig-line"></div>
+      <div class="sig-name">Nelinia Varenas, CEO</div>
+      <div class="sig-label">Date: _______________</div>
+    </div>
+    <div class="sig-party">
+      <div class="sig-label">For ${proposal.collaboratingEntities?.[0]?.name || "Client"}</div>
+      <div class="sig-line"></div>
+      <div class="sig-name">${proposal.collaboratingEntities?.[0]?.contactName || "Authorized Representative"}</div>
+      <div class="sig-label">Date: _______________</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      Strategic Value+ &mdash; Confidential
+    </div>
+    <div class="footer-right">
+      Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+    </div>
+  </div>
+
+</body>
+</html>`;
   };
 
   // Edit proposal - load into wizard
@@ -836,18 +1185,18 @@ Make it clear, professional, and highlight the value proposition and expected ou
     setShowWizard(true);
   };
 
-  // Download proposal as Markdown file
+  // Download proposal as professional branded PDF (via print dialog)
   const downloadProposal = (proposal: Proposal) => {
-    const markdown = generateProposalMarkdown(proposal);
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${proposal.name.replace(/[^a-zA-Z0-9]/g, "_")}_proposal.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const html = generateProposalHTML(proposal);
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      // Wait for logo image to load before triggering print
+      printWindow.onload = () => {
+        setTimeout(() => printWindow.print(), 300);
+      };
+    }
   };
 
   // Preview proposal
@@ -869,10 +1218,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
     if (!emailRecipient || !previewProposal) return;
     setIsSendingEmail(true);
     try {
-      // Generate the proposal content
-      const markdown = generateProposalMarkdown(previewProposal);
-      
-      // In production, this would call an email API endpoint
+      // In production, this would call an email API endpoint with the proposal HTML
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       alert(`Proposal "${previewProposal.name}" sent to ${emailRecipient}.\n\nSubject: ${emailSubject}`);
@@ -888,7 +1234,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
     }
   };
 
-  // Export proposal as Markdown (from wizard step 8)
+  // Export proposal as branded PDF (from wizard step 8)
   const exportAsMarkdown = () => {
     const proposal = {
       ...emptyProposal,
@@ -900,7 +1246,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
     downloadProposal(proposal);
   };
 
-  // Export proposal as PDF (generates HTML and triggers print)
+  // Export proposal as branded PDF (from wizard step 8)
   const exportAsPDF = () => {
     const proposal = {
       ...emptyProposal,
@@ -909,38 +1255,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
       createdAt: new Date(),
       updatedAt: new Date(),
     } as Proposal;
-    const markdown = generateProposalMarkdown(proposal);
-    const htmlContent = markdown
-      .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-      .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-      .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\n\n/g, "</p><p>")
-      .replace(/\n/g, "<br/>");
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${proposal.name} - Proposal</title>
-          <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.6; }
-            h1 { color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 10px; }
-            h2 { color: #16213e; margin-top: 30px; }
-            h3 { color: #0f3460; }
-            table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; }
-            strong { color: #1a1a2e; }
-          </style>
-        </head>
-        <body><p>${htmlContent}</p></body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
-    }
+    downloadProposal(proposal);
   };
 
   // OEM Supplier Readiness Functions
