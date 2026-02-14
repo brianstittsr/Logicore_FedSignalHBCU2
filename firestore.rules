@@ -638,5 +638,25 @@ service cloud.firestore {
       allow update: if true;
       allow delete: if true;
     }
+
+    // =========================================================================
+    // Proposals and E-Signatures
+    // =========================================================================
+
+    // Proposals - authenticated users can read/write for development
+    match /proposals/{proposalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+
+    // Proposal Signatures - for e-signature workflow
+    match /proposalSignatures/{signatureId} {
+      allow read: if true; // Public read for signing page access
+      allow create: if isAuthenticated();
+      allow update: if true; // Allow updates for signature completion
+      allow delete: if isAuthenticated();
+    }
   }
 }
