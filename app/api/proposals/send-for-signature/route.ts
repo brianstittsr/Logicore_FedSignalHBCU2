@@ -3,10 +3,17 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/schema";
 import { Resend } from "resend";
-import crypto from "crypto";
+
+export const runtime = 'nodejs';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Strategic Value+ <noreply@strategicvalueplus.com>";
+
+async function generateSigningToken(): Promise<string> {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,9 +40,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique signing token
-    const signingToken = crypto.randomBytes(32).toString("hex");
-    const signingId = `sig_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+    // Generate unique signing token using Web Crypto API
+    const signingToken = await generateSigningToken();
+    const signingId = `sig_${Date.now()}_${(await generateSigningToken()).substring(0, 8)}`;
 
     // Build signing URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://strategicvalueplus.com";
