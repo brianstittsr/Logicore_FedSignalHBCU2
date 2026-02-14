@@ -213,6 +213,8 @@ function SettingsPageContent() {
   const [aiFeatureSettings, setAiFeatureSettings] = useState({
     networkingMatchingEnabled: true,
   });
+  const [availableOllamaModels, setAvailableOllamaModels] = useState<string[]>([]);
+  const [isLoadingOllamaModels, setIsLoadingOllamaModels] = useState(false);
   const [browserPermission, setBrowserPermission] = useState<string>("default");
   
   // Navigation settings - role-based visibility
@@ -342,12 +344,41 @@ function SettingsPageContent() {
     };
     
     loadSettings();
-    
-    // Check browser notification permission
-    setBrowserPermission(getBrowserNotificationStatus());
   }, []);
 
-  // Save settings to Firebase
+  // Fetch available Ollama models when Ollama is enabled or URL changes
+  useEffect(() => {
+    async function fetchOllamaModels() {
+      if (!llmConfig.useOllama || !llmConfig.ollamaUrl) return;
+      
+      setIsLoadingOllamaModels(true);
+      try {
+        const response = await fetch(`${llmConfig.ollamaUrl}/api/tags`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        const models = data.models?.map((m: { name: string }) => m.name) || [];
+        setAvailableOllamaModels(models);
+        
+        // Auto-select first model if current selection isn't available
+        if (models.length > 0 && !models.includes(llmConfig.model)) {
+          setLlmConfig(prev => ({ ...prev, model: models[0] }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch Ollama models:", error);
+        setAvailableOllamaModels([]);
+      } finally {
+        setIsLoadingOllamaModels(false);
+      }
+    }
+    
+    fetchOllamaModels();
+  }, [llmConfig.useOllama, llmConfig.ollamaUrl]);
+
+  // Check browser notification permission
+  useEffect(() => {
+    setBrowserPermission(getBrowserNotificationStatus());
+  }, []);
   const saveSettings = async () => {
     if (!db) {
       alert("Firebase not initialized. Check your environment variables.");
@@ -683,18 +714,24 @@ function SettingsPageContent() {
                     <Select
                       value={llmConfig.model}
                       onValueChange={(value) => setLlmConfig({ ...llmConfig, model: value })}
+                      disabled={isLoadingOllamaModels || availableOllamaModels.length === 0}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a model" />
+                        <SelectValue placeholder={isLoadingOllamaModels ? "Loading models..." : "Select a model"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {llmProviders.find(p => p.id === "ollama")?.models.map((model) => (
+                        {availableOllamaModels.map((model) => (
                           <SelectItem key={model} value={model}>
                             {model}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {availableOllamaModels.length === 0 && !isLoadingOllamaModels && (
+                      <p className="text-sm text-muted-foreground text-amber-600">
+                        No models found. Ensure Ollama is running at {llmConfig.ollamaUrl}
+                      </p>
+                    )}
                   </div>
                   <div className="p-4 bg-muted rounded-lg">
                     <h4 className="font-medium mb-2">Ollama Setup Instructions</h4>
