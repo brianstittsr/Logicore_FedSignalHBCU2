@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -96,6 +96,10 @@ import {
   FIELD_TYPES,
 } from "@/lib/types/proposal";
 import { useUserProfile } from "@/contexts/user-profile-context";
+import { db } from "@/lib/firebase";
+import { collection, query, orderBy, getDocs, doc, setDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { COLLECTIONS } from "@/lib/schema";
+import { toast } from "sonner";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Basic Info", icon: FileText, description: "Document upload & basic details" },
@@ -314,6 +318,60 @@ export default function ProposalsPage() {
     }
   };
   const activeWizardSteps = getWizardStepsForType(proposalData.type || "grant");
+
+  // Load proposals from Firestore on mount
+  const [isLoadingProposals, setIsLoadingProposals] = useState(true);
+
+  useEffect(() => {
+    async function fetchProposals() {
+      if (!db) {
+        setIsLoadingProposals(false);
+        return;
+      }
+      try {
+        const proposalsRef = collection(db, COLLECTIONS.PROPOSALS);
+        const proposalsQuery = query(proposalsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(proposalsQuery);
+        const loaded: Proposal[] = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            ...data,
+            id: d.id,
+            createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
+            updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
+            submittedAt: data.submittedAt instanceof Timestamp ? data.submittedAt.toDate() : data.submittedAt ? new Date(data.submittedAt) : undefined,
+            signedAt: data.signedAt instanceof Timestamp ? data.signedAt.toDate() : data.signedAt ? new Date(data.signedAt) : undefined,
+          } as Proposal;
+        });
+        setProposals(loaded);
+      } catch (error) {
+        console.error("Failed to load proposals:", error);
+        toast.error("Failed to load proposals from database");
+      } finally {
+        setIsLoadingProposals(false);
+      }
+    }
+    fetchProposals();
+  }, []);
+
+  /** Persist a proposal object to Firestore */
+  const persistProposalToFirestore = async (proposal: Proposal): Promise<void> => {
+    if (!db) throw new Error("Database not initialized");
+    const proposalRef = doc(db, COLLECTIONS.PROPOSALS, proposal.id);
+    // Convert Date objects to Timestamps for Firestore
+    const firestoreData: Record<string, unknown> = {
+      ...proposal,
+      createdAt: proposal.createdAt instanceof Date ? Timestamp.fromDate(proposal.createdAt) : Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    };
+    if (proposal.submittedAt instanceof Date) {
+      firestoreData.submittedAt = Timestamp.fromDate(proposal.submittedAt);
+    }
+    if (proposal.signedAt instanceof Date) {
+      firestoreData.signedAt = Timestamp.fromDate(proposal.signedAt);
+    }
+    await setDoc(proposalRef, firestoreData, { merge: true });
+  };
 
   // Extract placeholders from template content (finds {{placeholder_name}} patterns)
   const extractPlaceholders = (content: string): string[] => {
@@ -600,26 +658,45 @@ Make it clear, professional, and highlight the value proposition and expected ou
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 8));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-  const saveProposal = () => {
-    if (editingProposalId) {
-      // Update existing proposal
-      setProposals((prev) =>
-        prev.map((p) =>
-          p.id === editingProposalId
-            ? { ...p, ...proposalData, updatedAt: new Date() } as Proposal
-            : p
-        )
-      );
-    } else {
-      // Create new proposal
-      const newProposal: Proposal = {
-        ...emptyProposal,
-        ...proposalData,
-        id: `proposal-${Date.now()}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Proposal;
-      setProposals((prev) => [newProposal, ...prev]);
+  const saveProposal = async () => {
+    try {
+      if (editingProposalId) {
+        // Update existing proposal
+        const updatedProposal = {
+          ...proposalData,
+          id: editingProposalId,
+          updatedAt: new Date(),
+        } as Proposal;
+        // Find existing to preserve createdAt
+        const existing = proposals.find((p) => p.id === editingProposalId);
+        if (existing) {
+          updatedProposal.createdAt = existing.createdAt;
+        }
+        await persistProposalToFirestore(updatedProposal);
+        setProposals((prev) =>
+          prev.map((p) =>
+            p.id === editingProposalId
+              ? { ...p, ...proposalData, updatedAt: new Date() } as Proposal
+              : p
+          )
+        );
+        toast.success("Proposal updated successfully");
+      } else {
+        // Create new proposal
+        const newProposal: Proposal = {
+          ...emptyProposal,
+          ...proposalData,
+          id: `proposal-${Date.now()}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as Proposal;
+        await persistProposalToFirestore(newProposal);
+        setProposals((prev) => [newProposal, ...prev]);
+        toast.success("Proposal saved to database");
+      }
+    } catch (error) {
+      console.error("Error saving proposal:", error);
+      toast.error("Failed to save proposal to database");
     }
     setShowWizard(false);
     setCurrentStep(1);
@@ -640,7 +717,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
       const submittedProposal: Proposal = {
         ...emptyProposal,
         ...proposalData,
-        id: `proposal-${Date.now()}`,
+        id: editingProposalId || `proposal-${Date.now()}`,
         status: "pending_signature",
         submittedAt: new Date(),
         submittedBy: profile.id,
@@ -649,17 +726,26 @@ Make it clear, professional, and highlight the value proposition and expected ou
         updatedAt: new Date(),
       } as Proposal;
       
-      setProposals((prev) => [submittedProposal, ...prev]);
-      alert(`Proposal "${proposalData.name}" submitted successfully!\n\nSubmitted by: ${getDisplayName()}\nSubmitted at: ${new Date().toLocaleString()}`);
+      await persistProposalToFirestore(submittedProposal);
+
+      if (editingProposalId) {
+        setProposals((prev) =>
+          prev.map((p) => (p.id === editingProposalId ? submittedProposal : p))
+        );
+      } else {
+        setProposals((prev) => [submittedProposal, ...prev]);
+      }
+      toast.success(`Proposal "${proposalData.name}" submitted successfully`);
       
       setShowWizard(false);
       setCurrentStep(1);
       setProposalData(emptyProposal);
       setAnalysisResult(null);
       setUploadedFile(null);
+      setEditingProposalId(null);
     } catch (error) {
       console.error("Error submitting proposal:", error);
-      alert("Failed to submit proposal. Please try again.");
+      toast.error("Failed to submit proposal. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -673,13 +759,12 @@ Make it clear, professional, and highlight the value proposition and expected ou
     }
     setIsCreatingProject(true);
     try {
-      // In production, this would create a project in Firestore
       const projectId = `project-${Date.now()}`;
       
       const submittedProposal: Proposal = {
         ...emptyProposal,
         ...proposalData,
-        id: `proposal-${Date.now()}`,
+        id: editingProposalId || `proposal-${Date.now()}`,
         status: "active",
         linkedProjectId: projectId,
         submittedAt: new Date(),
@@ -689,18 +774,27 @@ Make it clear, professional, and highlight the value proposition and expected ou
         updatedAt: new Date(),
       } as Proposal;
       
-      setProposals((prev) => [submittedProposal, ...prev]);
+      await persistProposalToFirestore(submittedProposal);
+
+      if (editingProposalId) {
+        setProposals((prev) =>
+          prev.map((p) => (p.id === editingProposalId ? submittedProposal : p))
+        );
+      } else {
+        setProposals((prev) => [submittedProposal, ...prev]);
+      }
       
-      alert(`Project created from proposal "${proposalData.name}"!\n\nProject ID: ${projectId}\nCreated by: ${getDisplayName()}\n\nYou can now track this in the Projects section.`);
+      toast.success(`Project created from proposal "${proposalData.name}"`);
       
       setShowWizard(false);
       setCurrentStep(1);
       setProposalData(emptyProposal);
       setAnalysisResult(null);
       setUploadedFile(null);
+      setEditingProposalId(null);
     } catch (error) {
       console.error("Error creating project:", error);
-      alert("Failed to create project. Please try again.");
+      toast.error("Failed to create project. Please try again.");
     } finally {
       setIsCreatingProject(false);
     }
@@ -1244,16 +1338,25 @@ Make it clear, professional, and highlight the value proposition and expected ou
         return;
       }
 
-      // Update proposal status
+      // Update proposal status in Firestore and local state
+      const updatedProposal = {
+        ...previewProposal,
+        status: "pending_signature" as const,
+        signatureStatus: "pending" as const,
+        updatedAt: new Date(),
+      };
+      try {
+        await persistProposalToFirestore(updatedProposal);
+      } catch (err) {
+        console.error("Failed to update proposal status in Firestore:", err);
+      }
       setProposals((prev) =>
         prev.map((p) =>
-          p.id === previewProposal.id
-            ? { ...p, status: "pending_signature" as const, signatureStatus: "pending" as const, updatedAt: new Date() }
-            : p
+          p.id === previewProposal.id ? updatedProposal : p
         )
       );
 
-      alert(`Signing request sent to ${emailRecipient}.\n\nThe recipient will receive an email with a secure link to review and electronically sign the document.\n\nOnce signed, both parties will receive a PDF copy.`);
+      toast.success(`Signing request sent to ${emailRecipient}`);
       setShowEmailDialog(false);
       setEmailRecipient("");
       setEmailSubject("");
@@ -2055,6 +2158,13 @@ Workflow:
                 ))}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+      ) : isLoadingProposals ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Loading proposals...</p>
           </CardContent>
         </Card>
       ) : (
