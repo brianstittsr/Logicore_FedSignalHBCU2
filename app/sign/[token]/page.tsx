@@ -502,10 +502,10 @@ export default function SigningPage() {
 
   // Main signing view
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-[#1e3a5f] text-white py-6 px-6 shadow-lg border-b-4 border-[#C8A951]">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src="/VPlus_logo.webp" alt="Strategic Value+" width={50} height={50} className="rounded" />
             <div>
@@ -520,7 +520,8 @@ export default function SigningPage() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <div className="flex-1 flex justify-center">
+        <div className="w-full max-w-4xl p-6 space-y-6">
         {/* Document Info */}
         <Card className="border-t-4 border-t-[#C8A951]">
           <CardHeader className="pb-4">
