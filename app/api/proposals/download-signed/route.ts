@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const data = sigDoc.data();
 
-    if (data.status !== "signed" || !data.signedPdfBase64) {
+    if ((data.status !== "signed" && data.status !== "signed_countersigned") || !data.signedPdfBase64) {
       return NextResponse.json({ error: "Document has not been signed yet" }, { status: 400 });
     }
 
