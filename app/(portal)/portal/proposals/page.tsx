@@ -1371,7 +1371,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
     ${proposal.endDate ? `<div><span class="meta-label">End Date</span></div><div><span class="meta-value">${proposal.endDate}</span></div>` : ""}
     ${proposal.fundingSource ? `<div><span class="meta-label">Funding Source</span></div><div><span class="meta-value">${proposal.fundingSource}</span></div>` : ""}
     ${proposal.totalBudget ? `<div><span class="meta-label">Total Budget</span></div><div><span class="meta-value">$${proposal.totalBudget.toLocaleString()}</span></div>` : ""}
-    <div><span class="meta-label">Status</span></div><div><span class="meta-value">${proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}</span></div>
+    <div><span class="meta-label">Status</span></div><div><span class="meta-value">${(proposal.status || "draft").charAt(0).toUpperCase() + (proposal.status || "draft").slice(1)}</span></div>
     ${proposal.submittedByName ? `<div><span class="meta-label">Prepared By</span></div><div><span class="meta-value">${proposal.submittedByName}</span></div>` : `<div><span class="meta-label">Prepared By</span></div><div><span class="meta-value">${getDisplayName()}</span></div>`}
   </div>
 
