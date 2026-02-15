@@ -2426,7 +2426,10 @@ Workflow:
 
       {/* Wizard Dialog */}
       <Dialog open={showWizard} onOpenChange={setShowWizard}>
-        <DialogContent className="!max-w-[90vw] !w-[1200px] !h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent 
+          className="!max-w-[90vw] !w-[1200px] !h-[85vh] overflow-hidden flex flex-col"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
