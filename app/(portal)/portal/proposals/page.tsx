@@ -969,7 +969,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
   };
 
   // Generate professional SVP-branded PDF HTML
-  const generateProposalHTML = (proposal: Proposal): string => {
+  const generateProposalHTML = (proposal: Partial<Proposal>): string => {
     const typeLabel = PROPOSAL_TYPES.find(t => t.value === proposal.type)?.label || proposal.type;
     const dateStr = new Date(proposal.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     const logoUrl = `${window.location.origin}/VPlus_logo.webp`;
