@@ -4,6 +4,8 @@ import { COLLECTIONS } from "@/lib/schema";
 import { sendEmail, isEmailConfigured } from "@/lib/email";
 import { Timestamp } from "firebase-admin/firestore";
 
+// Vercel redeploy trigger - Firebase Admin env vars now configured
+
 // GET - Fetch signing request by token
 export async function GET(request: NextRequest) {
   try {
