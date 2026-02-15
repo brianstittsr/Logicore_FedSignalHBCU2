@@ -1151,6 +1151,32 @@ Make it clear, professional, and highlight the value proposition and expected ou
       color: #1e293b;
       line-height: 1.65;
       font-size: 11pt;
+      background: #f5f5f5;
+    }
+    
+    /* ── Document Wrapper ── */
+    .document-wrapper {
+      max-width: 8.5in;
+      margin: 40px auto;
+      background: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .document-content {
+      padding: 48px 56px;
+    }
+    
+    @media print {
+      body { background: white; }
+      .document-wrapper { 
+        max-width: none; 
+        margin: 0; 
+        box-shadow: none; 
+        border-radius: 0;
+      }
+      .document-content { padding: 0; }
     }
 
     /* ── Header / Cover ── */
@@ -1354,6 +1380,9 @@ Make it clear, professional, and highlight the value proposition and expected ou
 </head>
 <body>
 
+  <div class="document-wrapper">
+    <div class="document-content">
+
   <!-- Header -->
   <div class="header">
     <img src="${logoUrl}" alt="Strategic Value+" class="header-logo" />
@@ -1437,6 +1466,9 @@ Make it clear, professional, and highlight the value proposition and expected ou
     </div>
     <div class="footer-right">
       Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+    </div>
+  </div>
+
     </div>
   </div>
 
