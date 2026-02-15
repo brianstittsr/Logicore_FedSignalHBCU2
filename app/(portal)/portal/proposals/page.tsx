@@ -1927,6 +1927,7 @@ Workflow:
       const agreementData = {
         proposalName: proposalData.name || "White Label Agreement",
         proposalType: "White Label Agreement",
+        proposalId: editingProposalId || proposalData.id,
         recipientEmail: ndaSignerEmail,
         recipientName: ndaSignerName,
         senderName: senderName,
@@ -1982,7 +1983,47 @@ Workflow:
           }
         }
 
-        alert(`White Label Agreement sent to ${ndaSignerName} (${ndaSignerEmail}) for signature.\n\nWorkflow:\n1. ${ndaSignerName} will receive an email with a signing link\n2. After signing, Nelinia Varenas will countersign\n3. Once countersigned, the agreement will be stored\n4. A PDF copy will be emailed to ${ndaSignerEmail}${proposalData.hostingEnabled ? "\n\nStripe subscription created for monthly hosting fee of $" + proposalData.monthlyFee : ""}`);
+        // Create styled success dialog
+        const dialogContent = `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 32px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8f 100%); border-radius: 12px; color: white; max-width: 500px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="width: 60px; height: 60px; background: #C8A951; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: white;">Agreement Sent Successfully</h2>
+              <p style="margin: 8px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.8);">White Label Agreement sent to ${ndaSignerName} (${ndaSignerEmail})</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+              <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #C8A951;">Workflow:</h3>
+              <ol style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 14px;">
+                <li>${ndaSignerName} will receive an email with a signing link</li>
+                <li>After signing, Nelinia Varenas will <strong>automatically countersign</strong></li>
+                <li>Once countersigned, the agreement will be stored</li>
+                <li>A PDF copy will be emailed to ${ndaSignerEmail}</li>
+              </ol>
+            </div>
+            ${proposalData.hostingEnabled ? `
+            <div style="background: rgba(200, 169, 81, 0.2); border: 1px solid #C8A951; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+              <p style="margin: 0; font-size: 13px; color: white;">
+                <strong>✓ Stripe Subscription Created</strong><br/>
+                Monthly hosting fee: <strong>$${proposalData.monthlyFee}</strong>
+              </p>
+            </div>
+            ` : ''}
+            <div style="text-align: center;">
+              <button onclick="this.closest('div').parentElement.remove()" style="background: #C8A951; color: #1e3a5f; border: none; padding: 12px 32px; border-radius: 6px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#b89a42'" onmouseout="this.style.background='#C8A951'">OK</button>
+            </div>
+          </div>
+        `;
+        
+        // Create and show the styled dialog
+        const dialogOverlay = document.createElement('div');
+        dialogOverlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
+        dialogOverlay.innerHTML = dialogContent;
+        dialogOverlay.onclick = (e) => { if (e.target === dialogOverlay) dialogOverlay.remove(); };
+        document.body.appendChild(dialogOverlay);
 
         // Update proposal status
         setProposalData((prev) => ({

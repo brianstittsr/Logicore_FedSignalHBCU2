@@ -130,10 +130,12 @@ export async function POST(request: NextRequest) {
     // Convert HTML to base64 for storage
     const signedPdfBase64 = Buffer.from(signedPdfHtml, "utf-8").toString("base64");
 
+    const signedAtTimestamp = Timestamp.now();
+
     // Update the signing request in Firestore using Admin SDK
     await sigDoc.ref.update({
-      status: "signed",
-      signedAt: Timestamp.now(),
+      status: "signed_countersigned",
+      signedAt: signedAtTimestamp,
       signerName,
       signerTitle: signerTitle || "",
       signerCompany: signerCompany || "",
@@ -141,7 +143,30 @@ export async function POST(request: NextRequest) {
       signedPdfBase64,
       signedPdfGeneratedAt: Timestamp.now(),
       signerIp: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+      countersignedBy: "Nelinia Varenas",
+      countersignedAt: signedAtTimestamp,
     });
+
+    // Update the original proposal document with signature data
+    if (data.proposalId) {
+      try {
+        const proposalRef = adminDb.collection(COLLECTIONS.PROPOSALS).doc(data.proposalId);
+        await proposalRef.update({
+          status: "signed_countersigned",
+          signedAt: signedAtTimestamp,
+          signerName,
+          signerTitle: signerTitle || "",
+          signerCompany: signerCompany || "",
+          signatureData,
+          countersignedBy: "Nelinia Varenas",
+          countersignedAt: signedAtTimestamp,
+          updatedAt: Timestamp.now(),
+        });
+      } catch (proposalUpdateError) {
+        console.error("Failed to update proposal document:", proposalUpdateError);
+        // Don't fail the signing process if proposal update fails
+      }
+    }
 
     // Send confirmation email with signed PDF link to the signer
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://strategicvalueplus.com";

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       senderEmail,
       message,
       proposalHtml,
+      proposalId,
     } = body;
 
     if (!recipientEmail || !proposalName || !proposalHtml) {
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
         token: signingToken,
         proposalName,
         proposalType: proposalType || "agreement",
+        proposalId: proposalId || null,
         recipientEmail,
         recipientName: recipientName || "",
         senderName: senderName || "Strategic Value+",

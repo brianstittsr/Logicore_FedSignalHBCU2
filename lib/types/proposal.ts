@@ -8,7 +8,7 @@
 // ============================================
 
 export type ProposalType = 'grant' | 'nda' | 'rfp_response' | 'rfi_response' | 'contract' | 'agreement' | 'mou' | 'oem_supplier_readiness';
-export type ProposalStatus = 'draft' | 'pending_signature' | 'active' | 'inactive' | 'completed';
+export type ProposalStatus = 'draft' | 'pending_signature' | 'active' | 'inactive' | 'completed' | 'signed' | 'signed_countersigned';
 export type SignatureStatus = 'not_sent' | 'pending' | 'partially_signed' | 'completed' | 'declined';
 
 export interface Proposal {
@@ -44,6 +44,12 @@ export interface Proposal {
   signatureStatus?: SignatureStatus;
   signedDocumentUrl?: string;
   signedAt?: Date;
+  signerName?: string;
+  signerTitle?: string;
+  signerCompany?: string;
+  signatureData?: string;
+  countersignedBy?: string;
+  countersignedAt?: Date;
   
   // Submission Tracking
   submittedAt?: Date;
