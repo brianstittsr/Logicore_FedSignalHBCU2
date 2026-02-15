@@ -509,6 +509,12 @@ IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date firs
     if (proposal.signedAt instanceof Date) {
       firestoreData.signedAt = Timestamp.fromDate(proposal.signedAt);
     }
+    // Remove undefined fields (Firestore doesn't allow undefined values)
+    Object.keys(firestoreData).forEach(key => {
+      if (firestoreData[key] === undefined) {
+        delete firestoreData[key];
+      }
+    });
     await setDoc(proposalRef, firestoreData, { merge: true });
   };
 
