@@ -690,6 +690,7 @@ export default function SigningPage() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Footer */}
       <footer className="bg-[#1e3a5f] text-white py-6 px-6 mt-12">
