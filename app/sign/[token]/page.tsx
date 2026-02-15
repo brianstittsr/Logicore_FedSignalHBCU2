@@ -15,6 +15,7 @@ import {
   Download,
   Eraser,
   Shield,
+  CreditCard,
 } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -30,6 +31,10 @@ interface SigningData {
   recipientEmail: string;
   status: string;
   createdAt: string;
+  // Hosting/payment info
+  hostingEnabled?: boolean;
+  monthlyFee?: number;
+  clientName?: string;
 }
 
 export default function SigningPage() {
@@ -57,6 +62,12 @@ export default function SigningPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState("");
+  const [signatureData, setSignatureData] = useState<{
+    hostingEnabled?: boolean;
+    monthlyFee?: number;
+    clientName?: string;
+    signatureId?: string;
+  }>({});
 
   // Fetch signing data
   useEffect(() => {
@@ -221,6 +232,14 @@ export default function SigningPage() {
         return;
       }
 
+      // Store signature data for potential payment redirect
+      setSignatureData({
+        hostingEnabled: data.hostingEnabled,
+        monthlyFee: data.monthlyFee,
+        clientName: data.clientName,
+        signatureId: data.signatureId,
+      });
+
       setIsComplete(true);
       setDownloadUrl(data.downloadUrl || "");
     } catch (err) {
@@ -269,6 +288,69 @@ export default function SigningPage() {
 
   // Success state
   if (isComplete) {
+    // If hosting is enabled, show payment setup option
+    if (signatureData.hostingEnabled && signatureData.monthlyFee && signatureData.monthlyFee > 0) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <Card className="max-w-lg w-full">
+            <CardContent className="pt-8 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="h-12 w-12 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-green-800 mb-2">Document Signed Successfully!</h2>
+              <p className="text-green-700 mb-4">
+                Thank you, <strong>{signerName}</strong>. Your signature has been recorded.
+              </p>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-amber-800 mb-2">Monthly Payment Required</h3>
+                <p className="text-sm text-amber-700 mb-2">
+                  To complete your agreement setup, please setup your monthly recurring payment of:
+                </p>
+                <p className="text-2xl font-bold text-amber-900">${signatureData.monthlyFee.toFixed(2)}/month</p>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  size="lg"
+                  className="w-full bg-[#C8A951] text-[#1e3a5f] hover:bg-[#b89a42] font-semibold"
+                  onClick={() => {
+                    // Redirect to payment setup
+                    const params = new URLSearchParams({
+                      signatureId: signatureData.signatureId || "",
+                      email: signingData?.recipientEmail || "",
+                      name: signerName,
+                      amount: signatureData.monthlyFee?.toString() || "0",
+                      agreement: signingData?.proposalName || "Agreement",
+                    });
+                    window.location.href = `/payment/setup?${params.toString()}`;
+                  }}
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Setup Monthly Payment
+                </Button>
+                
+                {downloadUrl && (
+                  <Button asChild variant="outline" size="lg" className="w-full">
+                    <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="mr-2 h-5 w-5" />
+                      Download Signed Document
+                    </a>
+                  </Button>
+                )}
+              </div>
+              
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                <Shield className="h-4 w-4 inline mr-1" />
+                Your document is signed. Complete the payment setup to activate your services.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Standard success (no payment required)
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">

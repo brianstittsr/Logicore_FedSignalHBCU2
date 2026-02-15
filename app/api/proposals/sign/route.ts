@@ -59,6 +59,10 @@ export async function GET(request: NextRequest) {
       recipientEmail: data.recipientEmail,
       status: data.status,
       createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+      // Include hosting/payment info for Stripe integration
+      hostingEnabled: data.hostingEnabled || false,
+      monthlyFee: data.monthlyFee || 0,
+      clientName: data.clientName || "",
     });
   } catch (error) {
     console.error("Get signing request error:", error);
@@ -212,6 +216,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Document signed successfully",
       downloadUrl,
+      // Include hosting info so frontend can redirect to payment if needed
+      hostingEnabled: data.hostingEnabled || false,
+      monthlyFee: data.monthlyFee || 0,
+      clientName: data.clientName || "",
+      signatureId: sigDoc.id,
     });
   } catch (error) {
     console.error("Sign proposal error:", error);
