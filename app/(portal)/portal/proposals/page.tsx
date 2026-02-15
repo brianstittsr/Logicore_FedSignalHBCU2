@@ -1414,7 +1414,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
   ${sections.join("\n")}
 
   <!-- Signature Block -->
-  ${proposal.status === "signed" && proposal.signedAt ? `
+  ${(proposal.status === "signed" || proposal.status === "signed_countersigned") && proposal.signedAt ? `
   <div style="margin-top:48px;padding-top:24px;border-top:2px solid #C8A951;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
       <div>
