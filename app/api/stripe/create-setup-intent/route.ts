@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-01-28.clover",
-});
+import { adminDb } from "@/lib/firebase-admin";
+import { COLLECTIONS } from "@/lib/schema";
+import { Timestamp } from "firebase-admin/firestore";
 
 export async function POST(request: NextRequest) {
   try {
+    const getStripe = () => {
+      const secretKey = process.env.STRIPE_SECRET_KEY;
+      if (!secretKey) {
+        throw new Error("STRIPE_SECRET_KEY environment variable is not set");
+      }
+      return new Stripe(secretKey, {
+        apiVersion: "2026-01-28.clover",
+      });
+    };
+
+    const stripe = getStripe();
     const { customerEmail, customerName, signatureId } = await request.json();
 
     if (!customerEmail || !signatureId) {
