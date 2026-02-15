@@ -63,7 +63,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Get signing request error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: "Failed to fetch signing request", details: message }, { status: 500 });
+    const stack = error instanceof Error ? error.stack : "";
+    console.error("Error stack:", stack);
+    return NextResponse.json({ 
+      error: "Failed to fetch signing request", 
+      details: message,
+      stack: process.env.NODE_ENV === "development" ? stack : undefined
+    }, { status: 500 });
   }
 }
 
