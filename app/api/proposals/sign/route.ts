@@ -243,6 +243,7 @@ function generateSignedPdfHtml(params: {
           </div>
           <div style="font-size:9pt;color:#1e293b;font-weight:600;">Nelinia Varenas, CEO</div>
           <div style="font-size:9pt;color:#64748b;">Date: ${signedDate}</div>
+          <div style="font-size:8pt;color:#94a3b8;">Signed: ${signedDate} at ${signedTime} EST</div>
         </div>
         <div>
           <div style="font-size:9pt;color:#64748b;margin-bottom:2px;">For ${params.signerCompany || "Client"}</div>
@@ -251,6 +252,7 @@ function generateSignedPdfHtml(params: {
           </div>
           <div style="font-size:9pt;color:#1e293b;font-weight:600;">${params.signerName}${params.signerTitle ? `, ${params.signerTitle}` : ""}</div>
           <div style="font-size:9pt;color:#64748b;">Date: ${signedDate}</div>
+          <div style="font-size:8pt;color:#94a3b8;">Signed: ${signedDate} at ${signedTime} EST</div>
         </div>
       </div>
       <div style="margin-top:24px;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:8pt;color:#166534;">
