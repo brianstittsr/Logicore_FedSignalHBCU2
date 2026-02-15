@@ -815,7 +815,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
         setProposals((prev) =>
           prev.map((p) =>
             p.id === editingProposalId
-              ? { ...p, ...proposalData, updatedAt: new Date() } as Proposal
+              ? { ...p, ...proposalData, createdAt: existing?.createdAt || p.createdAt, updatedAt: new Date() } as Proposal
               : p
           )
         );
@@ -4956,8 +4956,8 @@ Workflow:
                 </div>
               )}
 
-              {/* Step 6: Forms (Standard workflow) */}
-              {currentStep === 6 && proposalData.type !== "oem_supplier_readiness" && proposalData.type !== "agreement" && (
+              {/* Step 6: Forms (Standard workflow) - Skip for Agreement */}
+              {currentStep === 6 && proposalData.type !== "oem_supplier_readiness" && proposalData.type !== "agreement" && proposalData.type !== "mou" && proposalData.type !== "contract" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -5141,8 +5141,8 @@ Workflow:
                 </div>
               )}
 
-              {/* Step 7: Dashboard (Standard workflow) */}
-              {currentStep === 7 && proposalData.type !== "oem_supplier_readiness" && proposalData.type !== "agreement" && (
+              {/* Step 7: Dashboard (Standard workflow) - Skip for Agreement */}
+              {currentStep === 7 && proposalData.type !== "oem_supplier_readiness" && proposalData.type !== "agreement" && proposalData.type !== "mou" && proposalData.type !== "contract" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
