@@ -1385,6 +1385,35 @@ Make it clear, professional, and highlight the value proposition and expected ou
   ${sections.join("\n")}
 
   <!-- Signature Block -->
+  ${proposal.status === "signed" && proposal.signedAt ? `
+  <div style="margin-top:48px;padding-top:24px;border-top:2px solid #C8A951;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
+      <div>
+        <div style="font-size:9pt;color:#64748b;margin-bottom:2px;">For Strategic Value+</div>
+        <div style="margin-bottom:4px;height:50px;">
+          <svg width="200" height="50" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="35" font-family="Georgia, Times New Roman, serif" font-size="24" font-style="italic" fill="#1e293b">Nelinia Varenas</text>
+          </svg>
+        </div>
+        <div style="font-size:9pt;color:#1e293b;font-weight:600;">Nelinia Varenas, CEO</div>
+        <div style="font-size:9pt;color:#64748b;">Date: ${new Date(proposal.signedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
+        <div style="font-size:8pt;color:#94a3b8;">Signed: ${new Date(proposal.signedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at ${new Date(proposal.signedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} EST</div>
+      </div>
+      <div>
+        <div style="font-size:9pt;color:#64748b;margin-bottom:2px;">For ${proposal.signerCompany || proposal.collaboratingEntities?.[0]?.name || "Client"}</div>
+        <div style="margin-bottom:4px;height:50px;display:flex;align-items:center;">
+          ${proposal.signatureData ? `<img src="${proposal.signatureData}" alt="Signature" style="max-height:50px;max-width:200px;" />` : '<div style="border-bottom:1px solid #1e293b;width:200px;height:40px;"></div>'}
+        </div>
+        <div style="font-size:9pt;color:#1e293b;font-weight:600;">${proposal.signerName || proposal.collaboratingEntities?.[0]?.contactName || "Authorized Representative"}${proposal.signerTitle ? `, ${proposal.signerTitle}` : ""}</div>
+        <div style="font-size:9pt;color:#64748b;">Date: ${new Date(proposal.signedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
+        <div style="font-size:8pt;color:#94a3b8;">Signed: ${new Date(proposal.signedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at ${new Date(proposal.signedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} EST</div>
+      </div>
+    </div>
+    <div style="margin-top:24px;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:8pt;color:#166534;">
+      <strong>Electronically Signed</strong> — This document was signed electronically on ${new Date(proposal.signedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} at ${new Date(proposal.signedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} EST via Strategic Value+ secure signing platform. This electronic signature is legally binding under the ESIGN Act and UETA.
+    </div>
+  </div>
+  ` : `
   <div class="signature-block no-break">
     <div class="sig-party">
       <div class="sig-label">For Strategic Value+</div>
@@ -1399,6 +1428,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
       <div class="sig-label">Date: _______________</div>
     </div>
   </div>
+  `}
 
   <!-- Footer -->
   <div class="footer">
