@@ -800,7 +800,10 @@ Make it clear, professional, and highlight the value proposition and expected ou
     }
   }, []);
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 8));
+  const nextStep = () => {
+    const maxStep = activeWizardSteps.length;
+    setCurrentStep((prev) => Math.min(prev + 1, maxStep));
+  };
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const saveProposal = async () => {
@@ -5489,7 +5492,7 @@ Workflow:
                 <Button variant="outline" onClick={() => setShowWizard(false)}>
                   Cancel
                 </Button>
-                {currentStep === 8 ? (
+                {currentStep === activeWizardSteps.length ? (
                   <Button onClick={saveProposal}>
                     <Check className="mr-2 h-4 w-4" />
                     Save Proposal
