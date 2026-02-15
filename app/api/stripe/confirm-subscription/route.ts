@@ -5,7 +5,7 @@ import { COLLECTIONS } from "@/lib/schema";
 import { Timestamp } from "firebase-admin/firestore";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2026-01-28.clover",
 });
 
 export async function POST(request: NextRequest) {
@@ -42,21 +42,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create the subscription
+    // Create product first
+    const product = await stripe.products.create({
+      name: `${agreementName} - Monthly Hosting Fee`,
+    });
+
+    // Create price for the product
+    const price = await stripe.prices.create({
+      product: product.id,
+      unit_amount: Math.round(monthlyAmount * 100), // Convert to cents
+      currency: "usd",
+      recurring: {
+        interval: "month",
+      },
+    });
+
+    // Create the subscription using the price ID
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [
         {
-          price_data: {
-            currency: "usd",
-            unit_amount: Math.round(monthlyAmount * 100), // Convert to cents
-            recurring: {
-              interval: "month",
-            },
-            product_data: {
-              name: `${agreementName} - Monthly Hosting Fee`,
-            },
-          },
+          price: price.id,
         },
       ],
       payment_settings: {
