@@ -112,7 +112,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Signing link has expired" }, { status: 410 });
     }
 
-    // Generate the signed PDF HTML with signature embedded
+    // Generate Nelinia Varenas' signature (CEO auto-sign)
+    const neliniaSignature = generateNeliniaSignature();
+
+    // Generate the signed PDF HTML with both signatures embedded
     const signedPdfHtml = generateSignedPdfHtml({
       proposalHtml: data.proposalHtml,
       signerName,
@@ -121,6 +124,7 @@ export async function POST(request: NextRequest) {
       signatureData,
       signedAt: new Date().toISOString(),
       proposalName: data.proposalName,
+      neliniaSignature,
     });
 
     // Convert HTML to base64 for storage
@@ -191,6 +195,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function generateNeliniaSignature(): string {
+  // Generate Nelinia Varenas' signature as a typed signature
+  const canvas = {
+    width: 400,
+    height: 100,
+  };
+  
+  // Create a simple SVG signature for Nelinia Varenas
+  const svg = `
+    <svg width="${canvas.width}" height="${canvas.height}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="white"/>
+      <text x="20" y="60" font-family="Georgia, Times New Roman, serif" font-size="36" font-style="italic" fill="#1e293b">Nelinia Varenas</text>
+    </svg>
+  `;
+  
+  // Convert SVG to base64 data URL
+  const base64 = Buffer.from(svg).toString('base64');
+  return `data:image/svg+xml;base64,${base64}`;
+}
+
 function generateSignedPdfHtml(params: {
   proposalHtml: string;
   signerName: string;
@@ -199,6 +223,7 @@ function generateSignedPdfHtml(params: {
   signatureData: string;
   signedAt: string;
   proposalName: string;
+  neliniaSignature: string;
 }): string {
   const signedDate = new Date(params.signedAt).toLocaleDateString("en-US", {
     year: "numeric", month: "long", day: "numeric",
@@ -213,9 +238,11 @@ function generateSignedPdfHtml(params: {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
         <div>
           <div style="font-size:9pt;color:#64748b;margin-bottom:2px;">For Strategic Value+</div>
-          <div style="border-bottom:1px solid #1e293b;height:40px;margin-bottom:4px;"></div>
+          <div style="margin-bottom:4px;">
+            <img src="${params.neliniaSignature}" alt="Nelinia Varenas Signature" style="max-height:50px;max-width:200px;" />
+          </div>
           <div style="font-size:9pt;color:#1e293b;font-weight:600;">Nelinia Varenas, CEO</div>
-          <div style="font-size:9pt;color:#64748b;">Date: _______________</div>
+          <div style="font-size:9pt;color:#64748b;">Date: ${signedDate}</div>
         </div>
         <div>
           <div style="font-size:9pt;color:#64748b;margin-bottom:2px;">For ${params.signerCompany || "Client"}</div>
