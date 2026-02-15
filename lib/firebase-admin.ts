@@ -17,8 +17,15 @@ let adminAuth: Auth | null = null;
 let adminDb: Firestore | null = null;
 
 function initializeFirebaseAdmin() {
+  console.log("[Firebase Admin] Starting initialization...");
+  console.log("[Firebase Admin] NODE_ENV:", process.env.NODE_ENV);
+  console.log("[Firebase Admin] FIREBASE_PROJECT_ID exists:", !!process.env.FIREBASE_PROJECT_ID);
+  console.log("[Firebase Admin] FIREBASE_CLIENT_EMAIL exists:", !!process.env.FIREBASE_CLIENT_EMAIL);
+  console.log("[Firebase Admin] FIREBASE_PRIVATE_KEY exists:", !!process.env.FIREBASE_PRIVATE_KEY);
+  
   // Check if already initialized
   if (getApps().length > 0) {
+    console.log("[Firebase Admin] Already initialized, reusing existing app");
     adminApp = getApps()[0];
     adminAuth = getAuth(adminApp);
     adminDb = getFirestore(adminApp);
@@ -30,14 +37,19 @@ function initializeFirebaseAdmin() {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
+  console.log("[Firebase Admin] projectId:", projectId);
+  console.log("[Firebase Admin] clientEmail:", clientEmail ? "[REDACTED]" : "MISSING");
+  console.log("[Firebase Admin] privateKey length:", privateKey ? privateKey.length : 0);
+
   if (!projectId) {
-    console.warn("Firebase Admin: Missing FIREBASE_PROJECT_ID environment variable");
+    console.error("[Firebase Admin] Missing FIREBASE_PROJECT_ID environment variable");
     return;
   }
 
   try {
     // If we have service account credentials, use them
     if (clientEmail && privateKey) {
+      console.log("[Firebase Admin] Initializing with service account credentials...");
       adminApp = initializeApp({
         credential: cert({
           projectId,
@@ -45,20 +57,24 @@ function initializeFirebaseAdmin() {
           privateKey,
         }),
       });
-      console.log("Firebase Admin initialized with service account credentials");
+      console.log("[Firebase Admin] Successfully initialized with service account");
     } else {
       // Try to initialize with default credentials (works in Google Cloud environments)
       // or with GOOGLE_APPLICATION_CREDENTIALS environment variable
+      console.log("[Firebase Admin] Initializing with default credentials...");
       adminApp = initializeApp({
         projectId,
       });
-      console.log("Firebase Admin initialized with default credentials");
+      console.log("[Firebase Admin] Initialized with default credentials");
     }
 
     adminAuth = getAuth(adminApp);
     adminDb = getFirestore(adminApp);
+    console.log("[Firebase Admin] Auth and Firestore services initialized");
   } catch (error) {
-    console.error("Error initializing Firebase Admin:", error);
+    console.error("[Firebase Admin] Error initializing:", error);
+    console.error("[Firebase Admin] Error message:", error instanceof Error ? error.message : "Unknown");
+    console.error("[Firebase Admin] Error stack:", error instanceof Error ? error.stack : "No stack");
   }
 }
 
