@@ -3,7 +3,7 @@ import { db } from "@/lib/firebase";
 import { adminAuth } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { Resend } from "resend";
+import { sendEmail, isEmailConfigured } from "@/lib/email";
 
 // Professional password reset email template
 function generatePasswordResetEmail(
@@ -177,8 +177,6 @@ function generateResetToken(): string {
   return token;
 }
 
-// Initialize Resend client
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -247,34 +245,33 @@ export async function POST(request: NextRequest) {
       throw authError;
     }
 
-    // Send branded email using Resend
-    if (resend) {
+    // Send branded email using SMTP
+    if (isEmailConfigured()) {
       const emailContent = generatePasswordResetEmail(firstName, resetLink, 24);
       
-      const { data, error } = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || "Strategic Value+ <noreply@strategicvalueplus.com>",
+      const result = await sendEmail({
         to: email,
         subject: emailContent.subject,
         html: emailContent.html,
         text: emailContent.text,
       });
 
-      if (error) {
-        console.error("Resend error:", error);
-        throw new Error(`Failed to send email: ${error.message}`);
+      if (!result.success) {
+        console.error("Email send error:", result.error);
+        throw new Error(`Failed to send email: ${result.error}`);
       }
 
-      console.log(`Branded password reset email sent to ${email} (${firstName}, ID: ${memberId || 'unknown'}), Resend ID: ${data?.id}`);
+      console.log(`Branded password reset email sent to ${email} (${firstName}, ID: ${memberId || 'unknown'}), Message ID: ${result.messageId}`);
     } else {
       // Fallback: Log the reset link (for development/testing)
-      console.warn("Resend not configured. Password reset link:", resetLink);
+      console.warn("SMTP not configured. Password reset link:", resetLink);
       console.log(`Password reset requested for ${email} (${firstName}, ID: ${memberId || 'unknown'})`);
     }
 
     return NextResponse.json({
       success: true,
       message: `Password reset email sent to ${email}`,
-      note: resend ? "Branded email sent via Resend" : "Email service not configured - check server logs for reset link",
+      note: isEmailConfigured() ? "Branded email sent via SMTP" : "Email service not configured - check server logs for reset link",
     });
 
   } catch (error: any) {

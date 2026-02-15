@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/schema";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendEmail } from "@/lib/email";
 
 const NOTIFICATION_EMAIL = "nel@strategicvalueplus.com";
-const FROM_EMAIL = "noreply@strategicvalueplus.com";
 
 interface ContactFormRequest {
   formType: "assessment_request" | "book_call";
@@ -194,13 +191,16 @@ export async function POST(request: NextRequest) {
         </html>
       `;
 
-      await resend.emails.send({
-        from: FROM_EMAIL,
+      const result = await sendEmail({
         to: NOTIFICATION_EMAIL,
         subject,
         html: htmlContent,
         replyTo: email,
       });
+
+      if (!result.success) {
+        throw new Error(result.error || "Email send failed");
+      }
 
       emailSent = true;
     } catch (emailErr) {

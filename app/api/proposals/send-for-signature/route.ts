@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
-import { Resend } from "resend";
+import { sendEmail, isEmailConfigured } from "@/lib/email";
+import { Timestamp } from "firebase-admin/firestore";
 
 export const runtime = 'nodejs';
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Strategic Value+ <noreply@strategicvalueplus.com>";
 
 async function generateSigningToken(): Promise<string> {
   const array = new Uint8Array(32);
@@ -17,7 +14,7 @@ async function generateSigningToken(): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
     }
 
@@ -48,30 +45,40 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://strategicvalueplus.com";
     const signingUrl = `${baseUrl}/sign/${signingToken}`;
 
-    // Store signing request in Firestore
-    const sigRef = doc(db, COLLECTIONS.PROPOSAL_SIGNATURES, signingId);
-    await setDoc(sigRef, {
-      id: signingId,
-      token: signingToken,
-      proposalName,
-      proposalType: proposalType || "agreement",
-      recipientEmail,
-      recipientName: recipientName || "",
-      senderName: senderName || "Strategic Value+",
-      senderEmail: senderEmail || "nel@strategicvalueplus.com",
-      message: message || "",
-      proposalHtml,
-      status: "pending",
-      createdAt: Timestamp.now(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      signedAt: null,
-      signatureData: null,
-      signerName: null,
-      signerTitle: null,
-      signerCompany: null,
-      signedPdfBase64: null,
-      signedPdfGeneratedAt: null,
-    });
+    // Store signing request in Firestore using Admin SDK
+    let firestoreStored = false;
+    try {
+      const sigRef = adminDb.collection(COLLECTIONS.PROPOSAL_SIGNATURES).doc(signingId);
+      await sigRef.set({
+        id: signingId,
+        token: signingToken,
+        proposalName,
+        proposalType: proposalType || "agreement",
+        recipientEmail,
+        recipientName: recipientName || "",
+        senderName: senderName || "Strategic Value+",
+        senderEmail: senderEmail || "nel@strategicvalueplus.com",
+        message: message || "",
+        proposalHtml,
+        status: "pending",
+        createdAt: Timestamp.now(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        signedAt: null,
+        signatureData: null,
+        signerName: null,
+        signerTitle: null,
+        signerCompany: null,
+        signedPdfBase64: null,
+        signedPdfGeneratedAt: null,
+      });
+      firestoreStored = true;
+    } catch (firestoreError) {
+      console.error("Firestore write failed:", firestoreError);
+      return NextResponse.json(
+        { error: "Failed to create signing request", details: String(firestoreError) },
+        { status: 500 }
+      );
+    }
 
     // Generate and send email
     const emailHtml = generateSigningEmail({
@@ -84,23 +91,20 @@ export async function POST(request: NextRequest) {
       signingUrl,
     });
 
-    if (resend) {
-      const { error } = await resend.emails.send({
-        from: FROM_EMAIL,
+    let emailSent = false;
+    let emailError: string | null = null;
+
+    if (isEmailConfigured()) {
+      const result = await sendEmail({
         to: recipientEmail,
         subject: `Action Required: Please Sign — ${proposalName}`,
         html: emailHtml,
       });
-
-      if (error) {
-        console.error("Resend error:", error);
-        return NextResponse.json(
-          { error: "Failed to send email", details: error.message },
-          { status: 500 }
-        );
-      }
+      emailSent = result.success;
+      emailError = result.error || null;
     } else {
-      console.warn("Resend not configured. Signing URL:", signingUrl);
+      console.warn("SMTP not configured. Signing URL:", signingUrl);
+      emailError = "Email service not configured";
     }
 
     return NextResponse.json({
@@ -108,9 +112,12 @@ export async function POST(request: NextRequest) {
       signingId,
       signingUrl,
       sentTo: recipientEmail,
-      message: resend
+      firestoreStored,
+      emailSent,
+      emailError,
+      message: emailSent
         ? `Signing request sent to ${recipientEmail}`
-        : "Email service not configured — signing URL generated (check server logs)",
+        : `Signing record created. Email not sent: ${emailError || "unknown"}. Signing URL: ${signingUrl}`,
     });
   } catch (error) {
     console.error("Send for signature error:", error);

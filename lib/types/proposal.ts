@@ -66,6 +66,28 @@ export interface Proposal {
   matchingFundsAmount?: number;
   grantStatus?: 'applied' | 'under_review' | 'awarded' | 'declined' | 'completed';
   
+  // Agreement/White Label Specific Fields
+  clientName?: string;
+  clientAddress?: string;
+  clientCity?: string;
+  clientState?: string;
+  clientZip?: string;
+  serviceDescription?: string;
+  applicationDescription?: string;
+  billingPeriod?: 'monthly' | 'quarterly' | 'annual';
+  monthlyFee?: number;
+  hostingEnabled?: boolean;
+  stripeSubscriptionId?: string;
+  stripeCustomerId?: string;
+  feeAdjustmentNoticeDays?: number;
+  latePaymentGraceDays?: number;
+  terminationCureDays?: number;
+  clientTerminationNoticeDays?: number;
+  svpTerminationNoticeDays?: number;
+  terminationDeliverableDays?: number;
+  postTerminationSupportDays?: number;
+  confidentialityDurationYears?: number;
+  
   // OEM Supplier Readiness Fields
   supplierId?: string;
   supplierName?: string;

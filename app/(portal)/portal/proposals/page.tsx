@@ -149,13 +149,12 @@ const CONTRACT_WIZARD_STEPS = [
   { id: 5, title: "Sign & Send", icon: FileSignature, description: "Send for signature" },
 ];
 
-// Agreement wizard steps (no Forms, Dashboard, Export)
+// Agreement wizard steps (White Label Agreement specific - streamlined)
 const AGREEMENT_WIZARD_STEPS = [
-  { id: 1, title: "Agreement Details", icon: FileText, description: "Agreement information & template" },
-  { id: 2, title: "Parties", icon: Users, description: "Agreement parties" },
-  { id: 3, title: "Terms", icon: ClipboardList, description: "Agreement terms" },
-  { id: 4, title: "Review", icon: Eye, description: "Review & finalize" },
-  { id: 5, title: "Sign & Send", icon: FileSignature, description: "Send for signature" },
+  { id: 1, title: "Client Details", icon: Building, description: "Client company information" },
+  { id: 2, title: "Service Terms", icon: ClipboardList, description: "Service description & hosting fee" },
+  { id: 3, title: "Payment Setup", icon: DollarSign, description: "Stripe recurring billing setup" },
+  { id: 4, title: "Review & Send", icon: FileSignature, description: "Review and send for signature" },
 ];
 
 // MOU wizard steps (no Forms, Dashboard, Export)
@@ -1866,6 +1865,106 @@ Workflow:
     }
   };
 
+  // Agreement Signing Workflow
+  const sendAgreementForSignature = async () => {
+    if (!ndaSignerEmail || !ndaSignerName) {
+      alert("Please enter the signer's email address and name");
+      return;
+    }
+
+    if (!proposalData.clientName || !proposalData.startDate) {
+      alert("Please fill in all required client information and start date");
+      return;
+    }
+
+    setIsSendingNda(true);
+
+    try {
+      // Generate the proposal HTML for the signing page
+      const proposalHtml = generateProposalHTML(proposalData);
+
+      // Get sender info
+      const senderName = getDisplayName();
+      const senderEmail = profile?.email || "nel@strategicvalueplus.com";
+
+      // Prepare agreement data for API
+      const agreementData = {
+        proposalName: proposalData.name || "White Label Agreement",
+        proposalType: "White Label Agreement",
+        recipientEmail: ndaSignerEmail,
+        recipientName: ndaSignerName,
+        senderName: senderName,
+        senderEmail: senderEmail,
+        message: `Please review and sign this White Label Agreement for ${proposalData.clientName}.\n\nOnce signed, you will receive a PDF copy of the fully executed document for your records.`,
+        proposalHtml,
+        // Additional agreement-specific data
+        clientName: proposalData.clientName,
+        clientAddress: proposalData.clientAddress,
+        clientCity: proposalData.clientCity,
+        clientState: proposalData.clientState,
+        clientZip: proposalData.clientZip,
+        hostingEnabled: proposalData.hostingEnabled,
+        monthlyFee: proposalData.monthlyFee,
+      };
+
+      // Call API to send agreement for signature
+      const response = await fetch("/api/proposals/send-for-signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(agreementData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // If hosting is enabled, also create Stripe subscription
+        if (proposalData.hostingEnabled && proposalData.monthlyFee) {
+          try {
+            const stripeResponse = await fetch("/api/stripe/create-subscription", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                proposalId: proposalData.id,
+                customerEmail: ndaSignerEmail,
+                customerName: proposalData.clientName,
+                monthlyAmount: proposalData.monthlyFee,
+                agreementName: proposalData.name,
+              }),
+            });
+
+            const stripeResult = await stripeResponse.json();
+            if (stripeResult.success) {
+              setProposalData((prev) => ({
+                ...prev,
+                stripeCustomerId: stripeResult.customerId,
+                stripeSubscriptionId: stripeResult.subscriptionId,
+              }));
+            }
+          } catch (stripeError) {
+            console.error("Error creating Stripe subscription:", stripeError);
+            // Don't block the agreement sending if Stripe fails
+          }
+        }
+
+        alert(`White Label Agreement sent to ${ndaSignerName} (${ndaSignerEmail}) for signature.\n\nWorkflow:\n1. ${ndaSignerName} will receive an email with a signing link\n2. After signing, Nelinia Varenas will countersign\n3. Once countersigned, the agreement will be stored\n4. A PDF copy will be emailed to ${ndaSignerEmail}${proposalData.hostingEnabled ? "\n\nStripe subscription created for monthly hosting fee of $" + proposalData.monthlyFee : ""}`);
+
+        // Update proposal status
+        setProposalData((prev) => ({
+          ...prev,
+          signatureStatus: "pending",
+          status: "pending_signature",
+        }));
+      } else {
+        alert(result.error || "Failed to send agreement. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error sending agreement:", error);
+      alert("Failed to send agreement. Please try again.");
+    } finally {
+      setIsSendingNda(false);
+    }
+  };
+
   // Template Management Functions
   const handleTemplateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2713,142 +2812,165 @@ Workflow:
                     </Card>
                   )}
 
-                  {/* Basic Info Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Proposal Name *</Label>
-                      <Input
-                        placeholder="Enter proposal name"
-                        value={proposalData.name || ""}
-                        onChange={(e) => setProposalData({ ...proposalData, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Document Type *</Label>
-                      <Select
-                        value={proposalData.type}
-                        onValueChange={(v) => setProposalData({ ...proposalData, type: v as any })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PROPOSAL_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Description</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={enhanceDescription}
-                        disabled={isEnhancingDescription}
-                      >
-                        {isEnhancingDescription ? (
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        ) : (
-                          <Sparkles className="mr-2 h-3 w-3" />
-                        )}
-                        Enhance with AI
-                      </Button>
-                    </div>
-                    <Textarea
-                      placeholder="Brief description of the proposal"
-                      value={proposalData.description || ""}
-                      onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Funding Source</Label>
-                      <Select
-                        value={proposalData.fundingSource}
-                        onValueChange={(v) => setProposalData({ ...proposalData, fundingSource: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select funding source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {FUNDING_SOURCES.map((source) => (
-                            <SelectItem key={source} value={source}>
-                              {source}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Reference Number</Label>
-                      <Input
-                        placeholder="Grant/Contract number"
-                        value={proposalData.referenceNumber || ""}
-                        onChange={(e) => setProposalData({ ...proposalData, referenceNumber: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label>Start Date</Label>
-                      <Input
-                        type="date"
-                        value={proposalData.startDate || ""}
-                        onChange={(e) => setProposalData({ ...proposalData, startDate: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>End Date</Label>
-                      <Input
-                        type="date"
-                        value={proposalData.endDate || ""}
-                        onChange={(e) => setProposalData({ ...proposalData, endDate: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Response Deadline</Label>
-                      <Input
-                        type="date"
-                        value={proposalData.responseDeadline || ""}
-                        onChange={(e) => setProposalData({ ...proposalData, responseDeadline: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Total Budget ($)</Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={generateBudget}
-                          disabled={isGeneratingBudget}
-                        >
-                          {isGeneratingBudget ? (
-                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                          ) : (
-                            <Sparkles className="mr-2 h-3 w-3" />
-                          )}
-                          AI Budget
-                        </Button>
+                  {/* Basic Info Fields - hidden for Agreements when template is selected */}
+                  {!(proposalData.type === "agreement" && selectedTemplate) && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Proposal Name *</Label>
+                          <Input
+                            placeholder="Enter proposal name"
+                            value={proposalData.name || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Document Type *</Label>
+                          <Select
+                            value={proposalData.type}
+                            onValueChange={(v) => setProposalData({ ...proposalData, type: v as any })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PROPOSAL_TYPES.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <Input
-                        type="number"
-                        placeholder="0"
-                        value={proposalData.totalBudget || ""}
-                        onChange={(e) => setProposalData({ ...proposalData, totalBudget: parseFloat(e.target.value) || 0 })}
-                      />
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Description</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={enhanceDescription}
+                            disabled={isEnhancingDescription}
+                          >
+                            {isEnhancingDescription ? (
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="mr-2 h-3 w-3" />
+                            )}
+                            Enhance with AI
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder="Brief description of the proposal"
+                          value={proposalData.description || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
+                          rows={3}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Proposal-specific fields - hidden for Agreements */}
+                  {proposalData.type !== "agreement" && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Funding Source</Label>
+                          <Select
+                            value={proposalData.fundingSource}
+                            onValueChange={(v) => setProposalData({ ...proposalData, fundingSource: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select funding source" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FUNDING_SOURCES.map((source) => (
+                                <SelectItem key={source} value={source}>
+                                  {source}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Reference Number</Label>
+                          <Input
+                            placeholder="Grant/Contract number"
+                            value={proposalData.referenceNumber || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, referenceNumber: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Input
+                            type="date"
+                            value={proposalData.startDate || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, startDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Input
+                            type="date"
+                            value={proposalData.endDate || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, endDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Response Deadline</Label>
+                          <Input
+                            type="date"
+                            value={proposalData.responseDeadline || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, responseDeadline: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>Total Budget ($)</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={generateBudget}
+                              disabled={isGeneratingBudget}
+                            >
+                              {isGeneratingBudget ? (
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              ) : (
+                                <Sparkles className="mr-2 h-3 w-3" />
+                              )}
+                              AI Budget
+                            </Button>
+                          </div>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={proposalData.totalBudget || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, totalBudget: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Start Date - shown for Agreements only when no template selected */}
+                  {proposalData.type === "agreement" && !selectedTemplate && (
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <Label>Agreement Start Date *</Label>
+                        <Input
+                          type="date"
+                          value={proposalData.startDate || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, startDate: e.target.value })}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* RFI/RFP Notice */}
                   {(proposalData.type === "rfi_response" || proposalData.type === "rfp_response") && (
@@ -3491,6 +3613,592 @@ Workflow:
                   </Card>
                 </div>
               )}
+
+              {/* ==================== AGREEMENT WORKFLOW STEPS ==================== */}
+
+              {/* Step 1: Client Details (Agreement workflow) */}
+              {currentStep === 1 && proposalData.type === "agreement" && (
+                <div className="space-y-6">
+                  <Card className="border-primary">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Building className="h-5 w-5 text-primary" />
+                        White Label Agreement - Client Information
+                      </CardTitle>
+                      <CardDescription>
+                        Enter the client company details for the White Label Platform Service Agreement
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Agreement Name *</Label>
+                          <Input
+                            placeholder="e.g., White Label Platform Service Agreement"
+                            value={proposalData.name || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Client Company Name *</Label>
+                          <Input
+                            placeholder="e.g., ABC Technologies Inc."
+                            value={proposalData.clientName || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, clientName: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Street Address *</Label>
+                        <Input
+                          placeholder="123 Main Street, Suite 100"
+                          value={proposalData.clientAddress || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, clientAddress: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>City *</Label>
+                          <Input
+                            placeholder="Raleigh"
+                            value={proposalData.clientCity || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, clientCity: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>State *</Label>
+                          <Input
+                            placeholder="NC"
+                            value={proposalData.clientState || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, clientState: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>ZIP Code *</Label>
+                          <Input
+                            placeholder="27601"
+                            value={proposalData.clientZip || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, clientZip: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Service Description *</Label>
+                        <Textarea
+                          placeholder="Describe the specialized services SVP will provide (e.g., AI-powered platform development, cloud infrastructure management)"
+                          value={proposalData.serviceDescription || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, serviceDescription: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Application Description *</Label>
+                        <Textarea
+                          placeholder="Describe the application/technology that will be developed and maintained"
+                          value={proposalData.applicationDescription || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, applicationDescription: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
+
+                      {/* Feature List Description */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Platform Features & Deliverables</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              if (!proposalData.description) {
+                                alert("Please enter some bullet points first");
+                                return;
+                              }
+                              setIsEnhancingDescription(true);
+                              try {
+                                // Format bullet points into agreement-style clause
+                                const features = proposalData.description
+                                  .split('\n')
+                                  .filter(line => line.trim())
+                                  .map(line => line.replace(/^[-•*]\s*/, '').trim());
+                                
+                                const formattedDescription = `Strategic Value Plus agrees to provide the following platform features and deliverables to Client:\n\n${features.map((f, i) => `${i + 1}. ${f}`).join('\n')}\n\nThese features shall be developed and integrated into the white-labeled platform according to the timeline and specifications agreed upon by both parties.`;
+                                
+                                setProposalData({ ...proposalData, description: formattedDescription });
+                              } catch (error) {
+                                console.error("Error formatting description:", error);
+                              } finally {
+                                setIsEnhancingDescription(false);
+                              }
+                            }}
+                            disabled={isEnhancingDescription}
+                          >
+                            {isEnhancingDescription ? (
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="mr-2 h-3 w-3" />
+                            )}
+                            Enhance with AI
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter bullet points (one per line) of features SVP will add to the platform. Click "Enhance with AI" to format as agreement clause.
+                        </p>
+                        <Textarea
+                          placeholder="- AI-powered analytics dashboard\n- Custom branding and white-labeling\n- User management and authentication\n- Data integration and API connections\n- Reporting and export capabilities"
+                          value={proposalData.description || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, description: e.target.value })}
+                          rows={6}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Template Selection */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Select Agreement Template
+                      </CardTitle>
+                      <CardDescription>
+                        Choose the White Label Agreement template
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {documentTemplates.filter(t => t.type === "agreement").length > 0 ? (
+                        <div className="space-y-2">
+                          {documentTemplates.filter(t => t.type === "agreement").map((template) => (
+                            <div
+                              key={template.id}
+                              className={cn(
+                                "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
+                                selectedTemplate?.id === template.id
+                                  ? "border-primary bg-primary/5"
+                                  : "hover:bg-muted/50"
+                              )}
+                              onClick={() => setSelectedTemplate(template)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">{template.name}</p>
+                                  {template.description && (
+                                    <p className="text-sm text-muted-foreground">{template.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                              {selectedTemplate?.id === template.id && (
+                                <Check className="h-5 w-5 text-primary" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-muted-foreground">
+                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>No agreement templates available.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Step 2: Service Terms (Agreement workflow) */}
+              {currentStep === 2 && proposalData.type === "agreement" && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ClipboardList className="h-5 w-5" />
+                        Service Terms & Duration
+                      </CardTitle>
+                      <CardDescription>
+                        Define the agreement term, billing period, and key dates
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Agreement Start Date *</Label>
+                          <Input
+                            type="date"
+                            value={proposalData.startDate || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, startDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Billing Period *</Label>
+                          <Select
+                            value={proposalData.billingPeriod || "monthly"}
+                            onValueChange={(v) => setProposalData({ ...proposalData, billingPeriod: v as any })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="quarterly">Quarterly</SelectItem>
+                              <SelectItem value="annual">Annual</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Fee Adjustment Notice (Days)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="30"
+                            value={proposalData.feeAdjustmentNoticeDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, feeAdjustmentNoticeDays: parseInt(e.target.value) || 30 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Late Payment Grace (Days)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="5"
+                            value={proposalData.latePaymentGraceDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, latePaymentGraceDays: parseInt(e.target.value) || 5 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Termination Cure (Days)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="30"
+                            value={proposalData.terminationCureDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, terminationCureDays: parseInt(e.target.value) || 30 })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label>Client Notice (Days)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="30"
+                            value={proposalData.clientTerminationNoticeDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, clientTerminationNoticeDays: parseInt(e.target.value) || 30 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>SVP Notice (Days)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="60"
+                            value={proposalData.svpTerminationNoticeDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, svpTerminationNoticeDays: parseInt(e.target.value) || 60 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Deliverable Days</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="10"
+                            value={proposalData.terminationDeliverableDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, terminationDeliverableDays: parseInt(e.target.value) || 10 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Post-Term Support (Days)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="30"
+                            value={proposalData.postTerminationSupportDays || ""}
+                            onChange={(e) => setProposalData({ ...proposalData, postTerminationSupportDays: parseInt(e.target.value) || 30 })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Confidentiality Duration (Years)</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="10"
+                          placeholder="3"
+                          value={proposalData.confidentialityDurationYears || ""}
+                          onChange={(e) => setProposalData({ ...proposalData, confidentialityDurationYears: parseInt(e.target.value) || 3 })}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Step 3: Payment Setup (Agreement workflow) */}
+              {currentStep === 3 && proposalData.type === "agreement" && (
+                <div className="space-y-6">
+                  <Card className="border-primary">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5 text-primary" />
+                        Monthly Hosting Fee & Stripe Setup
+                      </CardTitle>
+                      <CardDescription>
+                        Configure the recurring monthly fee for platform hosting and management
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Hosting Enable Toggle */}
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">Enable Monthly Hosting Fee</p>
+                          <p className="text-sm text-muted-foreground">
+                            Charge the client a recurring monthly fee for platform hosting and maintenance
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{proposalData.hostingEnabled ? "Enabled" : "Disabled"}</span>
+                          <Button
+                            variant={proposalData.hostingEnabled ? "default" : "outline"}
+                            onClick={() => setProposalData({ ...proposalData, hostingEnabled: !proposalData.hostingEnabled })}
+                          >
+                            {proposalData.hostingEnabled ? "On" : "Off"}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {proposalData.hostingEnabled && (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Monthly Fee Amount (USD) *</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="e.g., 5000"
+                                value={proposalData.monthlyFee || ""}
+                                onChange={(e) => setProposalData({ ...proposalData, monthlyFee: parseFloat(e.target.value) || 0 })}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                This amount will be charged monthly via Stripe
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Calculated Annual Value</Label>
+                              <div className="p-2 bg-muted rounded-lg">
+                                <p className="text-lg font-semibold">
+                                  ${((proposalData.monthlyFee || 0) * 12).toLocaleString()} / year
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Card className="border-amber-200 bg-amber-50">
+                            <CardContent className="pt-4">
+                              <div className="flex items-start gap-3">
+                                <DollarSign className="h-5 w-5 text-amber-600 mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-amber-800">Stripe Recurring Billing</p>
+                                  <p className="text-sm text-amber-700 mt-1">
+                                    The monthly fee will be set up as a recurring subscription using the 
+                                    <strong> Strategic Value Plus Stripe Account</strong>. 
+                                    The client will be charged automatically on the 1st of each month.
+                                  </p>
+                                  <p className="text-sm text-amber-700 mt-2">
+                                    A secure payment link will be included in the agreement email for the client 
+                                    to enter their credit card information.
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <div className="p-4 border rounded-lg space-y-2">
+                            <Label>Payment Terms Summary</Label>
+                            <div className="text-sm space-y-1">
+                              <p><strong>Billing Period:</strong> {proposalData.billingPeriod || "Monthly"}</p>
+                              <p><strong>Monthly Amount:</strong> ${proposalData.monthlyFee?.toLocaleString() || "0"}</p>
+                              <p><strong>Payment Method:</strong> Credit card via Stripe</p>
+                              <p><strong>Billing Date:</strong> 1st of each month</p>
+                              <p><strong>Late Payment Grace:</strong> {proposalData.latePaymentGraceDays || 5} business days</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {!proposalData.hostingEnabled && (
+                        <div className="p-4 bg-muted rounded-lg text-center">
+                          <p className="text-muted-foreground">
+                            No recurring hosting fee will be charged. The agreement will be created without Stripe integration.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Step 4: Review & Send (Agreement workflow) */}
+              {currentStep === 4 && proposalData.type === "agreement" && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileSignature className="h-5 w-5" />
+                        Review White Label Agreement
+                      </CardTitle>
+                      <CardDescription>
+                        Review all details before sending for signature
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Client Information Summary */}
+                      <div className="p-4 bg-muted rounded-lg space-y-3">
+                        <h4 className="font-medium">Client Information</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Client Name</p>
+                            <p className="font-medium">{proposalData.clientName || "Not specified"}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Address</p>
+                            <p className="font-medium">
+                              {proposalData.clientAddress ? `${proposalData.clientAddress}, ${proposalData.clientCity || ""}, ${proposalData.clientState || ""} ${proposalData.clientZip || ""}` : "Not specified"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Service Terms Summary */}
+                      <div className="p-4 bg-muted rounded-lg space-y-3">
+                        <h4 className="font-medium">Service Terms</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Start Date</p>
+                            <p className="font-medium">{proposalData.startDate || "Not set"}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Billing Period</p>
+                            <p className="font-medium capitalize">{proposalData.billingPeriod || "Monthly"}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Service Description</p>
+                            <p className="font-medium">{proposalData.serviceDescription || "Not specified"}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Application</p>
+                            <p className="font-medium">{proposalData.applicationDescription || "Not specified"}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Payment Summary */}
+                      {proposalData.hostingEnabled && (
+                        <div className="p-4 bg-green-50 rounded-lg border border-green-200 space-y-3">
+                          <h4 className="font-medium text-green-800">Payment Configuration</h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-green-700">Monthly Fee</p>
+                              <p className="font-medium text-green-800">${proposalData.monthlyFee?.toLocaleString() || "0"}</p>
+                            </div>
+                            <div>
+                              <p className="text-green-700">Annual Value</p>
+                              <p className="font-medium text-green-800">${((proposalData.monthlyFee || 0) * 12).toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-green-700">Payment Method</p>
+                              <p className="font-medium text-green-800">Stripe Recurring</p>
+                            </div>
+                            <div>
+                              <p className="text-green-700">Billing Date</p>
+                              <p className="font-medium text-green-800">1st of each month</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Template Info */}
+                      {selectedTemplate && (
+                        <div className="p-4 border rounded-lg">
+                          <p className="text-sm text-muted-foreground">Template</p>
+                          <p className="font-medium">{selectedTemplate.name}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Signer Information */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Signer Information
+                      </CardTitle>
+                      <CardDescription>
+                        Enter the email address of the person who will sign this agreement
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Signer Email *</Label>
+                        <Input
+                          type="email"
+                          placeholder="e.g., john.smith@company.com"
+                          value={ndaSignerEmail}
+                          onChange={(e) => setNdaSignerEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Signer Name *</Label>
+                        <Input
+                          placeholder="e.g., John Smith"
+                          value={ndaSignerName}
+                          onChange={(e) => setNdaSignerName(e.target.value)}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Send Button */}
+                  <Card className="border-primary">
+                    <CardContent className="pt-6">
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={sendAgreementForSignature}
+                        disabled={isSendingNda || !ndaSignerEmail || !ndaSignerName || !proposalData.name || !proposalData.clientName}
+                      >
+                        {isSendingNda ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-5 w-5" />
+                            Send Agreement for Signature
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-sm text-center text-muted-foreground mt-2">
+                        The agreement will be sent for electronic signature. Once signed by the client, 
+                        it will be countersigned by Nelinia Varenas.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* ==================== END AGREEMENT WORKFLOW ==================== */}
 
               {/* Step 2: Deep Research (OEM) or Entities (Standard) */}
               {currentStep === 2 && proposalData.type === "oem_supplier_readiness" && (
@@ -4246,7 +4954,7 @@ Workflow:
               )}
 
               {/* Step 6: Forms (Standard workflow) */}
-              {currentStep === 6 && proposalData.type !== "oem_supplier_readiness" && (
+              {currentStep === 6 && proposalData.type !== "oem_supplier_readiness" && proposalData.type !== "agreement" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -4431,7 +5139,7 @@ Workflow:
               )}
 
               {/* Step 7: Dashboard (Standard workflow) */}
-              {currentStep === 7 && proposalData.type !== "oem_supplier_readiness" && (
+              {currentStep === 7 && proposalData.type !== "oem_supplier_readiness" && proposalData.type !== "agreement" && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>

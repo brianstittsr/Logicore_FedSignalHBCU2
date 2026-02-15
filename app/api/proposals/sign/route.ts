@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
-import { Resend } from "resend";
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Strategic Value+ <noreply@strategicvalueplus.com>";
+import { sendEmail, isEmailConfigured } from "@/lib/email";
+import { Timestamp } from "firebase-admin/firestore";
 
 // GET - Fetch signing request by token
 export async function GET(request: NextRequest) {
   try {
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
     }
 
@@ -21,11 +18,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Token required" }, { status: 400 });
     }
 
-    const q = query(
-      collection(db, COLLECTIONS.PROPOSAL_SIGNATURES),
-      where("token", "==", token)
-    );
-    const snapshot = await getDocs(q);
+    // Query Firestore using Admin SDK
+    const snapshot = await adminDb
+      .collection(COLLECTIONS.PROPOSAL_SIGNATURES)
+      .where("token", "==", token)
+      .limit(1)
+      .get();
 
     if (snapshot.empty) {
       return NextResponse.json({ error: "Signing request not found" }, { status: 404 });
@@ -70,7 +68,7 @@ export async function GET(request: NextRequest) {
 // POST - Submit signature
 export async function POST(request: NextRequest) {
   try {
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
     }
 
@@ -84,12 +82,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find the signing request
-    const q = query(
-      collection(db, COLLECTIONS.PROPOSAL_SIGNATURES),
-      where("token", "==", token)
-    );
-    const snapshot = await getDocs(q);
+    // Find the signing request using Admin SDK
+    const snapshot = await adminDb
+      .collection(COLLECTIONS.PROPOSAL_SIGNATURES)
+      .where("token", "==", token)
+      .limit(1)
+      .get();
 
     if (snapshot.empty) {
       return NextResponse.json({ error: "Signing request not found" }, { status: 404 });
@@ -120,9 +118,8 @@ export async function POST(request: NextRequest) {
     // Convert HTML to base64 for storage
     const signedPdfBase64 = Buffer.from(signedPdfHtml, "utf-8").toString("base64");
 
-    // Update the signing request in Firestore
-    const sigRef = doc(db, COLLECTIONS.PROPOSAL_SIGNATURES, sigDoc.id);
-    await updateDoc(sigRef, {
+    // Update the signing request in Firestore using Admin SDK
+    await sigDoc.ref.update({
       status: "signed",
       signedAt: Timestamp.now(),
       signerName,
@@ -138,7 +135,7 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://strategicvalueplus.com";
     const downloadUrl = `${baseUrl}/api/proposals/download-signed?id=${sigDoc.id}`;
 
-    if (resend) {
+    if (isEmailConfigured()) {
       // Email to signer
       const signerEmailHtml = generateSignerConfirmationEmail({
         signerName,
@@ -148,8 +145,7 @@ export async function POST(request: NextRequest) {
         downloadUrl,
       });
 
-      await resend.emails.send({
-        from: FROM_EMAIL,
+      await sendEmail({
         to: data.recipientEmail,
         subject: `Signed: ${data.proposalName} — Your Copy`,
         html: signerEmailHtml,
@@ -165,15 +161,14 @@ export async function POST(request: NextRequest) {
       });
 
       if (data.senderEmail) {
-        await resend.emails.send({
-          from: FROM_EMAIL,
+        await sendEmail({
           to: data.senderEmail,
           subject: `Document Signed: ${data.proposalName} — by ${signerName}`,
           html: senderEmailHtml,
         });
       }
     } else {
-      console.warn("Resend not configured. Download URL:", downloadUrl);
+      console.warn("SMTP not configured. Download URL:", downloadUrl);
     }
 
     return NextResponse.json({
