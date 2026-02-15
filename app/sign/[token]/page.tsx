@@ -233,7 +233,7 @@ export default function SigningPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-[#C8A951] mx-auto mb-4" />
           <p className="text-slate-600 text-lg">Loading document...</p>
@@ -245,7 +245,7 @@ export default function SigningPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-8 text-center">
             {alreadySigned ? (
@@ -270,7 +270,7 @@ export default function SigningPage() {
   // Success state
   if (isComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
           <CardContent className="pt-8 text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -281,7 +281,7 @@ export default function SigningPage() {
               Thank you, <strong>{signerName}</strong>. Your signature has been recorded. A signed copy has been sent to your email.
             </p>
             {downloadUrl && (
-              <Button asChild size="lg" className="bg-[#C8A951] text-black hover:bg-[#b89a42]">
+              <Button asChild size="lg" className="bg-[#C8A951] text-[#1e3a5f] hover:bg-[#b89a42] font-semibold">
                 <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
                   <Download className="mr-2 h-5 w-5" />
                   Download Signed Document
@@ -300,19 +300,19 @@ export default function SigningPage() {
 
   // Main signing view
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-slate-900 text-white py-4 px-6 shadow-lg">
+      <header className="bg-[#1e3a5f] text-white py-6 px-6 shadow-lg border-b-4 border-[#C8A951]">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/VPlus_logo.webp" alt="Strategic Value+" width={40} height={40} className="rounded" />
+            <Image src="/VPlus_logo.webp" alt="Strategic Value+" width={50} height={50} className="rounded" />
             <div>
-              <p className="font-semibold text-sm">Strategic Value+</p>
-              <p className="text-xs text-slate-400">Secure Document Signing</p>
+              <p className="font-bold text-lg">Strategic Value+</p>
+              <p className="text-xs text-gray-300">Secure Document Signing</p>
             </div>
           </div>
-          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30">
-            <FileSignature className="h-3 w-3 mr-1" />
+          <Badge className="bg-[#C8A951] text-[#1e3a5f] border-[#C8A951] font-semibold">
+            <FileSignature className="h-4 w-4 mr-1" />
             Signature Required
           </Badge>
         </div>
@@ -320,11 +320,11 @@ export default function SigningPage() {
 
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* Document Info */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xl">{signingData?.proposalName}</CardTitle>
-            <CardDescription>
-              Sent by <strong>{signingData?.senderName}</strong> &bull; {signingData?.proposalType}
+        <Card className="border-t-4 border-t-[#C8A951]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl font-bold text-[#1e3a5f]">{signingData?.proposalName}</CardTitle>
+            <CardDescription className="text-base">
+              Sent by <strong>{signingData?.senderName}</strong> &bull; <Badge variant="outline" className="ml-1">{signingData?.proposalType}</Badge>
             </CardDescription>
           </CardHeader>
         </Card>
@@ -459,13 +459,13 @@ export default function SigningPage() {
         </Card>
 
         {/* Submit */}
-        <div className="flex flex-col items-center gap-4 pb-12">
-          <p className="text-xs text-muted-foreground text-center max-w-md">
+        <div className="flex flex-col items-center gap-4 pb-8">
+          <p className="text-sm text-muted-foreground text-center max-w-md">
             By clicking &quot;Sign Document&quot;, you agree that your electronic signature is the legal equivalent of your manual signature on this document.
           </p>
           <Button
             size="lg"
-            className="w-full max-w-md bg-[#C8A951] text-black hover:bg-[#b89a42] font-bold text-lg py-6"
+            className="w-full max-w-md bg-[#C8A951] text-[#1e3a5f] hover:bg-[#b89a42] font-bold text-lg py-7 shadow-lg"
             onClick={handleSubmit}
             disabled={isSubmitting || !signerName.trim() || (signatureMode === "draw" ? !hasSignature : !typedSignature.trim())}
           >
@@ -487,6 +487,19 @@ export default function SigningPage() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-[#1e3a5f] text-white py-6 px-6 mt-12">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Image src="/VPlus_logo.webp" alt="Strategic Value+" width={30} height={30} className="rounded" />
+            <p className="font-bold text-lg">Strategic Value+</p>
+          </div>
+          <p className="text-sm text-gray-300 mb-1">Transforming U.S. Manufacturing</p>
+          <p className="text-xs text-gray-400">8 The Green #13351, Dover, DE 19901</p>
+          <p className="text-xs text-gray-400 mt-1">strategicvalueplus.com</p>
+        </div>
+      </footer>
     </div>
   );
 }
