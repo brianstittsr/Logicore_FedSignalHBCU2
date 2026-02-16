@@ -534,7 +534,7 @@ export default function SigningPage() {
 
         {/* Document Preview */}
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 px-6 pt-6">
             <CardTitle className="text-base flex items-center gap-2">
               <FileSignature className="h-4 w-4 text-[#C8A951]" />
               Document Preview
@@ -553,7 +553,7 @@ export default function SigningPage() {
 
         {/* Signer Information */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 px-6 pt-6">
             <CardTitle className="text-base">Your Information</CardTitle>
             <CardDescription>Please confirm your details</CardDescription>
           </CardHeader>
@@ -589,13 +589,13 @@ export default function SigningPage() {
 
         {/* Signature Pad */}
         <Card className="border-[#C8A951]/50">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 px-6 pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base">Electronic Signature</CardTitle>
                 <CardDescription>Sign using your mouse, touchscreen, or type your name</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button
                   variant={signatureMode === "draw" ? "default" : "outline"}
                   size="sm"
