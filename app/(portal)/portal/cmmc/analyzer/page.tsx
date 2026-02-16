@@ -264,7 +264,11 @@ export default function CMMCDashboard() {
             {Object.entries(CONTROL_FAMILIES).map(([family, name]) => {
               const familyControls = NIST_CONTROLS.filter(c => c.family === family);
               return (
-                <Card key={family} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card 
+                  key={family} 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => router.push(`/portal/cmmc/analyzer/controls/${family.toLowerCase()}`)}
+                >
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{family} - {name}</CardTitle>
