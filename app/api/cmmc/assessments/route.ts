@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, Query } from "firebase-admin/firestore";
 import { 
   SystemAssessment, 
   CMMC_COLLECTIONS,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // List assessments with optional filter
-    let query = adminDb.collection(
+    let query: Query = adminDb.collection(
       COLLECTIONS.CMMC_ASSESSMENTS || CMMC_COLLECTIONS.ASSESSMENTS
     );
 
