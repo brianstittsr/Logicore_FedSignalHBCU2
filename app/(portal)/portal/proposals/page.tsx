@@ -1989,35 +1989,6 @@ Workflow:
       const result = await response.json();
 
       if (result.success) {
-        // If hosting is enabled, also create Stripe subscription
-        if (proposalData.hostingEnabled && proposalData.monthlyFee) {
-          try {
-            const stripeResponse = await fetch("/api/stripe/create-subscription", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                proposalId: proposalData.id,
-                customerEmail: ndaSignerEmail,
-                customerName: proposalData.clientName,
-                monthlyAmount: proposalData.monthlyFee,
-                agreementName: proposalData.name,
-              }),
-            });
-
-            const stripeResult = await stripeResponse.json();
-            if (stripeResult.success) {
-              setProposalData((prev) => ({
-                ...prev,
-                stripeCustomerId: stripeResult.customerId,
-                stripeSubscriptionId: stripeResult.subscriptionId,
-              }));
-            }
-          } catch (stripeError) {
-            console.error("Error creating Stripe subscription:", stripeError);
-            // Don't block the agreement sending if Stripe fails
-          }
-        }
-
         // Create styled success dialog
         const dialogContent = `
           <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 32px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8f 100%); border-radius: 12px; color: white; max-width: 500px;">
