@@ -17,10 +17,8 @@ import {
   Target,
   Zap,
   Lock,
-  ChevronDown,
   Star,
   Building2,
-  Briefcase,
 } from "lucide-react";
 import {
   Accordion,
@@ -190,10 +188,6 @@ export default function CMMCTrainingPage() {
               <p className="text-lg md:text-xl font-semibold text-white/90 mt-3 tracking-wide uppercase">Collaboration</p>
             </div>
 
-            <Badge className="mb-6 bg-red-600 text-white border-0 px-6 py-3 text-base font-bold animate-pulse shadow-lg shadow-red-500/50">
-              <AlertTriangle className="w-5 h-5 mr-2" />
-              ⚠️ PHASE 1 ENFORCEMENT NOW ACTIVE - NOVEMBER 2025
-            </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-7xl mb-8">
               Register for the Next{" "}
               <span className="text-primary drop-shadow-lg">CMMC CyberSecurity Compliance Training Cohort</span>
@@ -229,49 +223,18 @@ export default function CMMCTrainingPage() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-xl px-10 py-7 font-bold shadow-lg shadow-primary/50 animate-pulse" asChild>
-                <Link href="/cmmc-training-confirmation">
+                <Link href="https://www.paypal.com/ncp/payment/Y5MWA6CR8NSXQ">
                   <Calendar className="w-6 h-6 mr-2" />
-                  REGISTER FOR THE NEXT CMMC COHORT
+                  SECURE YOUR SEAT
                 </Link>
               </Button>
             </div>
-            <Button size="lg" className="bg-white text-slate-900 hover:bg-gray-100 text-lg px-8 py-6 font-semibold" asChild>
-              <Link href="#timeline">
-                View Compliance Timeline
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Urgency Banner - Enhanced */}
-      <section className="bg-gradient-to-r from-red-700 via-red-600 to-red-700 text-white py-8">
-        <div className="container">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-full">
-                <AlertTriangle className="w-10 h-10" />
-              </div>
-              <div>
-                <p className="font-bold text-2xl">The Defense Contracting Landscape Has Changed</p>
-                <p className="text-red-100 text-lg">
-                  Without current SPRS scores and auditable evidence, your organization faces{" "}
-                  <strong className="text-white underline">immediate ineligibility</strong> for contract awards.
-                </p>
-              </div>
-            </div>
-            <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100 font-bold px-8 py-6 text-lg whitespace-nowrap" asChild>
-              <Link href="#register">
-                ACT NOW →
-              </Link>
-            </Button>
           </div>
         </div>
       </section>
 
       {/* KDM Consortium Section */}
-      <section className="py-20 md:py-28 bg-white">
+      <section className="py-24 md:py-32 bg-white">
         <div className="container">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
@@ -323,7 +286,7 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* Timeline Section */}
-      <section id="timeline" className="py-20 md:py-28 bg-slate-50">
+      <section id="timeline" className="py-24 md:py-32 bg-slate-50">
         <div className="container">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <Badge variant="outline" className="mb-6 border-red-500/50 text-red-600">
@@ -384,10 +347,10 @@ export default function CMMCTrainingPage() {
             </div>
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 py-6" asChild>
-              <Link href="/cmmc-training-confirmation">
-                REGISTER FOR NEXT CMMC COHORT
+              <Link href="https://www.paypal.com/ncp/payment/Y5MWA6CR8NSXQ">
+                SECURE YOUR SEAT
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </Button>
@@ -396,7 +359,7 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* Process Section */}
-      <section className="py-20 md:py-28 bg-white">
+      <section className="py-24 md:py-32 bg-white">
         <div className="container">
           <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-16">
             <div>
@@ -448,7 +411,7 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* CTA Section */}
-      <section id="register" className="py-20 md:py-28 bg-slate-800">
+      <section id="register" className="py-24 md:py-32 bg-slate-800">
         <div className="container">
           <div className="max-w-4xl mx-auto text-center text-white">
             <Shield className="w-16 h-16 mx-auto mb-6 text-primary" />
@@ -465,9 +428,9 @@ export default function CMMCTrainingPage() {
               className="bg-primary text-white hover:bg-primary/90 text-lg px-10 py-6 font-bold"
               asChild
             >
-              <Link href="/cmmc-training-confirmation">
+              <Link href="https://www.paypal.com/ncp/payment/Y5MWA6CR8NSXQ">
                 <Calendar className="w-5 h-5 mr-2" />
-                REGISTER FOR THE NEXT CMMC COHORT
+                SECURE YOUR SEAT
               </Link>
             </Button>
             <p className="mt-6 text-gray-400 text-sm">
@@ -478,7 +441,7 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 md:py-28 bg-slate-50">
+      <section className="py-24 md:py-32 bg-slate-50">
         <div className="container">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -508,7 +471,7 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 md:py-28 bg-white">
+      <section className="py-24 md:py-32 bg-white">
         <div className="container">
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -531,7 +494,7 @@ export default function CMMCTrainingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 md:py-28 bg-slate-900 text-white">
+      <section className="py-24 md:py-32 bg-slate-900 text-white">
         <div className="container">
           <div className="max-w-4xl mx-auto text-center">
             <Image
@@ -556,9 +519,9 @@ export default function CMMCTrainingPage() {
               className="bg-primary hover:bg-primary/90 text-lg px-10 py-6 font-bold"
               asChild
             >
-              <Link href="/cmmc-training-confirmation">
+              <Link href="https://www.paypal.com/ncp/payment/Y5MWA6CR8NSXQ">
                 <Calendar className="w-5 h-5 mr-2" />
-                REGISTER FOR THE NEXT CMMC COHORT
+                SECURE YOUR SEAT
               </Link>
             </Button>
           </div>
