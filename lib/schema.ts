@@ -2162,6 +2162,14 @@ export const COLLECTIONS = {
   PROPOSALS: "proposals",
   // Proposal E-Signatures
   PROPOSAL_SIGNATURES: "proposalSignatures",
+  // CMMC / NIST 800-171 Analyzer
+  CMMC_ASSESSMENTS: "cmmc_assessments",
+  CMMC_CONTROL_ASSESSMENTS: "cmmc_control_assessments",
+  CMMC_FINDINGS: "cmmc_findings",
+  CMMC_POAMS: "cmmc_poams",
+  CMMC_AI_SESSIONS: "cmmc_ai_sessions",
+  CMMC_QUESTIONNAIRE_RESPONSES: "cmmc_questionnaire_responses",
+  CMMC_PRE_AUDITS: "cmmc_pre_audits",
 } as const;
 
 // ============================================================================
