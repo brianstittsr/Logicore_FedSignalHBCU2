@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
 import { Timestamp } from "firebase-admin/firestore";
-import { CMMC_COLLECTIONS, SystemAssessment } from "@/lib/types/cmmc";
+import { CMMC_COLLECTIONS, SystemAssessment, Finding, ControlAssessment } from "@/lib/types/cmmc";
 import { 
   generateControlAnalysis, 
   generateControlResponse,
@@ -111,12 +111,7 @@ export async function POST_SUGGEST_RESPONSE(request: NextRequest) {
       );
     }
 
-    const assessment = assessmentDoc.data() as {
-      name: string;
-      systemType: string;
-      handlesCUI: boolean;
-      [key: string]: unknown;
-    };
+    const assessment = assessmentDoc.data() as unknown as SystemAssessment;
 
     // Generate AI response suggestion
     const suggestion = await generateControlResponse(
@@ -171,18 +166,8 @@ export async function POST_ANALYZE_FINDING(request: NextRequest) {
       );
     }
 
-    const finding = findingDoc.data() as {
-      id: string;
-      assessmentId: string;
-      controlId: string;
-      controlAssessmentId: string;
-      title: string;
-      description: string;
-      severity: 'critical' | 'high' | 'medium' | 'low' | 'informational';
-      identifiedBy: string;
-      identifiedAt: Timestamp;
-      updatedAt: Timestamp;
-    };
+    const finding = findingDoc.data() as unknown as Finding;
+    finding.id = findingId;
 
     // Get control assessment
     const controlAssessmentDoc = await adminDb
@@ -191,15 +176,7 @@ export async function POST_ANALYZE_FINDING(request: NextRequest) {
       .get();
 
     const controlAssessment = controlAssessmentDoc.exists 
-      ? controlAssessmentDoc.data() as {
-          id: string;
-          assessmentId: string;
-          controlId: string;
-          isApplicable: boolean;
-          status: string;
-          implementationDescription?: string;
-          [key: string]: unknown;
-        }
+      ? (controlAssessmentDoc.data() as unknown as ControlAssessment)
       : null;
 
     // Get assessment
@@ -209,13 +186,8 @@ export async function POST_ANALYZE_FINDING(request: NextRequest) {
       .get();
 
     const assessment = assessmentDoc.exists
-      ? assessmentDoc.data() as {
-          name: string;
-          systemType: string;
-          handlesCUI: boolean;
-          [key: string]: unknown;
-        }
-      : {};
+      ? (assessmentDoc.data() as unknown as SystemAssessment)
+      : {} as SystemAssessment;
 
     // Generate AI analysis
     const analysis = await analyzeFinding(
@@ -278,15 +250,8 @@ export async function POST_SUGGEST_POAM(request: NextRequest) {
       );
     }
 
-    const finding = findingDoc.data() as {
-      id: string;
-      assessmentId: string;
-      controlId: string;
-      controlAssessmentId: string;
-      title: string;
-      description: string;
-      severity: 'critical' | 'high' | 'medium' | 'low' | 'informational';
-    };
+    const finding = findingDoc.data() as unknown as Finding;
+    finding.id = findingId;
 
     // Get control assessment
     const controlAssessmentDoc = await adminDb
@@ -295,12 +260,7 @@ export async function POST_SUGGEST_POAM(request: NextRequest) {
       .get();
 
     const controlAssessment = controlAssessmentDoc.exists
-      ? controlAssessmentDoc.data() as {
-          id: string;
-          assessmentId: string;
-          controlId: string;
-          [key: string]: unknown;
-        }
+      ? (controlAssessmentDoc.data() as unknown as ControlAssessment)
       : null;
 
     // Get assessment
@@ -310,8 +270,8 @@ export async function POST_SUGGEST_POAM(request: NextRequest) {
       .get();
 
     const assessment = assessmentDoc.exists
-      ? assessmentDoc.data()
-      : {};
+      ? (assessmentDoc.data() as unknown as SystemAssessment)
+      : {} as SystemAssessment;
 
     // Generate AI POAM suggestion
     const suggestion = await generatePOAMSuggestion(
@@ -374,12 +334,8 @@ export async function POST_PRE_AUDIT(request: NextRequest) {
       );
     }
 
-    const assessment = assessmentDoc.data() as {
-      name: string;
-      systemType: string;
-      handlesCUI: boolean;
-      [key: string]: unknown;
-    };
+    const assessment = assessmentDoc.data() as unknown as SystemAssessment;
+    assessment.id = assessmentId;
 
     // Get control assessments
     const controlAssessmentsSnapshot = await adminDb
@@ -388,16 +344,9 @@ export async function POST_PRE_AUDIT(request: NextRequest) {
       .get();
 
     const controlAssessments = controlAssessmentsSnapshot.docs.map((doc) => ({
+      ...(doc.data() as ControlAssessment),
       id: doc.id,
-      ...doc.data(),
-    })) as Array<{
-      id: string;
-      assessmentId: string;
-      controlId: string;
-      isApplicable: boolean;
-      status: string;
-      [key: string]: unknown;
-    }>;
+    })) as ControlAssessment[];
 
     // Perform AI pre-audit
     const auditResult = await performPreAudit(
