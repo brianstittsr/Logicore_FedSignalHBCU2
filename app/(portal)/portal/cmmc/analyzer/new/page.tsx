@@ -337,7 +337,7 @@ export default function NewAssessmentPage() {
                   id="systemOwner"
                   placeholder="e.g., John Smith"
                   value={formData.systemOwner}
-                  onChange={(e) => updateFormData("systemOfficer", e.target.value)}
+                  onChange={(e) => updateFormData("systemOwner", e.target.value)}
                 />
               </div>
               <div className="space-y-2">
