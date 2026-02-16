@@ -239,6 +239,12 @@ const aiToolsItems = [
     icon: Sparkles,
   },
   {
+    title: "CMMC Analyzer",
+    href: "/portal/cmmc/analyzer",
+    icon: Shield,
+    badge: "NEW",
+  },
+  {
     title: "AI Workforce",
     href: "/portal/ai-workforce",
     icon: Bot,
