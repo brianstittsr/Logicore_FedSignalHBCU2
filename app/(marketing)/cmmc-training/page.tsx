@@ -280,6 +280,7 @@ export default function CMMCTrainingPage() {
             <p className="text-xl text-gray-600">
               The KDM Consortium brings a <strong>team-based approach</strong> to cybersecurity compliance 
               through the CMMC Cohorts, powered by Strategic Value Plus Solutions, LLC (V+).
+              We help you get ready for your third-party C3PAO assessment.
             </p>
           </div>
 
