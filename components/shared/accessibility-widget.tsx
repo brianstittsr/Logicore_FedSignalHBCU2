@@ -9,16 +9,17 @@ interface AccessibilityWidgetProps {
 }
 
 export function AccessibilityWidget({ accountId }: AccessibilityWidgetProps) {
-  // If no account ID provided, use a placeholder that can be configured later
   const userWayAccountId = accountId || process.env.NEXT_PUBLIC_USERWAY_ACCOUNT_ID;
 
-  if (!userWayAccountId) {
-    // In development, show a console warning
-    if (process.env.NODE_ENV === "development") {
+  useEffect(() => {
+    if (!userWayAccountId && process.env.NODE_ENV === "development") {
       console.warn(
         "UserWay account ID not configured. Set NEXT_PUBLIC_USERWAY_ACCOUNT_ID in your environment variables."
       );
     }
+  }, [userWayAccountId]);
+
+  if (!userWayAccountId) {
     return null;
   }
 
