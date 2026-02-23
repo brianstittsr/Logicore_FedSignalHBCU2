@@ -1999,6 +1999,60 @@ export const NIST_CONTROLS: NISTControl[] = [
     ],
     testMethods: ["examine", "interview", "test"]
   },
+  {
+    id: "MP.L2-3.8.8",
+    family: "MP",
+    level: 2,
+    number: "3.8.8",
+    title: "Prohibit Use of Unidentified Portable Storage",
+    description: "Prohibit the use of portable storage devices when such devices have no identifiable owner.",
+    discussion: "This control extends the portable storage controls to explicitly prohibit devices that cannot be attributed to an identified owner. Ownership identification enables accountability and traceability for data stored on portable media.",
+    relatedControls: ["MP.L2-3.8.7", "MP.L1-3.8.6", "AC.L2-3.1.17"],
+    assessmentObjective: "Determine if portable storage devices without identifiable owners are prohibited.",
+    potentialAssessors: ["IT Manager", "Security Officer", "Endpoint Administrator"],
+    cmmcLevel: 2,
+    commonArtifacts: [
+      "Portable Storage Ownership Policy",
+      "Device Registration Procedures",
+      "USB Blocking Configuration",
+      "Device Ownership Records",
+      "Endpoint Security Tool Configuration"
+    ],
+    interviewQuestions: [
+      "How is ownership of portable storage verified?",
+      "Are found or unregistered devices blocked?",
+      "What is the process for registering portable storage?",
+      "How are violations handled?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+  {
+    id: "MP.L2-3.8.9",
+    family: "MP",
+    level: 2,
+    number: "3.8.9",
+    title: "Protect Backups of CUI",
+    description: "Protect the confidentiality of backup CUI at storage locations.",
+    discussion: "Backup copies of CUI must receive the same protection as the original data. This includes encryption of backup media, secure storage locations, access controls, and protection during transport to offsite locations.",
+    relatedControls: ["MP.L1-3.8.3", "MP.L2-3.8.1", "SC.L1-3.13.11"],
+    assessmentObjective: "Determine if the confidentiality of backup CUI at storage locations is protected.",
+    potentialAssessors: ["Backup Administrator", "Security Engineer", "IT Manager"],
+    cmmcLevel: 2,
+    commonArtifacts: [
+      "Backup Encryption Policy",
+      "Offsite Backup Security Procedures",
+      "Backup Media Access Controls",
+      "Backup Storage Facility Security",
+      "Backup Encryption Verification Records"
+    ],
+    interviewQuestions: [
+      "How are backup copies of CUI protected?",
+      "Are backups encrypted at rest?",
+      "How are offsite backups secured?",
+      "Who has access to backup media?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
 
   // ============================================
   // PHYSICAL PROTECTION (PE)
@@ -2390,6 +2444,34 @@ export const NIST_CONTROLS: NISTControl[] = [
       "What metrics are tracked?",
       "Are there automated monitoring tools?",
       "How are monitoring results reviewed?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "CA.L2-3.12.4",
+    family: "CA",
+    level: 2,
+    number: "3.12.4",
+    title: "Develop System Security Plans",
+    description: "Develop, document, and periodically update system security plans that describe system boundaries, system environments of operation, how security requirements are implemented, and the relationships with or connections to other systems.",
+    discussion: "System Security Plans (SSPs) are the primary documentation artifact for CMMC compliance. They describe the system boundary, the CUI environment, implemented security controls, and how the organization meets each requirement. SSPs must be kept current as systems and environments change.",
+    relatedControls: ["CA.L2-3.12.1", "CA.L2-3.12.2", "CA.L2-3.12.3"],
+    assessmentObjective: "Determine if system security plans are developed, documented, and periodically updated.",
+    potentialAssessors: ["Security Officer", "Compliance Manager", "System Owner"],
+    cmmcLevel: 2,
+    commonArtifacts: [
+      "System Security Plan (SSP)",
+      "System Boundary Documentation",
+      "CUI Environment Description",
+      "Control Implementation Statements",
+      "System Interconnection Agreements",
+      "SSP Review and Update Records"
+    ],
+    interviewQuestions: [
+      "Is there a documented System Security Plan?",
+      "How often is the SSP reviewed and updated?",
+      "Does the SSP describe the system boundary?",
+      "Are all security controls documented in the SSP?"
     ],
     testMethods: ["examine", "interview"]
   },
@@ -3324,6 +3406,709 @@ export const NIST_CONTROLS: NISTControl[] = [
       "How are vendors notified of incidents?",
       "How are component vulnerabilities tracked?",
       "What happens when a supplier is compromised?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "SR.L2-3.15.5",
+    family: "SR",
+    level: 2,
+    number: "3.15.5",
+    title: "Develop Supply Chain Protection Plan",
+    description: "Develop and implement a plan for managing supply chain risks associated with the development, acquisition, maintenance, and disposal of systems, system components, and system services.",
+    discussion: "A supply chain protection plan formalizes the organization's approach to managing risks from third-party hardware, software, and services. The plan should address vendor selection, component verification, and ongoing monitoring.",
+    relatedControls: ["SR.L2-3.15.1", "SR.L2-3.15.2", "SR.L2-3.15.3"],
+    assessmentObjective: "Determine if a supply chain risk management plan is developed and implemented.",
+    potentialAssessors: ["Supply Chain Manager", "Security Officer", "Procurement"],
+    cmmcLevel: 2,
+    commonArtifacts: [
+      "Supply Chain Risk Management Plan",
+      "Vendor Selection Criteria",
+      "Component Verification Procedures",
+      "Supply Chain Security Policy",
+      "Plan Review and Update Records"
+    ],
+    interviewQuestions: [
+      "Is there a documented supply chain risk management plan?",
+      "How are supply chain risks identified and tracked?",
+      "How is the plan reviewed and updated?",
+      "Who is responsible for supply chain risk management?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "SR.L2-3.15.6",
+    family: "SR",
+    level: 2,
+    number: "3.15.6",
+    title: "Employ Counterfeit Component Detection",
+    description: "Employ detection methods for counterfeit components prior to installation.",
+    discussion: "Counterfeit hardware and software components can introduce backdoors, malware, or reduced reliability. Detection methods include visual inspection, testing, provenance verification, and use of trusted suppliers.",
+    relatedControls: ["SR.L2-3.15.1", "SR.L2-3.15.3", "CM.L2-3.4.1"],
+    assessmentObjective: "Determine if counterfeit component detection methods are employed prior to installation.",
+    potentialAssessors: ["Supply Chain Manager", "IT Manager", "Procurement"],
+    cmmcLevel: 2,
+    commonArtifacts: [
+      "Counterfeit Detection Procedures",
+      "Trusted Supplier List",
+      "Component Inspection Records",
+      "Provenance Verification Documentation",
+      "Anti-Counterfeit Policy"
+    ],
+    interviewQuestions: [
+      "How are counterfeit components detected?",
+      "Are components inspected before installation?",
+      "How is component provenance verified?",
+      "What happens when a counterfeit component is found?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "SR.L2-3.15.7",
+    family: "SR",
+    level: 2,
+    number: "3.15.7",
+    title: "Limit Harm from Potentially Malicious Components",
+    description: "Limit harm from potential adversary-controlled components by employing safeguards to detect and prevent malicious functionality.",
+    discussion: "Components from untrusted sources may contain malicious functionality. Safeguards include network isolation, behavioral monitoring, code signing verification, and sandboxing of suspect components.",
+    relatedControls: ["SR.L2-3.15.6", "SI.L2-3.14.1", "SC.L1-3.13.1"],
+    assessmentObjective: "Determine if safeguards are employed to limit harm from potentially malicious components.",
+    potentialAssessors: ["Security Engineer", "Supply Chain Manager", "IT Manager"],
+    cmmcLevel: 2,
+    commonArtifacts: [
+      "Malicious Component Detection Procedures",
+      "Network Isolation Configuration",
+      "Behavioral Monitoring Rules",
+      "Code Signing Verification",
+      "Component Sandboxing Documentation"
+    ],
+    interviewQuestions: [
+      "How is malicious functionality in components detected?",
+      "Are untrusted components isolated?",
+      "How is code signing verified?",
+      "What monitoring exists for component behavior?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+
+  // ============================================
+  // LEVEL 3 ENHANCED CONTROLS (NIST 800-172 / CMMC Level 3)
+  // ============================================
+
+  // AC Level 3
+  {
+    id: "AC.L3-3.1.2e",
+    family: "AC",
+    level: 3,
+    number: "3.1.2e",
+    title: "Employ Dynamic Access Control",
+    description: "Employ dynamic access control approaches that can be updated to respond to rapidly changing security and mission requirements.",
+    discussion: "Dynamic access control enables organizations to respond quickly to changing threat conditions by adjusting access policies in real time. This includes attribute-based access control (ABAC) and policy-based access control that can be updated without system reconfiguration.",
+    relatedControls: ["AC.L1-3.1.1", "AC.L1-3.1.2", "AC.L2-3.1.3"],
+    assessmentObjective: "Determine if dynamic access control approaches are employed to respond to changing security requirements.",
+    potentialAssessors: ["Security Architect", "System Administrator", "Security Engineer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Dynamic Access Control Policy",
+      "ABAC Configuration",
+      "Access Policy Update Procedures",
+      "Real-Time Access Control Logs",
+      "Policy Change Management Records"
+    ],
+    interviewQuestions: [
+      "How quickly can access policies be updated?",
+      "Is attribute-based access control implemented?",
+      "How are access decisions made dynamically?",
+      "How are policy changes tested before deployment?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+  {
+    id: "AC.L3-3.1.3e",
+    family: "AC",
+    level: 3,
+    number: "3.1.3e",
+    title: "Employ Secure Information Sharing Techniques",
+    description: "Use secure information sharing techniques to enable authorized sharing while preventing unauthorized disclosure.",
+    discussion: "Secure information sharing techniques include data tagging, automated access enforcement based on tags, and cross-domain solutions that enforce information flow policies. These techniques enable sharing with mission partners while maintaining CUI protection.",
+    relatedControls: ["AC.L3-3.1.22", "AC.L2-3.1.3", "SC.L2-3.13.7"],
+    assessmentObjective: "Determine if secure information sharing techniques are employed.",
+    potentialAssessors: ["Security Architect", "Data Owner", "Security Engineer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Data Tagging Implementation",
+      "Cross-Domain Solution Configuration",
+      "Information Sharing Agreements",
+      "Automated Access Enforcement Documentation",
+      "Sharing Policy Documentation"
+    ],
+    interviewQuestions: [
+      "How is CUI tagged for automated access control?",
+      "Are cross-domain solutions used?",
+      "How is sharing with mission partners controlled?",
+      "How are sharing violations detected?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+
+  // AT Level 3
+  {
+    id: "AT.L3-3.2.1e",
+    family: "AT",
+    level: 3,
+    number: "3.2.1e",
+    title: "Provide Advanced Cyber Threat Awareness Training",
+    description: "Provide awareness training focused on recognizing and responding to threats from adversaries with advanced persistent threat (APT) capabilities.",
+    discussion: "APT-focused training prepares personnel to recognize sophisticated, targeted attacks that may use spear phishing, watering hole attacks, and other advanced techniques. Training should include current threat intelligence and real-world examples.",
+    relatedControls: ["AT.L1-3.2.1", "AT.L2-3.2.2", "AT.L2-3.2.3"],
+    assessmentObjective: "Determine if awareness training addresses advanced persistent threat techniques.",
+    potentialAssessors: ["Training Officer", "Security Officer", "Threat Intelligence Analyst"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "APT Awareness Training Materials",
+      "Threat Intelligence Briefings",
+      "Advanced Phishing Simulation Results",
+      "Training Completion Records",
+      "Threat Scenario Documentation"
+    ],
+    interviewQuestions: [
+      "Does training cover APT techniques?",
+      "Is threat intelligence incorporated into training?",
+      "How are advanced attack scenarios exercised?",
+      "How is training effectiveness measured?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // AU Level 3
+  {
+    id: "AU.L3-3.3.1e",
+    family: "AU",
+    level: 3,
+    number: "3.3.1e",
+    title: "Conduct Audit Log Reviews for APT Indicators",
+    description: "Review and analyze audit records for indicators of advanced persistent threat activity.",
+    discussion: "APT actors often operate slowly and stealthily, making detection through standard log review difficult. Specialized analysis techniques, threat hunting, and behavioral analytics are needed to detect APT indicators in audit logs.",
+    relatedControls: ["AU.L2-3.3.1", "AU.L2-3.3.3", "AU.L2-3.3.5"],
+    assessmentObjective: "Determine if audit records are reviewed for indicators of advanced persistent threat activity.",
+    potentialAssessors: ["Threat Hunter", "Security Operations", "Forensic Analyst"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "APT Indicator Detection Rules",
+      "Threat Hunting Procedures",
+      "Behavioral Analytics Configuration",
+      "APT Detection Reports",
+      "Threat Intelligence Integration"
+    ],
+    interviewQuestions: [
+      "How are APT indicators identified in logs?",
+      "Is threat hunting performed?",
+      "What behavioral analytics are used?",
+      "How is threat intelligence used in log analysis?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // CM Level 3
+  {
+    id: "CM.L3-3.4.1e",
+    family: "CM",
+    level: 3,
+    number: "3.4.1e",
+    title: "Establish Authoritative Source for Configuration Baselines",
+    description: "Establish and maintain an authoritative source and golden images for configuration baselines.",
+    discussion: "Authoritative sources for configuration (golden images) ensure that systems can be rapidly restored to a known-good state. These images should be protected from tampering, regularly updated, and used for both initial deployment and recovery.",
+    relatedControls: ["CM.L2-3.4.1", "CM.L2-3.4.2", "IR.L2-3.6.1"],
+    assessmentObjective: "Determine if authoritative sources and golden images are established and maintained for configuration baselines.",
+    potentialAssessors: ["System Administrator", "Configuration Manager", "Security Engineer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Golden Image Repository",
+      "Image Integrity Verification",
+      "Image Update Procedures",
+      "Authoritative Source Documentation",
+      "Image Access Controls"
+    ],
+    interviewQuestions: [
+      "Are golden images maintained for systems?",
+      "How are images protected from tampering?",
+      "How often are images updated?",
+      "How are images used for recovery?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+  {
+    id: "CM.L3-3.4.2e",
+    family: "CM",
+    level: 3,
+    number: "3.4.2e",
+    title: "Implement Automated Configuration Management",
+    description: "Employ automated mechanisms to detect misconfigured or unauthorized system components and remediate identified issues.",
+    discussion: "Automated configuration management tools continuously monitor system configurations against baselines and automatically remediate deviations. This reduces the window of exposure from misconfigurations and ensures consistent security posture.",
+    relatedControls: ["CM.L2-3.4.1", "CM.L2-3.4.2", "CM.L2-3.4.8"],
+    assessmentObjective: "Determine if automated mechanisms detect and remediate misconfigured or unauthorized system components.",
+    potentialAssessors: ["System Administrator", "Security Engineer", "Configuration Manager"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Automated Configuration Tool Configuration",
+      "Configuration Drift Detection Reports",
+      "Auto-Remediation Logs",
+      "Compliance Dashboard",
+      "Configuration Monitoring Procedures"
+    ],
+    interviewQuestions: [
+      "What automated tools monitor configurations?",
+      "How quickly are deviations detected?",
+      "Is auto-remediation implemented?",
+      "How are configuration alerts handled?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+
+  // IA Level 3
+  {
+    id: "IA.L3-3.5.3e",
+    family: "IA",
+    level: 3,
+    number: "3.5.3e",
+    title: "Employ Hardware-Based Multi-Factor Authentication",
+    description: "Employ hardware-based multi-factor authentication mechanisms for privileged accounts.",
+    discussion: "Hardware-based MFA (e.g., PIV cards, FIDO2 hardware tokens, smart cards) provides stronger authentication than software-based solutions. Hardware tokens are resistant to phishing, credential theft, and remote attacks.",
+    relatedControls: ["IA.L2-3.5.3", "IA.L2-3.5.4", "AC.L2-3.1.5"],
+    assessmentObjective: "Determine if hardware-based multi-factor authentication is employed for privileged accounts.",
+    potentialAssessors: ["Security Engineer", "System Administrator", "Identity Manager"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Hardware Token Inventory",
+      "PIV/CAC Implementation Documentation",
+      "FIDO2 Configuration",
+      "Hardware MFA Enrollment Records",
+      "Privileged Account MFA Verification"
+    ],
+    interviewQuestions: [
+      "What hardware MFA tokens are used?",
+      "Are PIV/CAC cards implemented?",
+      "How are hardware tokens managed and replaced?",
+      "Are all privileged accounts using hardware MFA?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+  {
+    id: "IA.L3-3.5.4e",
+    family: "IA",
+    level: 3,
+    number: "3.5.4e",
+    title: "Employ Passwordless Authentication",
+    description: "Employ passwordless authentication mechanisms to reduce risks associated with password-based authentication.",
+    discussion: "Passwordless authentication eliminates the risks of password theft, reuse, and brute force attacks. Methods include biometrics, hardware tokens, and certificate-based authentication that do not rely on shared secrets.",
+    relatedControls: ["IA.L2-3.5.3", "IA.L3-3.5.3e", "IA.L2-3.5.7"],
+    assessmentObjective: "Determine if passwordless authentication mechanisms are employed.",
+    potentialAssessors: ["Security Engineer", "Identity Manager", "System Administrator"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Passwordless Authentication Configuration",
+      "Biometric System Documentation",
+      "Certificate-Based Auth Configuration",
+      "Authentication Method Inventory",
+      "Passwordless Rollout Plan"
+    ],
+    interviewQuestions: [
+      "Is passwordless authentication implemented?",
+      "What passwordless methods are used?",
+      "Which accounts use passwordless auth?",
+      "How are passwordless credentials managed?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+
+  // IR Level 3
+  {
+    id: "IR.L3-3.6.1e",
+    family: "IR",
+    level: 3,
+    number: "3.6.1e",
+    title: "Establish Cyber Incident Response Teams",
+    description: "Establish and maintain a cyber incident response team with the capability to respond to advanced persistent threat incidents.",
+    discussion: "A dedicated cyber incident response team (CIRT) with APT-specific capabilities provides faster and more effective response to sophisticated attacks. The team should have specialized skills in forensics, threat hunting, and malware analysis.",
+    relatedControls: ["IR.L2-3.6.1", "IR.L2-3.6.2", "IR.L2-3.6.3"],
+    assessmentObjective: "Determine if a cyber incident response team with APT response capability is established and maintained.",
+    potentialAssessors: ["CISO", "Incident Response Manager", "Security Operations Manager"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "CIRT Charter and Composition",
+      "APT Response Procedures",
+      "Team Skills and Certifications",
+      "CIRT Contact Information",
+      "APT Exercise Records"
+    ],
+    interviewQuestions: [
+      "Is there a dedicated incident response team?",
+      "Does the team have APT response capabilities?",
+      "What forensic tools does the team use?",
+      "How is the team activated for APT incidents?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "IR.L3-3.6.2e",
+    family: "IR",
+    level: 3,
+    number: "3.6.2e",
+    title: "Establish Cyber Threat Hunting Capability",
+    description: "Establish and maintain a cyber threat hunting capability to search for indicators of compromise.",
+    discussion: "Threat hunting proactively searches for threats that have evaded automated detection. Hunters use threat intelligence, behavioral analytics, and manual investigation techniques to find hidden adversaries before they cause significant damage.",
+    relatedControls: ["IR.L2-3.6.1", "AU.L2-3.3.1", "SI.L2-3.14.6"],
+    assessmentObjective: "Determine if a cyber threat hunting capability is established and maintained.",
+    potentialAssessors: ["Threat Hunter", "SOC Manager", "Security Operations"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Threat Hunting Procedures",
+      "Hunt Team Charter",
+      "Threat Intelligence Sources",
+      "Hunt Campaign Records",
+      "Indicators of Compromise (IOC) Database"
+    ],
+    interviewQuestions: [
+      "Is proactive threat hunting performed?",
+      "What threat intelligence sources are used?",
+      "How often are hunt campaigns conducted?",
+      "How are hunt findings documented and acted upon?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // MA Level 3
+  {
+    id: "MA.L3-3.7.1e",
+    family: "MA",
+    level: 3,
+    number: "3.7.1e",
+    title: "Inspect Maintenance Tools for Malicious Content",
+    description: "Inspect maintenance tools carried into a facility by maintenance personnel for malicious software.",
+    discussion: "Maintenance tools brought into facilities by external personnel can introduce malware. Inspection includes scanning tools with up-to-date antivirus, verifying tool integrity, and using organization-provided tools where possible.",
+    relatedControls: ["MA.L2-3.7.2", "MA.L2-3.7.4", "SI.L2-3.14.1"],
+    assessmentObjective: "Determine if maintenance tools are inspected for malicious software before use.",
+    potentialAssessors: ["IT Manager", "Security Officer", "Maintenance Supervisor"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Maintenance Tool Inspection Procedures",
+      "Malware Scan Records for Tools",
+      "Tool Integrity Verification",
+      "Approved Tool List",
+      "Tool Inspection Logs"
+    ],
+    interviewQuestions: [
+      "Are maintenance tools scanned for malware?",
+      "Who performs tool inspections?",
+      "What happens if malware is found in a tool?",
+      "Are organization-provided tools preferred?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // RA Level 3
+  {
+    id: "RA.L3-3.11.1e",
+    family: "RA",
+    level: 3,
+    number: "3.11.1e",
+    title: "Employ Threat Intelligence in Risk Assessments",
+    description: "Employ threat intelligence, including information about adversary tactics, techniques, and procedures (TTPs), in risk assessments.",
+    discussion: "Incorporating threat intelligence into risk assessments provides a more accurate picture of the threat landscape. This includes using MITRE ATT&CK framework, ISAC threat feeds, and government threat advisories to inform risk decisions.",
+    relatedControls: ["RA.L2-3.11.1", "RA.L2-3.11.2", "SI.L2-3.14.6"],
+    assessmentObjective: "Determine if threat intelligence including adversary TTPs is employed in risk assessments.",
+    potentialAssessors: ["Risk Manager", "Threat Intelligence Analyst", "Security Officer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Threat Intelligence Sources",
+      "TTP-Based Risk Assessment",
+      "MITRE ATT&CK Mapping",
+      "Threat Intelligence Integration Procedures",
+      "Risk Assessment with Threat Context"
+    ],
+    interviewQuestions: [
+      "What threat intelligence sources are used?",
+      "How is threat intelligence incorporated into risk assessments?",
+      "Is MITRE ATT&CK used?",
+      "How are adversary TTPs mapped to controls?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "RA.L3-3.11.2e",
+    family: "RA",
+    level: 3,
+    number: "3.11.2e",
+    title: "Conduct Penetration Testing",
+    description: "Conduct penetration testing periodically and after significant changes to the system.",
+    discussion: "Penetration testing simulates real-world attacks to identify exploitable vulnerabilities. Testing should be conducted by qualified personnel or third parties and should cover network, application, and physical attack vectors.",
+    relatedControls: ["RA.L2-3.11.2", "CA.L2-3.12.1", "IR.L2-3.6.1"],
+    assessmentObjective: "Determine if penetration testing is conducted periodically and after significant changes.",
+    potentialAssessors: ["Penetration Tester", "Security Officer", "Assessor"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Penetration Test Plans",
+      "Penetration Test Reports",
+      "Remediation Tracking",
+      "Rules of Engagement Documentation",
+      "Retest Verification Records"
+    ],
+    interviewQuestions: [
+      "How often is penetration testing conducted?",
+      "Who performs penetration testing?",
+      "What scope is covered?",
+      "How are findings remediated and verified?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "RA.L3-3.11.3e",
+    family: "RA",
+    level: 3,
+    number: "3.11.3e",
+    title: "Employ Advanced Vulnerability Analysis",
+    description: "Employ advanced vulnerability analysis techniques including adversarial analysis to identify vulnerabilities.",
+    discussion: "Advanced vulnerability analysis goes beyond automated scanning to include manual analysis, adversarial thinking, and red team exercises. This identifies vulnerabilities that automated tools miss, including logic flaws and complex attack chains.",
+    relatedControls: ["RA.L2-3.11.2", "RA.L3-3.11.2e", "CA.L2-3.12.1"],
+    assessmentObjective: "Determine if advanced vulnerability analysis techniques including adversarial analysis are employed.",
+    potentialAssessors: ["Security Researcher", "Red Team Lead", "Security Engineer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Red Team Exercise Reports",
+      "Adversarial Analysis Documentation",
+      "Manual Vulnerability Analysis Records",
+      "Attack Chain Analysis",
+      "Advanced Vulnerability Findings"
+    ],
+    interviewQuestions: [
+      "Are red team exercises conducted?",
+      "What manual analysis techniques are used?",
+      "How are complex attack chains identified?",
+      "How are advanced findings tracked and remediated?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // CA Level 3
+  {
+    id: "CA.L3-3.12.1e",
+    family: "CA",
+    level: 3,
+    number: "3.12.1e",
+    title: "Conduct Independent Security Assessments",
+    description: "Employ independent assessors or assessment teams to conduct security assessments.",
+    discussion: "Independent assessments provide an objective evaluation of security controls without the bias of internal teams. Assessors should have no direct responsibility for the systems being assessed and should have appropriate qualifications.",
+    relatedControls: ["CA.L2-3.12.1", "CA.L2-3.12.2", "RA.L2-3.11.1"],
+    assessmentObjective: "Determine if independent assessors or assessment teams are employed for security assessments.",
+    potentialAssessors: ["CISO", "Compliance Manager", "Audit Committee"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Independent Assessor Qualifications",
+      "Assessment Independence Documentation",
+      "Third-Party Assessment Reports",
+      "Assessor Conflict of Interest Declarations",
+      "Assessment Scope and Methodology"
+    ],
+    interviewQuestions: [
+      "Are assessors independent of the systems assessed?",
+      "What qualifications do assessors have?",
+      "How is assessor independence verified?",
+      "Are third-party assessors used?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "CA.L3-3.12.2e",
+    family: "CA",
+    level: 3,
+    number: "3.12.2e",
+    title: "Create and Maintain Plans of Action and Milestones",
+    description: "Develop and implement plans of action designed to correct deficiencies and reduce or eliminate vulnerabilities in organizational systems.",
+    discussion: "Plans of Action and Milestones (POA&Ms) document identified deficiencies, planned corrective actions, resources required, and target completion dates. POA&Ms provide accountability for security improvement and are required for CMMC certification.",
+    relatedControls: ["CA.L2-3.12.1", "CA.L2-3.12.3", "RA.L2-3.11.3"],
+    assessmentObjective: "Determine if plans of action are developed and implemented to correct deficiencies.",
+    potentialAssessors: ["Security Officer", "Compliance Manager", "System Owner"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Plan of Action and Milestones (POA&M)",
+      "Deficiency Tracking System",
+      "Corrective Action Records",
+      "POA&M Review Records",
+      "Milestone Completion Evidence"
+    ],
+    interviewQuestions: [
+      "Is a POA&M maintained?",
+      "How are deficiencies tracked to closure?",
+      "Who reviews and approves POA&M entries?",
+      "How are overdue items escalated?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // SC Level 3 (additional)
+  {
+    id: "SC.L3-3.13.19",
+    family: "SC",
+    level: 3,
+    number: "3.13.19",
+    title: "Isolate Security Functions",
+    description: "Isolate security functions from non-security functions.",
+    discussion: "Security functions (authentication, audit, access control) should be isolated from general user functions to prevent tampering or bypass. This includes running security components in separate processes, VMs, or hardware.",
+    relatedControls: ["SC.L2-3.13.3", "AC.L2-3.1.7", "CM.L2-3.4.6"],
+    assessmentObjective: "Determine if security functions are isolated from non-security functions.",
+    potentialAssessors: ["Security Architect", "System Administrator", "Security Engineer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Security Function Isolation Architecture",
+      "Separate Security Process Configuration",
+      "Security VM/Container Documentation",
+      "Isolation Verification Records",
+      "Security Function Inventory"
+    ],
+    interviewQuestions: [
+      "How are security functions isolated?",
+      "Are security components in separate processes?",
+      "Can users access security functions directly?",
+      "How is isolation verified?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+  {
+    id: "SC.L3-3.13.20",
+    family: "SC",
+    level: 3,
+    number: "3.13.20",
+    title: "Implement Deception Technologies",
+    description: "Employ deception technologies and techniques to identify and understand adversary tactics, techniques, and procedures.",
+    discussion: "Deception technologies (honeypots, honeynets, decoy credentials) lure attackers into interacting with fake assets, revealing their TTPs and providing early warning of intrusion. These techniques help detect sophisticated attackers who evade traditional controls.",
+    relatedControls: ["SC.L3-3.13.17", "IR.L3-3.6.2e", "SI.L2-3.14.6"],
+    assessmentObjective: "Determine if deception technologies are employed to identify adversary TTPs.",
+    potentialAssessors: ["Security Operations", "Threat Hunter", "Security Engineer"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Deception Technology Configuration",
+      "Honeypot/Honeynet Documentation",
+      "Decoy Credential Deployment",
+      "Deception Alert Logs",
+      "TTP Intelligence from Deception"
+    ],
+    interviewQuestions: [
+      "Are honeypots or deception technologies deployed?",
+      "How are deception alerts monitored?",
+      "What intelligence is gathered from deception?",
+      "How are deception assets maintained?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+
+  // SI Level 3
+  {
+    id: "SI.L3-3.14.1e",
+    family: "SI",
+    level: 3,
+    number: "3.14.1e",
+    title: "Implement Threat Intelligence Program",
+    description: "Implement a threat intelligence program that includes a cross-organization information-sharing capability.",
+    discussion: "A formal threat intelligence program collects, analyzes, and disseminates threat information to improve defensive posture. Cross-organization sharing (via ISACs, government partnerships) provides broader visibility into the threat landscape.",
+    relatedControls: ["SI.L2-3.14.6", "IR.L3-3.6.2e", "RA.L3-3.11.1e"],
+    assessmentObjective: "Determine if a threat intelligence program with cross-organization sharing is implemented.",
+    potentialAssessors: ["Threat Intelligence Analyst", "Security Operations Manager", "CISO"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Threat Intelligence Program Charter",
+      "ISAC Membership Records",
+      "Threat Intelligence Sharing Agreements",
+      "Intelligence Dissemination Procedures",
+      "Threat Intelligence Reports"
+    ],
+    interviewQuestions: [
+      "Is there a formal threat intelligence program?",
+      "What ISACs or sharing communities are participated in?",
+      "How is intelligence shared internally?",
+      "How is threat intelligence acted upon?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "SI.L3-3.14.2e",
+    family: "SI",
+    level: 3,
+    number: "3.14.2e",
+    title: "Employ Advanced Endpoint Detection and Response",
+    description: "Employ advanced endpoint detection and response (EDR) capabilities to detect and respond to threats on endpoints.",
+    discussion: "EDR solutions provide continuous monitoring, behavioral analysis, and response capabilities on endpoints. Advanced EDR goes beyond traditional antivirus to detect fileless malware, living-off-the-land attacks, and other sophisticated threats.",
+    relatedControls: ["SI.L2-3.14.1", "SI.L2-3.14.2", "IR.L3-3.6.1e"],
+    assessmentObjective: "Determine if advanced endpoint detection and response capabilities are employed.",
+    potentialAssessors: ["Security Engineer", "Endpoint Administrator", "SOC Analyst"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "EDR Tool Configuration",
+      "EDR Coverage Reports",
+      "Behavioral Detection Rules",
+      "EDR Alert Response Procedures",
+      "Endpoint Telemetry Documentation"
+    ],
+    interviewQuestions: [
+      "What EDR solution is deployed?",
+      "What percentage of endpoints have EDR coverage?",
+      "How are EDR alerts investigated?",
+      "Does EDR detect fileless and behavioral threats?"
+    ],
+    testMethods: ["examine", "interview", "test"]
+  },
+
+  // SR Level 3
+  {
+    id: "SR.L3-3.15.1e",
+    family: "SR",
+    level: 3,
+    number: "3.15.1e",
+    title: "Establish Supply Chain Traceability",
+    description: "Establish and maintain traceability of components throughout the supply chain.",
+    discussion: "Component traceability enables organizations to track the provenance and chain of custody of hardware and software components. This supports detection of counterfeit components, unauthorized modifications, and supply chain attacks.",
+    relatedControls: ["SR.L2-3.15.1", "SR.L2-3.15.6", "CM.L2-3.4.1"],
+    assessmentObjective: "Determine if traceability of components throughout the supply chain is established and maintained.",
+    potentialAssessors: ["Supply Chain Manager", "Security Officer", "Procurement"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Component Traceability Records",
+      "Bill of Materials (BOM)",
+      "Chain of Custody Documentation",
+      "Component Provenance Database",
+      "Traceability Verification Procedures"
+    ],
+    interviewQuestions: [
+      "How are components traced through the supply chain?",
+      "Is a bill of materials maintained?",
+      "How is chain of custody documented?",
+      "How are traceability records protected?"
+    ],
+    testMethods: ["examine", "interview"]
+  },
+  {
+    id: "SR.L3-3.15.2e",
+    family: "SR",
+    level: 3,
+    number: "3.15.2e",
+    title: "Conduct Supply Chain Risk Assessments",
+    description: "Conduct supply chain risk assessments for critical systems and components using threat intelligence.",
+    discussion: "Supply chain risk assessments informed by threat intelligence identify specific risks from adversaries targeting the supply chain. These assessments should consider nation-state threats, targeted attacks on specific vendors, and systemic supply chain vulnerabilities.",
+    relatedControls: ["SR.L2-3.15.1", "SR.L2-3.15.5", "RA.L3-3.11.1e"],
+    assessmentObjective: "Determine if threat-intelligence-informed supply chain risk assessments are conducted for critical systems.",
+    potentialAssessors: ["Supply Chain Manager", "Threat Intelligence Analyst", "Risk Manager"],
+    cmmcLevel: 3,
+    commonArtifacts: [
+      "Threat-Informed Supply Chain Risk Assessment",
+      "Critical Component Identification",
+      "Adversary Targeting Analysis",
+      "Supply Chain Risk Register",
+      "Assessment Methodology Documentation"
+    ],
+    interviewQuestions: [
+      "Are supply chain risk assessments informed by threat intelligence?",
+      "Which components are considered critical?",
+      "Are nation-state supply chain threats considered?",
+      "How are supply chain risks prioritized?"
     ],
     testMethods: ["examine", "interview"]
   },
