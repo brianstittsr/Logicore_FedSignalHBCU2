@@ -9,13 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
 import {
   FileSignature,
   CheckCircle,
@@ -25,19 +18,12 @@ import {
   Eraser,
   Shield,
   CreditCard,
-  Eye,
   Pen,
-  ArrowRight,
-  ArrowLeft,
-  Lock,
   FileText,
 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 interface SigningData {
   id: string;
@@ -54,106 +40,6 @@ interface SigningData {
   hostingEnabled?: boolean;
   monthlyFee?: number;
   clientName?: string;
-}
-
-// Payment Form Component
-function PaymentForm({
-  clientSecret,
-  monthlyAmount,
-  onSuccess,
-}: {
-  clientSecret: string;
-  monthlyAmount: number;
-  onSuccess: () => void;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-
-    setIsProcessing(true);
-    setError(null);
-
-    const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
-      payment_method: { card: elements.getElement(CardElement)! },
-    });
-
-    if (confirmError) {
-      setError(confirmError.message || "Payment failed");
-      setIsProcessing(false);
-      return;
-    }
-
-    if (setupIntent.status === "succeeded") {
-      onSuccess();
-    }
-    setIsProcessing(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <CreditCard className="h-5 w-5 text-amber-600" />
-          <span className="font-semibold text-amber-800">Monthly Subscription</span>
-        </div>
-        <p className="text-2xl font-bold text-amber-900">${monthlyAmount.toFixed(2)}/month</p>
-        <p className="text-sm text-amber-700 mt-1">Your card will be charged automatically each month</p>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Card Information</Label>
-        <div className="p-4 border-2 border-gray-200 rounded-lg bg-white focus-within:border-[#C8A951] transition-colors">
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: "16px",
-                  color: "#1e293b",
-                  "::placeholder": { color: "#94a3b8" },
-                },
-                invalid: { color: "#dc2626" },
-              },
-            }}
-          />
-        </div>
-      </div>
-
-      {error && (
-        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-          <AlertTriangle className="h-4 w-4" />
-          {error}
-        </div>
-      )}
-
-      <Button
-        type="submit"
-        className="w-full h-12 bg-[#C8A951] hover:bg-[#b89a42] text-[#1e3a5f] font-semibold text-lg"
-        disabled={!stripe || isProcessing}
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          <>
-            <Lock className="mr-2 h-5 w-5" />
-            Save Payment Method & Subscribe
-          </>
-        )}
-      </Button>
-
-      <p className="text-xs text-gray-500 text-center">
-        <Lock className="h-3 w-3 inline mr-1" />
-        Secured by Stripe. Your card information is encrypted and never stored on our servers.
-      </p>
-    </form>
-  );
 }
 
 export default function SigningPage() {
