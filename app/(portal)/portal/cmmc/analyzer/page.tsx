@@ -281,16 +281,16 @@ export default function CMMCDashboard() {
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>CMMC Level 1</span>
-                        <span>{familyControls.filter(c => c.cmmcLevel === 1).length}</span>
+                        <span className="text-green-700">CMMC Level 1</span>
+                        <span className="font-medium text-green-700">{familyControls.filter(c => c.cmmcLevel === 1).length}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>CMMC Level 2</span>
-                        <span>{familyControls.filter(c => c.cmmcLevel <= 2).length}</span>
+                        <span className="text-blue-700">CMMC Level 2</span>
+                        <span className="font-medium text-blue-700">{familyControls.filter(c => c.cmmcLevel === 2).length}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>CMMC Level 3</span>
-                        <span>{familyControls.length}</span>
+                        <span className="text-purple-700">CMMC Level 3</span>
+                        <span className="font-medium text-purple-700">{familyControls.filter(c => c.cmmcLevel === 3).length}</span>
                       </div>
                     </div>
                   </CardContent>
