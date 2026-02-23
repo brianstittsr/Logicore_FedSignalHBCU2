@@ -1530,6 +1530,7 @@ Make it clear, professional, and highlight the value proposition and expected ou
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          proposalId: previewProposal.id,
           proposalName: previewProposal.name,
           proposalType: typeLabel,
           recipientEmail: emailRecipient,

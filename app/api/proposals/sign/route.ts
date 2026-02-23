@@ -167,10 +167,13 @@ export async function POST(request: NextRequest) {
           countersignedAt: signedAtTimestamp,
           updatedAt: Timestamp.now(),
         });
+        console.log(`Proposal ${data.proposalId} updated with signatureId ${sigDoc.id}`);
       } catch (proposalUpdateError) {
         console.error("Failed to update proposal document:", proposalUpdateError);
         // Don't fail the signing process if proposal update fails
       }
+    } else {
+      console.warn(`Sign route: no proposalId on signing request ${sigDoc.id} — proposal document will NOT be updated. The signing record was stored but the proposal list won't show the signed status.`);
     }
 
     // Send confirmation email with signed PDF link to the signer
