@@ -48,6 +48,7 @@ export interface Proposal {
   signerTitle?: string;
   signerCompany?: string;
   signatureData?: string;
+  signatureId?: string;
   countersignedBy?: string;
   countersignedAt?: Date;
   

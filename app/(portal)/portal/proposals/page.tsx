@@ -2182,6 +2182,10 @@ Workflow:
         return <Badge className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 mr-1" />Active</Badge>;
       case "completed":
         return <Badge className="bg-blue-100 text-blue-700"><Check className="h-3 w-3 mr-1" />Completed</Badge>;
+      case "signed":
+        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 mr-1" />Signed</Badge>;
+      case "signed_countersigned":
+        return <Badge className="bg-green-600 text-white"><CheckCircle className="h-3 w-3 mr-1" />Fully Signed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -2487,8 +2491,20 @@ Workflow:
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" title="Preview" onClick={() => openPreview(proposal)}><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" title="Edit" onClick={() => editProposal(proposal)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" title="Download" onClick={() => downloadProposal(proposal)}><Download className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" title="Email" onClick={() => openEmailDialog(proposal)}><Send className="h-4 w-4" /></Button>
+                        {(proposal.status === "signed" || proposal.status === "signed_countersigned") && proposal.signatureId ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Download Signed Copy"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => window.open(`/api/proposals/download-signed?id=${proposal.signatureId}`, "_blank")}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="icon" title="Download Draft" onClick={() => downloadProposal(proposal)}><Download className="h-4 w-4" /></Button>
+                        )}
+                        <Button variant="ghost" size="icon" title="Send for Signature" onClick={() => openEmailDialog(proposal)}><Send className="h-4 w-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>

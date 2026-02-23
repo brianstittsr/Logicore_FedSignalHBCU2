@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       countersignedAt: signedAtTimestamp,
     });
 
-    // Update the original proposal document with signature data
+    // Update the original proposal document with signature data and signatureId for download link
     if (data.proposalId) {
       try {
         const proposalRef = adminDb.collection(COLLECTIONS.PROPOSALS).doc(data.proposalId);
@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
           signerTitle: signerTitle || "",
           signerCompany: signerCompany || "",
           signatureData,
+          signatureId: sigDoc.id,
           countersignedBy: "Nelinia Varenas",
           countersignedAt: signedAtTimestamp,
           updatedAt: Timestamp.now(),
