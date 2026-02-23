@@ -502,7 +502,7 @@ export default function SigningPage() {
 
   // Main signing view
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-slate-100 flex flex-col">
       {/* Header */}
       <header className="bg-[#1e3a5f] text-white py-6 px-6 shadow-lg border-b-4 border-[#C8A951]">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -521,28 +521,30 @@ export default function SigningPage() {
       </header>
 
       <div className="flex-1 flex justify-center">
-        <div className="w-full max-w-4xl p-6 space-y-6">
+        <div className="w-full max-w-4xl px-4 py-8 space-y-5">
         {/* Document Info */}
-        <Card className="border-t-4 border-t-[#C8A951]">
-          <CardHeader className="pb-4">
+        <Card className="border border-slate-200 shadow-md border-t-4 border-t-[#C8A951]">
+          <CardHeader className="pb-4 px-6 pt-6">
             <CardTitle className="text-2xl font-bold text-[#1e3a5f]">{signingData?.proposalName}</CardTitle>
-            <CardDescription className="text-base">
-              Sent by <strong>{signingData?.senderName}</strong> &bull; <Badge variant="outline" className="ml-1">{signingData?.proposalType}</Badge>
+            <CardDescription className="text-base flex items-center gap-2 flex-wrap">
+              Sent by <strong className="text-slate-700">{signingData?.senderName}</strong>
+              <span className="text-slate-400">&bull;</span>
+              <Badge variant="outline" className="border-[#C8A951] text-[#1e3a5f] font-medium">{signingData?.proposalType}</Badge>
             </CardDescription>
           </CardHeader>
         </Card>
 
         {/* Document Preview */}
-        <Card>
-          <CardHeader className="pb-2 px-6 pt-6">
-            <CardTitle className="text-base flex items-center gap-2">
+        <Card className="border border-slate-200 shadow-md">
+          <CardHeader className="pb-3 px-6 pt-5 border-b border-slate-100 bg-slate-50/60 rounded-t-xl">
+            <CardTitle className="text-sm font-semibold text-[#1e3a5f] flex items-center gap-2">
               <FileSignature className="h-4 w-4 text-[#C8A951]" />
               Document Preview
             </CardTitle>
-            <CardDescription>Review the full document before signing</CardDescription>
+            <CardDescription className="text-xs">Review the full document before signing</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[500px] border rounded-lg bg-white">
+          <CardContent className="p-4">
+            <ScrollArea className="h-[520px] rounded-lg border border-slate-200 bg-white shadow-inner">
               <div
                 className="p-6"
                 dangerouslySetInnerHTML={{ __html: signingData?.proposalHtml || "" }}
