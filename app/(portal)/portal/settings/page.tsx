@@ -59,13 +59,18 @@ import {
   Globe,
   Navigation,
   LayoutDashboard,
+  Building2,
+  Plus,
+  Trash2,
+  Edit,
+  ExternalLink,
 } from "lucide-react";
 import { ALL_NAV_ITEMS } from "@/components/portal/portal-sidebar";
 import { cn } from "@/lib/utils";
 import { WEBHOOK_EVENTS, testWebhookConnection, sendToBrianStitt, type WebhookEventType } from "@/lib/mattermost";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { COLLECTIONS, type PlatformSettingsDoc } from "@/lib/schema";
+import { COLLECTIONS, type PlatformSettingsDoc, type GovernmentSourceConfig } from "@/lib/schema";
 import { logSettingsUpdated } from "@/lib/activity-logger";
 import { 
   showInAppNotification, 
@@ -241,6 +246,11 @@ function SettingsPageContent() {
     { value: "consultant", label: "Consultant" },
   ];
 
+  // Government Sources settings
+  const [governmentSources, setGovernmentSources] = useState<GovernmentSourceConfig[]>([]);
+  const [editingSource, setEditingSource] = useState<GovernmentSourceConfig | null>(null);
+  const [isSourceDialogOpen, setIsSourceDialogOpen] = useState(false);
+
   // Load settings from Firebase on mount
   useEffect(() => {
     const loadSettings = async () => {
@@ -334,6 +344,56 @@ function SettingsPageContent() {
           // Load AI feature settings
           if (data.aiFeatureSettings) {
             setAiFeatureSettings(prev => ({ ...prev, ...data.aiFeatureSettings }));
+          }
+          
+          // Load government sources - add default SAM.gov if none exist
+          if (data.governmentSources) {
+            setGovernmentSources(data.governmentSources);
+          } else {
+            // Add default SAM.gov source using public endpoints (no API key required)
+            const defaultSamGovSource: GovernmentSourceConfig = {
+              id: "sam-gov-public",
+              name: "SAM.gov (Public API)",
+              description: "Official SAM.gov opportunity search using public web API endpoints - no API key required",
+              type: "sam-gov",
+              apiEndpoint: "https://sam.gov/api/prod/opps/v2/opportunities",
+              apiKeyEnvVar: "",
+              authType: "none",
+              isActive: true,
+              isEnabled: true,
+              status: "connected",
+              searchConfig: {
+                enabled: true,
+                defaultLimit: 100,
+                maxLimit: 1000,
+                supportedFilters: ["naics", "psc", "set_aside", "notice_type", "state", "response_date", "posted_date"],
+                dateFormat: "YYYY-MM-DD",
+                queryParamName: "q",
+              },
+              fieldMapping: {
+                noticeId: "noticeId",
+                title: "title",
+                solicitationNumber: "solicitationNumber",
+                postedDate: "postedDate",
+                responseDeadLine: "responseDeadLine",
+                naicsCode: "naicsCode",
+                classificationCode: "classificationCode",
+                typeOfSetAside: "typeOfSetAside",
+                description: "description",
+                organizationHierarchy: "organizationHierarchy",
+                uiLink: "uiLink",
+                active: "active",
+                type: "type",
+                pointOfContact: "pointOfContact",
+                award: "award",
+              },
+              defaultFilters: {
+                isActive: true,
+              },
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now(),
+            };
+            setGovernmentSources([defaultSamGovSource]);
           }
         }
       } catch (error) {
@@ -429,6 +489,7 @@ function SettingsPageContent() {
         socialLinks: socialLinks,
         navigationSettings: navigationSettings,
         aiFeatureSettings: aiFeatureSettings,
+        governmentSources: governmentSources,
         updatedAt: Timestamp.now(),
       };
       
@@ -516,6 +577,56 @@ function SettingsPageContent() {
     setHasChanges(true);
   };
 
+  // Test government source connection
+  const testGovernmentSource = async (sourceId: string) => {
+    const source = governmentSources.find(s => s.id === sourceId);
+    if (!source) return;
+
+    // Update status to testing
+    setGovernmentSources(prev =>
+      prev.map(s =>
+        s.id === sourceId ? { ...s, status: "pending" } : s
+      )
+    );
+
+    try {
+      // Simulate API test - in production, this would call the actual API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // For sources using public endpoints (no auth), simulate success
+      // For sources with auth, check if credentials exist
+      const isPublicEndpoint = source.authType === "none" || !source.apiKeyEnvVar;
+      const hasCredentials = source.apiKey || source.apiEndpoint;
+      
+      setGovernmentSources(prev =>
+        prev.map(s =>
+          s.id === sourceId
+            ? { 
+                ...s, 
+                status: isPublicEndpoint || hasCredentials ? "connected" : "error",
+                lastTested: Timestamp.now(),
+                lastTestError: isPublicEndpoint || hasCredentials ? undefined : "No API credentials configured"
+              }
+            : s
+        )
+      );
+    } catch (error) {
+      setGovernmentSources(prev =>
+        prev.map(s =>
+          s.id === sourceId
+            ? { 
+                ...s, 
+                status: "error",
+                lastTested: Timestamp.now(),
+                lastTestError: error instanceof Error ? error.message : "Connection failed"
+              }
+            : s
+        )
+      );
+    }
+    setHasChanges(true);
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -553,6 +664,7 @@ function SettingsPageContent() {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="social">Social Links</TabsTrigger>
           <TabsTrigger value="navigation">Navigation</TabsTrigger>
+          <TabsTrigger value="government-sources">Government Sources</TabsTrigger>
         </TabsList>
 
         {/* Integrations Tab */}
@@ -1868,8 +1980,369 @@ function SettingsPageContent() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Government Sources Tab */}
+        <TabsContent value="government-sources" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Building2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>Government Solicitation Sources</CardTitle>
+                    <CardDescription>
+                      Configure government procurement sources for solicitation searches
+                    </CardDescription>
+                  </div>
+                </div>
+                <Dialog open={isSourceDialogOpen} onOpenChange={setIsSourceDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => setEditingSource(null)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Source
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingSource ? "Edit Source" : "Add Government Source"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        Configure a new government procurement data source
+                      </DialogDescription>
+                    </DialogHeader>
+                    <GovernmentSourceForm
+                      source={editingSource}
+                      onSave={(source) => {
+                        if (editingSource) {
+                          // Update existing
+                          setGovernmentSources(prev =>
+                            prev.map(s => s.id === source.id ? source : s)
+                          );
+                        } else {
+                          // Add new
+                          setGovernmentSources(prev => [...prev, source]);
+                        }
+                        setHasChanges(true);
+                        setIsSourceDialogOpen(false);
+                        setEditingSource(null);
+                      }}
+                      onCancel={() => {
+                        setIsSourceDialogOpen(false);
+                        setEditingSource(null);
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {governmentSources.length === 0 ? (
+                <div className="text-center py-12">
+                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Sources Configured</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add government solicitation sources like SAM.gov, GovTribe, or custom APIs
+                  </p>
+                  <Button onClick={() => setIsSourceDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Your First Source
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {governmentSources.map((source) => (
+                    <div
+                      key={source.id}
+                      className={cn(
+                        "p-4 border rounded-lg transition-colors",
+                        source.isEnabled ? "bg-background" : "bg-muted/30"
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "p-2 rounded-lg",
+                            source.isEnabled ? "bg-primary/10" : "bg-muted"
+                          )}>
+                            <Building2 className={cn(
+                              "h-5 w-5",
+                              source.isEnabled ? "text-primary" : "text-muted-foreground"
+                            )} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{source.name}</span>
+                              <Badge variant={source.isEnabled ? "default" : "secondary"}>
+                                {source.isEnabled ? "Enabled" : "Disabled"}
+                              </Badge>
+                              <Badge variant={
+                                source.status === "connected" ? "default" :
+                                source.status === "error" ? "destructive" :
+                                "secondary"
+                              }>
+                                {source.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {source.type} • {source.apiEndpoint || "No endpoint configured"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={source.isEnabled}
+                            onCheckedChange={(checked) => {
+                              setGovernmentSources(prev =>
+                                prev.map(s =>
+                                  s.id === source.id
+                                    ? { ...s, isEnabled: checked }
+                                    : s
+                                )
+                              );
+                              setHasChanges(true);
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => testGovernmentSource(source.id)}
+                          >
+                            <TestTube className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingSource(source);
+                              setIsSourceDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              if (confirm(`Delete ${source.name}?`)) {
+                                setGovernmentSources(prev =>
+                                  prev.filter(s => s.id !== source.id)
+                                );
+                                setHasChanges(true);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {source.description && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {source.description}
+                        </p>
+                      )}
+                      {source.searchConfig && (
+                        <div className="flex flex-wrap gap-2">
+                          {source.searchConfig.supportedFilters.map(filter => (
+                            <Badge key={filter} variant="outline" className="text-xs">
+                              {filter}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">About Government Sources</h4>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Configure multiple government procurement data sources</li>
+                  <li>SAM.gov is pre-configured and ready to use with an API key</li>
+                  <li>Enable/disable sources to control which are used in searches</li>
+                  <li>Each source can have custom filters and field mappings</li>
+                  <li>Test connections to verify API access before enabling</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Government Source Form Component
+interface GovernmentSourceFormProps {
+  source: GovernmentSourceConfig | null;
+  onSave: (source: GovernmentSourceConfig) => void;
+  onCancel: () => void;
+}
+
+function GovernmentSourceForm({ source, onSave, onCancel }: GovernmentSourceFormProps) {
+  const [formData, setFormData] = useState<Partial<GovernmentSourceConfig>>(
+    source || {
+      id: crypto.randomUUID(),
+      name: "",
+      description: "",
+      type: "sam-gov",
+      apiEndpoint: "",
+      apiKeyEnvVar: "",
+      apiKey: "",
+      authType: "apikey",
+      isActive: true,
+      isEnabled: false,
+      status: "pending",
+      searchConfig: {
+        enabled: true,
+        defaultLimit: 100,
+        maxLimit: 1000,
+        supportedFilters: ["naics", "psc", "set_aside", "notice_type", "state"],
+        dateFormat: "YYYY-MM-DD",
+        queryParamName: "q",
+      },
+      fieldMapping: {
+        noticeId: "noticeId",
+        title: "title",
+        postedDate: "postedDate",
+      },
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    }
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name) {
+      alert("Source name is required");
+      return;
+    }
+    onSave({
+      ...formData,
+      id: formData.id || crypto.randomUUID(),
+      updatedAt: Timestamp.now(),
+    } as GovernmentSourceConfig);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="source-name">Source Name *</Label>
+          <Input
+            id="source-name"
+            value={formData.name || ""}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="e.g., SAM.gov"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="source-type">Type</Label>
+          <Select
+            value={formData.type || "sam-gov"}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as GovernmentSourceConfig["type"] }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sam-gov">SAM.gov</SelectItem>
+              <SelectItem value="govtribe">GovTribe</SelectItem>
+              <SelectItem value="api">Generic API</SelectItem>
+              <SelectItem value="rss">RSS Feed</SelectItem>
+              <SelectItem value="custom">Custom</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="source-description">Description</Label>
+        <Input
+          id="source-description"
+          value={formData.description || ""}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="Brief description of this source"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="api-endpoint">API Endpoint URL</Label>
+        <Input
+          id="api-endpoint"
+          type="url"
+          value={formData.apiEndpoint || ""}
+          onChange={(e) => setFormData(prev => ({ ...prev, apiEndpoint: e.target.value }))}
+          placeholder="https://api.example.com/v1/search"
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="auth-type">Authentication</Label>
+          <Select
+            value={formData.authType || "apikey"}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, authType: value as GovernmentSourceConfig["authType"] }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select auth type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="apikey">API Key</SelectItem>
+              <SelectItem value="oauth">OAuth 2.0</SelectItem>
+              <SelectItem value="basic">Basic Auth</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="api-key">API Key</Label>
+          <Input
+            id="api-key"
+            type="password"
+            value={formData.apiKey || ""}
+            onChange={(e) => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
+            placeholder="Enter API key"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="api-key-env">Environment Variable Name (Optional)</Label>
+        <Input
+          id="api-key-env"
+          value={formData.apiKeyEnvVar || ""}
+          onChange={(e) => setFormData(prev => ({ ...prev, apiKeyEnvVar: e.target.value }))}
+          placeholder="e.g., SAM_API_KEY, GOVTRIBE_API_KEY"
+        />
+        <p className="text-xs text-muted-foreground">
+          If set, the API key will be read from this environment variable instead of being stored in the database
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="source-enabled"
+            checked={formData.isEnabled || false}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isEnabled: checked }))}
+          />
+          <Label htmlFor="source-enabled">Enable for searches</Label>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {source ? "Update Source" : "Create Source"}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }
 

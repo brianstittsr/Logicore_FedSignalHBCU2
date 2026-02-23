@@ -314,6 +314,12 @@ const adminToolsItems = [
     icon: Battery,
   },
   {
+    title: "SAM.gov Search",
+    href: "/portal/admin/sam-gov",
+    icon: Building,
+    badge: "NEW",
+  },
+  {
     title: "Marketing Hub",
     href: "/portal/admin/marketing-hub",
     icon: Megaphone,

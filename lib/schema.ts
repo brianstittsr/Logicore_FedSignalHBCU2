@@ -1293,7 +1293,88 @@ export interface PlatformSettingsDoc {
   aiFeatureSettings?: {
     networkingMatchingEnabled: boolean; // Toggle for AI networking matching feature
   };
+  // Government Solicitation Sources Configuration
+  governmentSources?: GovernmentSourceConfig[];
   updatedAt: Timestamp;
+  updatedBy?: string;
+}
+
+/** Government Solicitation Source Configuration */
+export interface GovernmentSourceConfig {
+  id: string;
+  name: string;                    // Display name (e.g., "SAM.gov", "GovTribe", "Beta.SAM")
+  description?: string;            // Brief description of the source
+  type: "sam-gov" | "govtribe" | "custom" | "api" | "rss" | "scraper"; // Source type
+  apiEndpoint?: string;            // Base API endpoint URL
+  apiKeyEnvVar?: string;           // Environment variable name for API key (e.g., "SAM_API_KEY")
+  apiKey?: string;                 // Encrypted API key (if stored in settings)
+  
+  // Authentication
+  authType: "apikey" | "oauth" | "basic" | "none";
+  authConfig?: {
+    headerName?: string;           // e.g., "Authorization", "X-API-Key"
+    tokenPrefix?: string;          // e.g., "Bearer", "ApiKey"
+    username?: string;             // For basic auth
+    password?: string;             // For basic auth (encrypted)
+    clientId?: string;             // For OAuth
+    clientSecret?: string;         // For OAuth (encrypted)
+    tokenUrl?: string;             // For OAuth token endpoint
+  };
+  
+  // Search Configuration
+  searchConfig?: {
+    enabled: boolean;
+    defaultLimit: number;
+    maxLimit: number;
+    supportedFilters: string[];    // e.g., ["naics", "psc", "set_aside", "notice_type", "state"]
+    dateFormat: string;            // e.g., "MM/DD/YYYY", "YYYY-MM-DD"
+    queryParamName?: string;       // e.g., "q", "search", "keywords"
+  };
+  
+  // Data Mapping (how to transform API response to standard format)
+  fieldMapping?: {
+    noticeId: string;              // e.g., "noticeId", "id", "solicitation_number"
+    title: string;                 // e.g., "title", "solicitation_title"
+    solicitationNumber?: string;   // e.g., "solicitationNumber"
+    postedDate: string;            // e.g., "postedDate", "published_date"
+    responseDeadLine?: string;     // e.g., "responseDeadLine", "due_date"
+    naicsCode?: string;            // e.g., "naicsCode", "naics"
+    classificationCode?: string;   // e.g., "pscCode", "classification_code"
+    typeOfSetAside?: string;       // e.g., "typeOfSetAside", "set_aside"
+    description?: string;          // e.g., "description", "summary"
+    organizationHierarchy?: string; // e.g., "organizationHierarchy", "agency"
+    uiLink?: string;               // e.g., "uiLink", "url", "link"
+    active?: string;               // e.g., "active", "is_active", "status"
+    type?: string;                 // e.g., "type", "notice_type"
+    pointOfContact?: string;       // e.g., "pointOfContact", "contacts"
+    award?: string;                // e.g., "award", "awards"
+  };
+  
+  // Default Filters (pre-configured for this source)
+  defaultFilters?: {
+    naics?: string[];
+    psc?: string[];
+    setAsides?: string[];
+    noticeTypes?: string[];
+    states?: string[];
+    isActive?: boolean;
+  };
+  
+  // Status
+  isActive: boolean;
+  isEnabled: boolean;              // Whether this source is enabled for searches
+  status: "connected" | "disconnected" | "error" | "pending";
+  lastTested?: Timestamp;
+  lastTestError?: string;
+  
+  // Rate Limiting
+  rateLimitRequestsPerMinute?: number;
+  rateLimitRequestsPerDay?: number;
+  
+  // Metadata
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  createdBy?: string;
   updatedBy?: string;
 }
 
@@ -2170,7 +2251,79 @@ export const COLLECTIONS = {
   CMMC_AI_SESSIONS: "cmmc_ai_sessions",
   CMMC_QUESTIONNAIRE_RESPONSES: "cmmc_questionnaire_responses",
   CMMC_PRE_AUDITS: "cmmc_pre_audits",
+  // SAM.gov Federal Opportunities
+  SAM_SAVED_OPPORTUNITIES: "samSavedOpportunities",
+  SAM_SEARCH_SCHEDULES: "samSearchSchedules",
 } as const;
+
+// ============================================================================
+// SAM.gov Types
+// ============================================================================
+
+/** A saved SAM.gov opportunity with tags and assignment */
+export interface SamSavedOpportunityDoc {
+  id: string;
+  noticeId: string;
+  title: string;
+  solicitationNumber?: string;
+  type?: string;
+  postedDate?: string;
+  responseDeadLine?: string;
+  department?: string;
+  organizationHierarchy?: string;
+  naicsCode?: string;
+  classificationCode?: string;
+  typeOfSetAside?: string;
+  description?: string;
+  uiLink?: string;
+  placeOfPerformance?: {
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
+  };
+  // Tagging & assignment
+  tags: string[];
+  notes?: string;
+  assignedToUserId?: string;   // firebaseUid of assigned user
+  assignedToName?: string;
+  status: "new" | "reviewing" | "pursuing" | "submitted" | "awarded" | "no_bid";
+  // Metadata
+  savedByUserId: string;
+  savedByName: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/** A scheduled SAM.gov search that auto-emails results */
+export interface SamSearchScheduleDoc {
+  id: string;
+  name: string;
+  query: string;
+  filters: {
+    naicsCode?: string;
+    pscCode?: string;
+    setAside?: string;
+    noticeType?: string;
+    popState?: string;
+    isActive?: string;
+  };
+  // Email configuration
+  emailRecipients: string[];   // list of email addresses
+  emailSubject?: string;
+  schedule: "daily" | "weekly" | "biweekly" | "monthly";
+  scheduleDay?: number;        // 0-6 for weekly (0=Sunday), 1-31 for monthly
+  scheduleHour?: number;       // 0-23 UTC hour to send
+  isActive: boolean;
+  lastRunAt?: Timestamp;
+  nextRunAt?: Timestamp;
+  lastResultCount?: number;
+  // Metadata
+  createdByUserId: string;
+  createdByName: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
 
 // ============================================================================
 // Collection References
