@@ -105,21 +105,32 @@ export async function POST(request: NextRequest) {
       emailSent = result.success;
       emailError = result.error || null;
     } else {
-      console.warn("SMTP not configured. Signing URL:", signingUrl);
-      emailError = "Email service not configured";
+      console.warn("Azure Graph credentials not configured. Signing URL:", signingUrl);
+      emailError = "Email service not configured — AZURE_TENANT_ID, AZURE_CLIENT_ID, and AZURE_CLIENT_SECRET must be set in environment variables.";
+    }
+
+    // If email failed, return a 207 (partial success) so the UI can show a clear warning
+    if (!emailSent) {
+      return NextResponse.json({
+        success: true,
+        emailSent: false,
+        emailError,
+        signingId,
+        signingUrl,
+        sentTo: recipientEmail,
+        firestoreStored,
+        message: `Signing record created but email was NOT sent. ${emailError}. Share this signing link manually: ${signingUrl}`,
+      }, { status: 207 });
     }
 
     return NextResponse.json({
       success: true,
+      emailSent: true,
       signingId,
       signingUrl,
       sentTo: recipientEmail,
       firestoreStored,
-      emailSent,
-      emailError,
-      message: emailSent
-        ? `Signing request sent to ${recipientEmail}`
-        : `Signing record created. Email not sent: ${emailError || "unknown"}. Signing URL: ${signingUrl}`,
+      message: `Signing request sent to ${recipientEmail}`,
     });
   } catch (error) {
     console.error("Send for signature error:", error);

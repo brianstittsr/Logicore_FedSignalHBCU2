@@ -1543,8 +1543,9 @@ Make it clear, professional, and highlight the value proposition and expected ou
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.error || "Failed to send signing request");
+      // Hard failure (4xx/5xx that isn't 207)
+      if (!response.ok && response.status !== 207) {
+        toast.error(data.error || "Failed to send signing request");
         return;
       }
 
@@ -1566,11 +1567,25 @@ Make it clear, professional, and highlight the value proposition and expected ou
         )
       );
 
-      toast.success(`Signing request sent to ${emailRecipient}`);
       setShowEmailDialog(false);
       setEmailRecipient("");
       setEmailSubject("");
       setEmailMessage("");
+
+      // 207 = signing record saved but email NOT sent
+      if (response.status === 207 || data.emailSent === false) {
+        toast.warning(
+          `Signing record saved, but email could NOT be sent. Share this link manually: ${data.signingUrl}`,
+          { duration: 15000 }
+        );
+        // Also copy to clipboard for convenience
+        if (data.signingUrl) {
+          navigator.clipboard.writeText(data.signingUrl).catch(() => {});
+        }
+        return;
+      }
+
+      toast.success(`Signing request sent to ${emailRecipient}`);
     } catch (error) {
       console.error("Error sending signing request:", error);
       alert("Failed to send signing request. Please try again.");
