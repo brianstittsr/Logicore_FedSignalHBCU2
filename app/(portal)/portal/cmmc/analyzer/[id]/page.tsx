@@ -374,7 +374,7 @@ export default function AssessmentDetailPage() {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
-                  onClick={() => setActiveTab("controls")}
+                  onClick={() => router.push(`/portal/cmmc/analyzer/${assessmentId}/controls`)}
                 >
                   <Shield className="h-4 w-4 mr-2" />
                   Review Controls
