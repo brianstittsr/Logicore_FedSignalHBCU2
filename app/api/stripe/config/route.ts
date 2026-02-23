@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
+import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
 const SETTINGS_DOC = "stripe_config";
@@ -7,11 +7,11 @@ const SETTINGS_COLLECTION = "platformSettings";
 
 export async function GET() {
   try {
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
     }
 
-    const docRef = db.collection(SETTINGS_COLLECTION).doc(SETTINGS_DOC);
+    const docRef = adminDb.collection(SETTINGS_COLLECTION).doc(SETTINGS_DOC);
     const snap = await docRef.get();
 
     const mode: "test" | "live" = snap.exists
@@ -27,14 +27,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
     }
 
     const body = await request.json();
     const mode = body.mode === "live" ? "live" : "test";
 
-    const docRef = db.collection(SETTINGS_COLLECTION).doc(SETTINGS_DOC);
+    const docRef = adminDb.collection(SETTINGS_COLLECTION).doc(SETTINGS_DOC);
     await docRef.set(
       { mode, updatedAt: FieldValue.serverTimestamp() },
       { merge: true }
