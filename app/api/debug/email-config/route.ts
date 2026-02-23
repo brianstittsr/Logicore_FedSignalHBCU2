@@ -38,6 +38,6 @@ export async function GET() {
     variables: vars,
     instructions: configured
       ? "Email should be sending. If still failing, check Azure app permissions: Mail.Send on Microsoft Graph."
-      : `Add the missing environment variables to your Netlify site settings under Site Configuration → Environment Variables, then redeploy.`,
+      : `Add the missing environment variables to your Vercel project settings under Settings → Environment Variables, then redeploy.`,
   });
 }
