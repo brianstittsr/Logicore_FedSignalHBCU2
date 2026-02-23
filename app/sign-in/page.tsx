@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, setPersistence, browserSessionPersistence, browserLocalPersistence } from "firebase/auth";
 import { findAndLinkTeamMember } from "@/lib/auth-team-member-link";
 
 export default function SignInPage() {
@@ -62,19 +62,36 @@ export default function SignInPage() {
       // Try Firebase Auth sign-in if available
       if (auth) {
         try {
+          // Explicitly set persistence before signing in.
+          // Firefox's Enhanced Tracking Protection can block IndexedDB (Firebase's
+          // default LOCAL persistence). Fall back to SESSION persistence so the
+          // sign-in always succeeds regardless of browser storage restrictions.
+          try {
+            const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistence);
+          } catch {
+            // If setPersistence fails (e.g. private browsing), continue anyway
+          }
+
           const userCredential = await signInWithEmailAndPassword(auth, email, password);
           firebaseUid = userCredential.user.uid;
           userName = userCredential.user.displayName;
 
-          // Check if this email matches an existing Team Member and link them
-          // This handles the case where a Team Member exists but hasn't been linked yet
-          const teamMember = await findAndLinkTeamMember(email, firebaseUid);
-          if (teamMember) {
-            console.log(`Linked to Team Member: ${teamMember.firstName} ${teamMember.lastName}`);
-            sessionStorage.setItem("svp_team_member_id", teamMember.id);
-            sessionStorage.setItem("svp_user_role", teamMember.role);
-            sessionStorage.setItem("svp_user_name", `${teamMember.firstName} ${teamMember.lastName}`);
-          }
+          // Fire-and-forget: link team member in background — never block the redirect.
+          // Firefox can be slow with Firestore queries; awaiting this caused sign-in
+          // to appear frozen or fail silently.
+          findAndLinkTeamMember(email, firebaseUid).then((teamMember) => {
+            if (teamMember) {
+              try {
+                sessionStorage.setItem("svp_team_member_id", teamMember.id);
+                sessionStorage.setItem("svp_user_role", teamMember.role);
+                sessionStorage.setItem("svp_user_name", `${teamMember.firstName} ${teamMember.lastName}`);
+              } catch {
+                // sessionStorage may be blocked in Firefox private mode
+              }
+            }
+          }).catch(() => {});
+
         } catch (authError: any) {
           // Handle specific Firebase Auth errors
           if (authError.code === "auth/user-not-found") {
@@ -88,22 +105,27 @@ export default function SignInPage() {
             return;
           }
           console.error("Firebase Auth error:", authError);
-          // Fall through to session-based auth for demo
+          // Fall through to session-based auth
         }
       }
 
-      // Store session info
-      sessionStorage.setItem("svp_authenticated", "true");
-      sessionStorage.setItem("svp_user_email", email);
-      if (firebaseUid) {
-        sessionStorage.setItem("svp_firebase_uid", firebaseUid);
+      // Store session info — wrap in try/catch for Firefox private mode
+      try {
+        sessionStorage.setItem("svp_authenticated", "true");
+        sessionStorage.setItem("svp_user_email", email);
+        if (firebaseUid) {
+          sessionStorage.setItem("svp_firebase_uid", firebaseUid);
+        }
+        if (userName) {
+          sessionStorage.setItem("svp_user_name", userName);
+        }
+      } catch {
+        // sessionStorage blocked — continue, Firebase Auth state will handle auth
       }
-      if (userName) {
-        sessionStorage.setItem("svp_user_name", userName);
-      }
-      
-      // Redirect to portal
-      router.push("/portal");
+
+      // Use window.location.href for a hard redirect — more reliable than
+      // router.push() across all browsers when Firebase Auth state is settling
+      window.location.href = "/portal";
     } catch (err) {
       setError("An error occurred during sign in. Please try again.");
     } finally {
