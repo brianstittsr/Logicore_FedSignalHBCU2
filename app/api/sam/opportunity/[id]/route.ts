@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchOpportunityDetails } from "@/lib/sam/samApiClient";
+import { fetchOpportunityDetails, fetchResourceLinks } from "@/lib/sam/samApiClient";
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +15,11 @@ export async function GET(
       );
     }
 
-    const opportunity = await fetchOpportunityDetails(id);
+    // Fetch opportunity details and attachments in parallel
+    const [opportunity, resourceLinks] = await Promise.all([
+      fetchOpportunityDetails(id),
+      fetchResourceLinks(id),
+    ]);
 
     if (!opportunity) {
       return NextResponse.json(
@@ -23,6 +27,9 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // Merge attachments into the opportunity object
+    opportunity.resourceLinks = resourceLinks;
 
     return NextResponse.json({
       opportunity,

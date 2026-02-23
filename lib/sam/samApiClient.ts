@@ -237,37 +237,57 @@ export async function fetchOpportunityDetails(
 }
 
 /**
- * Fetch resource links/attachments for an opportunity
+ * Fetch resource links/attachments for an opportunity.
+ * SAM.gov v3 resources API returns:
+ *   _embedded.opportunityAttachmentList[].attachments[]
+ * Each attachment has: type ("link"|"file"), uri, description, resourceId, attachmentId
  */
 export async function fetchResourceLinks(
   noticeId: string
-): Promise<Array<{ url: string; description?: string; name?: string }>> {
+): Promise<Array<{ url: string; description?: string; name?: string; type?: string }>> {
   try {
     const url = `${SAM_RESOURCES_API_BASE_URL}/${noticeId}/resources?random=${Date.now()}`;
-    
+
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+      headers: SAM_HEADERS,
     });
 
     if (!response.ok) {
-      // Resources endpoint may not always be available
       return [];
     }
 
     const data = await response.json();
-    
-    if (data._embedded?.resources) {
-      return data._embedded.resources.map((resource: any) => ({
-        url: resource._links?.self?.href || resource.url,
-        description: resource.description,
-        name: resource.name || resource.fileName,
-      }));
+
+    // Correct structure: _embedded.opportunityAttachmentList[].attachments[]
+    const attachmentList: any[] = data._embedded?.opportunityAttachmentList || [];
+    const results: Array<{ url: string; description?: string; name?: string; type?: string }> = [];
+
+    for (const entry of attachmentList) {
+      for (const att of entry.attachments || []) {
+        if (att.deletedFlag === "1" || att.accessLevel === "private") continue;
+
+        let resolvedUrl = "";
+        if (att.type === "link") {
+          // External URL stored in uri field
+          resolvedUrl = att.uri || "";
+        } else {
+          // Downloadable file — construct download URL
+          resolvedUrl = `https://sam.gov/api/prod/opps/v3/opportunities/${noticeId}/resources/${att.resourceId}/download?token=`;
+        }
+
+        if (!resolvedUrl) continue;
+
+        results.push({
+          url: resolvedUrl,
+          description: att.description || att.name || "",
+          name: att.name || att.description || `Attachment ${att.attachmentOrder || ""}`,
+          type: att.type || "file",
+        });
+      }
     }
 
-    return [];
+    return results;
   } catch (error) {
     console.error("Error fetching resource links:", error);
     return [];

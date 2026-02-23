@@ -131,6 +131,7 @@ export default function SamGovSearchPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SamOpportunity[]>([]);
   const [selectedOpportunity, setSelectedOpportunity] = useState<SamOpportunity | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [totalResults, setTotalResults] = useState(0);
@@ -160,6 +161,25 @@ export default function SamGovSearchPage() {
       })
       .catch(() => {});
   }, []);
+
+  const openDetail = async (opp: SamOpportunity) => {
+    // Show immediately with search data, then enrich with attachments
+    setSelectedOpportunity(opp);
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/sam/opportunity/${opp.noticeId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.opportunity) {
+          setSelectedOpportunity(data.opportunity);
+        }
+      }
+    } catch {
+      // Keep the search result data if detail fetch fails
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   const openSaveDialog = (opp: SamOpportunity) => {
     setSaveTarget(opp);
@@ -592,7 +612,7 @@ export default function SamGovSearchPage() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => setSelectedOpportunity(opp)}
+                        onClick={() => openDetail(opp)}
                       >
                         View Details
                         <ChevronRight className="h-4 w-4 ml-1" />
@@ -852,28 +872,38 @@ export default function SamGovSearchPage() {
               )}
 
               {/* Attachments */}
-              {selectedOpportunity.resourceLinks && selectedOpportunity.resourceLinks.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-3 text-lg">Attachments & Documents</h3>
+              <div>
+                <h3 className="font-semibold mb-3 text-lg">Attachments & Documents</h3>
+                {loadingDetail ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 bg-gray-50 rounded-lg">
+                    <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    Loading attachments...
+                  </div>
+                ) : selectedOpportunity.resourceLinks && selectedOpportunity.resourceLinks.length > 0 ? (
                   <div className="space-y-2">
                     {selectedOpportunity.resourceLinks.map((link, idx) => (
                       <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                        <div className="flex items-center gap-2">
-                          <ExternalLink className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-medium">{link.name || link.description || `Document ${idx + 1}`}</span>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <ExternalLink className="h-4 w-4 text-blue-600 shrink-0" />
+                          <span className="text-sm font-medium truncate">{link.name || link.description || `Document ${idx + 1}`}</span>
+                          {(link as any).type === "link" && (
+                            <Badge variant="outline" className="text-xs shrink-0">External Link</Badge>
+                          )}
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => window.open(link.url || link.downloadUrl, "_blank")}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => window.open((link.url || link.downloadUrl), "_blank")}
                         >
-                          View
+                          Open
                         </Button>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground p-3 bg-gray-50 rounded-lg">No attachments available for this opportunity.</p>
+                )}
+              </div>
 
               {/* Points of Contact */}
               {selectedOpportunity.pointOfContact && selectedOpportunity.pointOfContact.length > 0 && (
