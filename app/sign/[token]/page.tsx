@@ -500,33 +500,44 @@ export default function SigningPage() {
                   <CardDescription className="text-sm text-slate-500">Sign using your mouse, touchscreen, or type your name</CardDescription>
                 </div>
               </div>
-              <div className="flex gap-1 bg-slate-100 p-1 rounded-md">
+              <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  variant={signatureMode === "draw" ? "default" : "ghost"}
-                  onClick={() => { setSignatureMode("draw"); clearSignature(); }}
-                  className={cn(
-                    signatureMode === "draw"
-                      ? "bg-[#1e3a5f] text-white hover:bg-[#1e3a5f]/90 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
-                  )}
+                  variant="outline"
+                  onClick={clearSignature}
+                  className="border-slate-300 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
                 >
-                  <Pen className="h-3.5 w-3.5" />
-                  Draw
+                  <Eraser className="h-3.5 w-3.5" />
+                  Reset
                 </Button>
-                <Button
-                  size="sm"
-                  variant={signatureMode === "type" ? "default" : "ghost"}
-                  onClick={() => { setSignatureMode("type"); clearSignature(); }}
-                  className={cn(
-                    signatureMode === "type"
-                      ? "bg-[#1e3a5f] text-white hover:bg-[#1e3a5f]/90 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
-                  )}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Type
-                </Button>
+                <div className="flex gap-1 bg-slate-100 p-1 rounded-md">
+                  <Button
+                    size="sm"
+                    variant={signatureMode === "draw" ? "default" : "ghost"}
+                    onClick={() => { setSignatureMode("draw"); clearSignature(); }}
+                    className={cn(
+                      signatureMode === "draw"
+                        ? "bg-[#1e3a5f] text-white hover:bg-[#1e3a5f]/90 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+                    )}
+                  >
+                    <Pen className="h-3.5 w-3.5" />
+                    Draw
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={signatureMode === "type" ? "default" : "ghost"}
+                    onClick={() => { setSignatureMode("type"); clearSignature(); }}
+                    className={cn(
+                      signatureMode === "type"
+                        ? "bg-[#1e3a5f] text-white hover:bg-[#1e3a5f]/90 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+                    )}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Type
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -558,14 +569,6 @@ export default function SigningPage() {
                   {/* Baseline */}
                   <div className="absolute bottom-10 left-6 right-6 border-b border-slate-200 pointer-events-none" />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearSignature}
-                >
-                  <Eraser className="h-3.5 w-3.5" />
-                  Clear Signature
-                </Button>
               </div>
             ) : (
               <div className="space-y-4">
