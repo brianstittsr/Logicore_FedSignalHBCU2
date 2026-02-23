@@ -63,8 +63,6 @@ export async function GET(request: NextRequest) {
       query = query.where("status", "==", status);
     }
 
-    query = query.orderBy("createdAt", "desc");
-
     const snapshot = await query.get();
     const poams = snapshot.docs.map((doc) => {
       const data = doc.data();
@@ -75,6 +73,15 @@ export async function GET(request: NextRequest) {
         ...data,
         controlDefinition: control,
       };
+    });
+
+    // Sort in-memory to avoid requiring a composite Firestore index
+    poams.sort((a, b) => {
+      const aData = a as Record<string, any>;
+      const bData = b as Record<string, any>;
+      const aTime = aData.createdAt?.toMillis?.() ?? aData.createdAt?.seconds ?? 0;
+      const bTime = bData.createdAt?.toMillis?.() ?? bData.createdAt?.seconds ?? 0;
+      return bTime - aTime;
     });
 
     return NextResponse.json({ poams });
