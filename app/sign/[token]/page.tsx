@@ -552,35 +552,47 @@ export default function SigningPage() {
         </Card>
 
         {/* Signer Information */}
-        <Card>
-          <CardHeader className="pb-3 px-6 pt-6">
-            <CardTitle className="text-base">Your Information</CardTitle>
-            <CardDescription>Please confirm your details</CardDescription>
+        <Card className="border border-slate-200 shadow-sm">
+          <CardHeader className="pb-4 px-6 pt-6 border-b border-slate-100 bg-slate-50/60 rounded-t-xl">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center">
+                <span className="text-white text-xs font-bold">1</span>
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold text-[#1e3a5f]">Your Information</CardTitle>
+                <CardDescription className="text-sm text-slate-500">Please confirm your details before signing</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Full Name *</Label>
+          <CardContent className="px-6 py-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">
+                  Full Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   value={signerName}
                   onChange={(e) => setSignerName(e.target.value)}
                   placeholder="John Smith"
+                  className="h-10 border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951] bg-white"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Title</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Title</Label>
                 <Input
                   value={signerTitle}
                   onChange={(e) => setSignerTitle(e.target.value)}
                   placeholder="e.g., CEO, Director"
+                  className="h-10 border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951] bg-white"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Company</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-slate-700">Company</Label>
                 <Input
                   value={signerCompany}
                   onChange={(e) => setSignerCompany(e.target.value)}
                   placeholder="Company name"
+                  className="h-10 border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951] bg-white"
                 />
               </div>
             </div>
@@ -588,41 +600,57 @@ export default function SigningPage() {
         </Card>
 
         {/* Signature Pad */}
-        <Card className="border-[#C8A951]/50">
-          <CardHeader className="pb-3 px-6 pt-6">
+        <Card className="border border-[#C8A951]/40 shadow-sm">
+          <CardHeader className="pb-4 px-6 pt-6 border-b border-slate-100 bg-slate-50/60 rounded-t-xl">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">Electronic Signature</CardTitle>
-                <CardDescription>Sign using your mouse, touchscreen, or type your name</CardDescription>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-[#C8A951] flex items-center justify-center">
+                  <span className="text-[#1e3a5f] text-xs font-bold">2</span>
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold text-[#1e3a5f]">Electronic Signature</CardTitle>
+                  <CardDescription className="text-sm text-slate-500">Sign using your mouse, touchscreen, or type your name</CardDescription>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <Button
-                  variant={signatureMode === "draw" ? "default" : "outline"}
-                  size="sm"
+              <div className="flex gap-1.5 bg-slate-100 p-1 rounded-lg">
+                <button
                   onClick={() => { setSignatureMode("draw"); clearSignature(); }}
+                  className={cn(
+                    "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                    signatureMode === "draw"
+                      ? "bg-[#1e3a5f] text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
                 >
+                  <Pen className="h-3.5 w-3.5 inline mr-1.5" />
                   Draw
-                </Button>
-                <Button
-                  variant={signatureMode === "type" ? "default" : "outline"}
-                  size="sm"
+                </button>
+                <button
                   onClick={() => { setSignatureMode("type"); clearSignature(); }}
+                  className={cn(
+                    "px-4 py-1.5 text-sm font-medium rounded-md transition-all",
+                    signatureMode === "type"
+                      ? "bg-[#1e3a5f] text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
                 >
+                  <FileText className="h-3.5 w-3.5 inline mr-1.5" />
                   Type
-                </Button>
+                </button>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 py-5">
             {signatureMode === "draw" ? (
               <div className="space-y-3">
-                <div className="relative border-2 border-dashed border-slate-300 rounded-lg bg-white overflow-hidden"
+                <div
+                  className="relative border-2 border-dashed border-[#C8A951]/50 rounded-xl bg-white overflow-hidden hover:border-[#C8A951] transition-colors"
                   style={{ touchAction: "none" }}
                 >
                   <canvas
                     ref={canvasRef}
                     className="w-full cursor-crosshair"
-                    style={{ height: "150px", display: "block" }}
+                    style={{ height: "160px", display: "block" }}
                     onMouseDown={startDrawing}
                     onMouseMove={draw}
                     onMouseUp={stopDrawing}
@@ -632,28 +660,40 @@ export default function SigningPage() {
                     onTouchEnd={stopDrawing}
                   />
                   {!hasSignature && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <p className="text-slate-400 text-sm">Sign here</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
+                      <Pen className="h-6 w-6 text-slate-300" />
+                      <p className="text-slate-400 text-sm font-medium">Click or touch to sign here</p>
                     </div>
                   )}
+                  {/* Baseline */}
+                  <div className="absolute bottom-10 left-6 right-6 border-b border-slate-200 pointer-events-none" />
                 </div>
-                <Button variant="outline" size="sm" onClick={clearSignature}>
-                  <Eraser className="h-4 w-4 mr-1" />
-                  Clear
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSignature}
+                  className="text-slate-600 border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                >
+                  <Eraser className="h-3.5 w-3.5 mr-1.5" />
+                  Clear Signature
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
-                <Input
-                  value={typedSignature}
-                  onChange={(e) => setTypedSignature(e.target.value)}
-                  placeholder="Type your full name"
-                  className="text-lg"
-                />
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-slate-700">Type your full legal name</Label>
+                  <Input
+                    value={typedSignature}
+                    onChange={(e) => setTypedSignature(e.target.value)}
+                    placeholder="e.g., Jane Smith"
+                    className="h-11 text-base border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951] bg-white"
+                  />
+                </div>
                 {typedSignature && (
-                  <div className="p-4 bg-white border rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Preview:</p>
-                    <p className="text-3xl italic font-serif text-slate-800">{typedSignature}</p>
+                  <div className="p-5 bg-white border-2 border-[#C8A951]/30 rounded-xl">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Signature Preview</p>
+                    <p className="text-4xl italic font-serif text-[#1e3a5f] leading-tight">{typedSignature}</p>
+                    <div className="mt-3 border-t border-slate-200" />
                   </div>
                 )}
               </div>
@@ -662,33 +702,37 @@ export default function SigningPage() {
         </Card>
 
         {/* Submit */}
-        <div className="flex flex-col items-center gap-4 pb-8">
-          <p className="text-sm text-muted-foreground text-center max-w-md">
-            By clicking &quot;Sign Document&quot;, you agree that your electronic signature is the legal equivalent of your manual signature on this document.
-          </p>
-          <Button
-            size="lg"
-            className="w-full max-w-md bg-[#C8A951] text-[#1e3a5f] hover:bg-[#b89a42] font-bold text-lg py-7 shadow-lg"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !signerName.trim() || (signatureMode === "draw" ? !hasSignature : !typedSignature.trim())}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processing Signature...
-              </>
-            ) : (
-              <>
-                <FileSignature className="mr-2 h-5 w-5" />
-                Sign Document
-              </>
-            )}
-          </Button>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Shield className="h-3 w-3" />
-            <span>Secured by Strategic Value+ &bull; ESIGN Act Compliant</span>
-          </div>
-        </div>
+        <Card className="border border-slate-200 shadow-sm bg-gradient-to-br from-slate-50 to-white">
+          <CardContent className="px-6 py-6 flex flex-col items-center gap-5">
+            <div className="text-center max-w-md">
+              <p className="text-sm text-slate-500 leading-relaxed">
+                By clicking <strong className="text-slate-700">&quot;Sign Document&quot;</strong>, you agree that your electronic signature is the legal equivalent of your manual signature on this document.
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="w-full max-w-sm h-14 bg-[#C8A951] text-[#1e3a5f] hover:bg-[#b89a42] font-bold text-base shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !signerName.trim() || (signatureMode === "draw" ? !hasSignature : !typedSignature.trim())}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing Signature...
+                </>
+              ) : (
+                <>
+                  <FileSignature className="mr-2 h-5 w-5" />
+                  Sign Document
+                </>
+              )}
+            </Button>
+            <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-100 px-4 py-2 rounded-full">
+              <Shield className="h-3.5 w-3.5 text-[#1e3a5f]" />
+              <span>Secured by Strategic Value+ &bull; ESIGN Act &amp; UETA Compliant</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       </div>
 
