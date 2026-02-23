@@ -194,6 +194,13 @@ export async function POST(request: NextRequest) {
         to: data.recipientEmail,
         subject: `Signed: ${data.proposalName} — Your Copy`,
         html: signerEmailHtml,
+        attachments: [
+          {
+            name: `${data.proposalName.replace(/[^a-z0-9]/gi, "_")}_Signed.html`,
+            contentType: "text/html",
+            contentBytes: signedPdfBase64,
+          },
+        ],
       });
 
       // Email notification to sender

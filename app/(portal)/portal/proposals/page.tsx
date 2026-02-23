@@ -67,6 +67,7 @@ import {
   Lightbulb,
   FolderOpen,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -1509,6 +1510,33 @@ Make it clear, professional, and highlight the value proposition and expected ou
     setShowPreviewDialog(true);
   };
 
+  // Reset signature back to draft
+  const resetSignature = async (proposal: Proposal) => {
+    if (!confirm(`Reset the signature on "${proposal.name}"? This will delete the signed document and revert the proposal to Draft status.`)) return;
+    try {
+      const response = await fetch("/api/proposals/reset-signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId: proposal.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || "Failed to reset signature");
+        return;
+      }
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposal.id
+            ? { ...p, status: "draft" as const, signatureId: undefined, signedAt: undefined, signerName: undefined, signatureData: undefined }
+            : p
+        )
+      );
+      toast.success("Signature reset. Proposal is now a draft.");
+    } catch (err) {
+      toast.error("Failed to reset signature");
+    }
+  };
+
   // Email proposal for signature
   const openEmailDialog = (proposal: Proposal) => {
     setPreviewProposal(proposal);
@@ -2506,6 +2534,17 @@ Workflow:
                           <Button variant="ghost" size="icon" title="Download Draft" onClick={() => downloadProposal(proposal)}><Download className="h-4 w-4" /></Button>
                         )}
                         <Button variant="ghost" size="icon" title="Send for Signature" onClick={() => openEmailDialog(proposal)}><Send className="h-4 w-4" /></Button>
+                        {(proposal.status === "signed" || proposal.status === "signed_countersigned" || proposal.status === "pending_signature") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Reset Signature"
+                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            onClick={() => resetSignature(proposal)}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

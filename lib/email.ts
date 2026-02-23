@@ -14,12 +14,19 @@ import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-grap
  *   SMTP_FROM_NAME     - Sender display name (default: "Strategic Value+")
  */
 
+interface EmailAttachment {
+  name: string;
+  contentType: string;
+  contentBytes: string;
+}
+
 interface EmailOptions {
   to: string | string[];
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }
 
 interface EmailResult {
@@ -117,6 +124,16 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
                 emailAddress: { address: options.replyTo },
               },
             ],
+          }
+        : {}),
+      ...(options.attachments && options.attachments.length > 0
+        ? {
+            attachments: options.attachments.map((a) => ({
+              "@odata.type": "#microsoft.graph.fileAttachment",
+              name: a.name,
+              contentType: a.contentType,
+              contentBytes: a.contentBytes,
+            })),
           }
         : {}),
     },
