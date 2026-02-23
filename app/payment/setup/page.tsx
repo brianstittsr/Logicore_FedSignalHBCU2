@@ -11,7 +11,11 @@ import {
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Loader2, CreditCard, CheckCircle, AlertCircle, Shield, Lock, User, Mail, Calendar } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 
 // Initialize Stripe only when a publishable key is available
@@ -106,25 +110,23 @@ function PaymentForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="space-y-1.5">
+        <Label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+          <CreditCard className="h-3.5 w-3.5 text-[#C8A951]" />
           Card Information
-        </label>
-        <div className="p-4 border rounded-lg bg-white">
+        </Label>
+        <div className="p-4 border border-slate-300 rounded-md bg-white focus-within:border-[#C8A951] focus-within:ring-1 focus-within:ring-[#C8A951] transition-colors">
           <CardElement
             options={{
               style: {
                 base: {
-                  fontSize: "16px",
-                  color: "#424770",
-                  "::placeholder": {
-                    color: "#aab7c4",
-                  },
+                  fontSize: "15px",
+                  color: "#1e293b",
+                  fontFamily: "ui-sans-serif, system-ui, sans-serif",
+                  "::placeholder": { color: "#94a3b8" },
                 },
-                invalid: {
-                  color: "#9e2146",
-                },
+                invalid: { color: "#dc2626" },
               },
             }}
           />
@@ -132,51 +134,96 @@ function PaymentForm({
       </div>
 
       {errorMessage && (
-        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-          <AlertCircle className="h-4 w-4" />
+        <div className="flex items-center gap-2 text-red-700 text-sm bg-red-50 border border-red-200 p-3 rounded-md">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {errorMessage}
         </div>
       )}
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <p className="text-sm text-amber-800">
-          <strong>Monthly Recurring Payment:</strong> ${monthlyAmount.toFixed(2)}/month
-        </p>
-        <p className="text-xs text-amber-700 mt-1">
-          Your card will be charged automatically each month. You can cancel anytime.
-        </p>
+      <div className="bg-[#1e3a5f]/5 border border-[#1e3a5f]/20 rounded-md p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-slate-600">Monthly charge</span>
+          <span className="text-xl font-bold text-[#1e3a5f]">${monthlyAmount.toFixed(2)}<span className="text-sm font-normal text-slate-500">/mo</span></span>
+        </div>
+        <p className="text-xs text-slate-500 mt-1.5">Billed automatically each month. Cancel anytime.</p>
       </div>
 
       <Button
         type="submit"
-        className="w-full bg-[#C8A951] hover:bg-[#b89a42] text-[#1e3a5f] font-semibold"
+        size="lg"
+        className="w-full bg-[#C8A951] hover:bg-[#b89a42] text-[#1e3a5f] font-bold"
         disabled={!stripe || isProcessing}
       >
         {isProcessing ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             Processing...
           </>
         ) : (
           <>
-            <CreditCard className="mr-2 h-4 w-4" />
-            Save Payment Method & Setup Subscription
+            <Lock className="h-4 w-4" />
+            Authorize Monthly Payment
           </>
         )}
       </Button>
+
+      <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
+        <Shield className="h-3.5 w-3.5 text-[#1e3a5f]" />
+        <span>Secured by Stripe &bull; 256-bit SSL encryption</span>
+      </div>
     </form>
+  );
+}
+
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-slate-100 flex flex-col">
+      {/* Header */}
+      <header className="bg-[#1e3a5f] text-white py-5 px-6 shadow-lg border-b-4 border-[#C8A951]">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image src="/VPlus_logo.webp" alt="Strategic Value+" width={44} height={44} className="rounded" />
+            <div>
+              <p className="font-bold text-base leading-tight">Strategic Value+</p>
+              <p className="text-xs text-slate-300">Secure Payment Setup</p>
+            </div>
+          </div>
+          <Badge className="bg-[#C8A951] text-[#1e3a5f] border-[#C8A951] font-semibold text-xs">
+            <Lock className="h-3 w-3 mr-1" />
+            SSL Secured
+          </Badge>
+        </div>
+      </header>
+
+      <div className="flex-1 flex items-start justify-center px-4 py-10">
+        <div className="w-full max-w-lg space-y-5">
+          {children}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-[#1e3a5f] text-white py-5 px-6">
+        <div className="max-w-lg mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Image src="/VPlus_logo.webp" alt="Strategic Value+" width={24} height={24} className="rounded" />
+            <p className="font-bold text-sm">Strategic Value+</p>
+          </div>
+          <p className="text-xs text-slate-400">8 The Green #13351, Dover, DE 19901 &bull; strategicvalueplus.com</p>
+        </div>
+      </footer>
+    </div>
   );
 }
 
 export default function PaymentPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8f] flex items-center justify-center">
-        <div className="text-center text-white">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-lg">Loading payment system...</p>
+      <PageShell>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-[#C8A951]" />
+          <p className="text-slate-500 text-sm">Loading payment system...</p>
         </div>
-      </div>
+      </PageShell>
     }>
       <PaymentPageContent />
     </Suspense>
@@ -236,65 +283,85 @@ function PaymentPageContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8f] flex items-center justify-center">
-        <div className="text-center text-white">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
-          <p className="text-lg">Loading payment system...</p>
+      <PageShell>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-[#C8A951]" />
+          <p className="text-slate-500 text-sm">Initializing secure payment...</p>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8f] flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-red-700 mb-2">Error</h2>
-            <p className="text-gray-600">{error}</p>
-            <Button
-              className="mt-4 w-full"
-              onClick={() => router.push("/")}
-            >
+      <PageShell>
+        <Card className="border border-slate-200 shadow-md">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-red-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">Unable to Load Payment</h2>
+            <p className="text-slate-500 text-sm mb-6">{error}</p>
+            <Button variant="outline" onClick={() => router.push("/")}>
               Return Home
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1e3a5f] to-[#2d5a8f] flex items-center justify-center p-4">
-      <Card className="max-w-lg w-full">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-[#C8A951] rounded-full flex items-center justify-center mx-auto mb-4">
-            <CreditCard className="h-8 w-8 text-[#1e3a5f]" />
-          </div>
-          <CardTitle className="text-2xl text-[#1e3a5f]">
-            Setup Monthly Payment
-          </CardTitle>
-          <CardDescription>
-            Complete your {agreementName} by setting up your monthly recurring payment
+    <PageShell>
+      {/* Agreement summary card */}
+      <Card className="border border-slate-200 shadow-md border-t-4 border-t-[#C8A951]">
+        <CardHeader className="pb-4 px-6 pt-6">
+          <CardTitle className="text-xl font-bold text-[#1e3a5f]">Setup Monthly Payment</CardTitle>
+          <CardDescription className="text-sm">
+            Complete your <strong className="text-slate-700">{agreementName}</strong> by authorizing your monthly subscription
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Customer:</span>
-              <span className="font-medium">{customerName}</span>
+        <CardContent className="px-6 pb-6">
+          <div className="rounded-md border border-slate-200 bg-slate-50 divide-y divide-slate-200">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="flex items-center gap-2 text-sm text-slate-500">
+                <User className="h-3.5 w-3.5" />
+                Customer
+              </span>
+              <span className="text-sm font-medium text-slate-800">{customerName || "—"}</span>
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Email:</span>
-              <span className="font-medium">{customerEmail}</span>
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="flex items-center gap-2 text-sm text-slate-500">
+                <Mail className="h-3.5 w-3.5" />
+                Email
+              </span>
+              <span className="text-sm font-medium text-slate-800">{customerEmail}</span>
             </div>
-            <div className="flex justify-between pt-2 border-t">
-              <span className="text-gray-600">Monthly Fee:</span>
-              <span className="font-bold text-[#1e3a5f]">${monthlyAmount.toFixed(2)}/month</span>
+            <div className="flex items-center justify-between px-4 py-3 bg-white rounded-b-md">
+              <span className="flex items-center gap-2 text-sm text-slate-500">
+                <Calendar className="h-3.5 w-3.5" />
+                Billing
+              </span>
+              <span className="text-base font-bold text-[#1e3a5f]">${monthlyAmount.toFixed(2)}<span className="text-xs font-normal text-slate-500">/month</span></span>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
+      {/* Payment form card */}
+      <Card className="border border-[#C8A951]/40 shadow-md">
+        <CardHeader className="pb-4 px-6 pt-5 border-b border-slate-100 bg-slate-50/60 rounded-t-xl">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#C8A951] flex items-center justify-center">
+              <CreditCard className="h-3.5 w-3.5 text-[#1e3a5f]" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold text-[#1e3a5f]">Payment Details</CardTitle>
+              <CardDescription className="text-xs">Your card is encrypted and never stored on our servers</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-6 py-5">
           {clientSecret && stripePromise ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm
@@ -307,17 +374,18 @@ function PaymentPageContent() {
               />
             </Elements>
           ) : clientSecret && !stripePromise ? (
-            <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 p-4 rounded-lg">
+            <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 p-4 rounded-md">
               <AlertCircle className="h-4 w-4 shrink-0" />
               Payment processing is not configured. Please contact Strategic Value+ to complete your payment setup.
             </div>
-          ) : null}
-
-          <p className="text-xs text-gray-500 text-center mt-6">
-            Secured by Stripe. Your card information is never stored on our servers.
-          </p>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" />
+              <p className="text-sm text-slate-500">Preparing secure payment form...</p>
+            </div>
+          )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }
