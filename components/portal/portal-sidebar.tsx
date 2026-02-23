@@ -78,6 +78,7 @@ import {
   EyeOff,
   UserCheck,
   Megaphone,
+  CreditCard,
   Database,
   Video,
   Flame,
@@ -351,6 +352,12 @@ const systemSettingsItems = [
     href: "/portal/admin/site-settings",
     icon: Settings,
     badge: "NEW",
+  },
+  {
+    title: "Stripe Integration",
+    href: "/portal/admin/stripe-test",
+    icon: CreditCard,
+    badge: "PAY",
   },
   {
     title: "AI Page Designer",
