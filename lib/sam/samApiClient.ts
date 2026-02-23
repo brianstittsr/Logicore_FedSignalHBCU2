@@ -272,8 +272,9 @@ export async function fetchResourceLinks(
           // External URL stored in uri field
           resolvedUrl = att.uri || "";
         } else {
-          // Downloadable file — construct download URL
-          resolvedUrl = `https://sam.gov/api/prod/opps/v3/opportunities/${noticeId}/resources/${att.resourceId}/download?token=`;
+          // SAM.gov file downloads require authentication — link to the opportunity
+          // page on SAM.gov where the user can download files directly
+          resolvedUrl = `https://sam.gov/opp/${noticeId}/view`;
         }
 
         if (!resolvedUrl) continue;

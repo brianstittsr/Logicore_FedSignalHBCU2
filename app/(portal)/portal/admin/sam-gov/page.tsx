@@ -881,24 +881,30 @@ export default function SamGovSearchPage() {
                   </div>
                 ) : selectedOpportunity.resourceLinks && selectedOpportunity.resourceLinks.length > 0 ? (
                   <div className="space-y-2">
-                    {selectedOpportunity.resourceLinks.map((link, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <ExternalLink className="h-4 w-4 text-blue-600 shrink-0" />
-                          <span className="text-sm font-medium truncate">{link.name || link.description || `Document ${idx + 1}`}</span>
-                          {(link as any).type === "link" && (
-                            <Badge variant="outline" className="text-xs shrink-0">External Link</Badge>
-                          )}
+                    {selectedOpportunity.resourceLinks.map((link, idx) => {
+                      const isFile = (link as any).type === "file";
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <ExternalLink className="h-4 w-4 text-blue-600 shrink-0" />
+                            <div className="min-w-0">
+                              <span className="text-sm font-medium truncate block">{link.name || link.description || `Document ${idx + 1}`}</span>
+                              {isFile && (
+                                <span className="text-xs text-muted-foreground">Opens on SAM.gov — sign in to download</span>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="shrink-0"
+                            onClick={() => window.open((link.url || (link as any).downloadUrl), "_blank")}
+                          >
+                            {isFile ? "View on SAM.gov" : "Open"}
+                          </Button>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => window.open((link.url || link.downloadUrl), "_blank")}
-                        >
-                          Open
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground p-3 bg-gray-50 rounded-lg">No attachments available for this opportunity.</p>
