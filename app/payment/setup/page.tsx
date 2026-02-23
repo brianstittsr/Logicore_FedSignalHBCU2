@@ -14,8 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Loader2, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
-// Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
+// Initialize Stripe only when a publishable key is available
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 function PaymentForm({
   clientSecret,
@@ -294,7 +295,7 @@ function PaymentPageContent() {
             </div>
           </div>
 
-          {clientSecret && (
+          {clientSecret && stripePromise ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm
                 clientSecret={clientSecret}
@@ -305,7 +306,12 @@ function PaymentPageContent() {
                 signatureId={signatureId!}
               />
             </Elements>
-          )}
+          ) : clientSecret && !stripePromise ? (
+            <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 p-4 rounded-lg">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Payment processing is not configured. Please contact Strategic Value+ to complete your payment setup.
+            </div>
+          ) : null}
 
           <p className="text-xs text-gray-500 text-center mt-6">
             Secured by Stripe. Your card information is never stored on our servers.
