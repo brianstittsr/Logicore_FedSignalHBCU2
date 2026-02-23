@@ -31,7 +31,7 @@ export async function exportToExcel(
   const worksheet = workbook.addWorksheet(sheetName);
 
   // Define columns
-  const columns: ExcelJS.Column[] = [
+  const columns: Partial<ExcelJS.Column>[] = [
     { header: "Notice ID", key: "noticeId", width: 20 },
     { header: "Title", key: "title", width: 50 },
     { header: "Solicitation Number", key: "solicitationNumber", width: 25 },
