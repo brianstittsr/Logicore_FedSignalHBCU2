@@ -26,7 +26,7 @@ export function OrganizationJsonLd() {
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: "+1-555-123-4567",
+        telephone: "+1-302-215-4700",
         contactType: "sales",
         availableLanguage: ["English"],
       },
@@ -74,7 +74,7 @@ export function LocalBusinessJsonLd() {
     name: "Strategic Value+ Solutions",
     image: "https://strategicvalueplus.com/logo.png",
     url: "https://strategicvalueplus.com",
-    telephone: "+1-555-123-4567",
+    telephone: "+1-302-215-4700",
     email: "info@strategicvalueplus.com",
     priceRange: "$$$$",
     address: {
