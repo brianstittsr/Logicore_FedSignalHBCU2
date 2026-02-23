@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
+import { adminDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
-import { collection, getDocs, query, where, updateDoc, Timestamp, doc as firestoreDoc } from "firebase/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "email and role are required" }, { status: 400 });
     }
 
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
     }
 
@@ -23,15 +23,17 @@ export async function POST(request: NextRequest) {
     let firebaseUid = null;
 
     // Find the team member by emailPrimary
-    let snapshot = await getDocs(
-      query(collection(db, COLLECTIONS.TEAM_MEMBERS), where("emailPrimary", "==", normalizedEmail))
-    );
+    let snapshot = await adminDb
+      .collection(COLLECTIONS.TEAM_MEMBERS)
+      .where("emailPrimary", "==", normalizedEmail)
+      .get();
 
     // If not found, try email field
     if (snapshot.empty) {
-      snapshot = await getDocs(
-        query(collection(db, COLLECTIONS.TEAM_MEMBERS), where("email", "==", normalizedEmail))
-      );
+      snapshot = await adminDb
+        .collection(COLLECTIONS.TEAM_MEMBERS)
+        .where("email", "==", normalizedEmail)
+        .get();
     }
 
     if (!snapshot.empty) {
@@ -39,9 +41,9 @@ export async function POST(request: NextRequest) {
       teamMemberId = teamMemberDoc.id;
       const teamMemberData = teamMemberDoc.data();
       firebaseUid = teamMemberData.firebaseUid;
-      
+
       // Update the Team Member role
-      await updateDoc(teamMemberDoc.ref, {
+      await teamMemberDoc.ref.update({
         role: role,
         isAffiliate: role === "affiliate",
         updatedAt: Timestamp.now(),
@@ -52,8 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Also update the User Profile if we have a firebaseUid
     if (firebaseUid) {
-      const userProfileRef = firestoreDoc(db, COLLECTIONS.USERS, firebaseUid);
-      await updateDoc(userProfileRef, {
+      await adminDb.collection(COLLECTIONS.USERS).doc(firebaseUid).update({
         role: role,
         isAffiliate: role === "affiliate",
         updatedAt: Timestamp.now(),
@@ -62,12 +63,13 @@ export async function POST(request: NextRequest) {
       console.log(`Updated User Profile ${firebaseUid} role to: ${role}`);
     } else {
       // Try to find User Profile by email
-      const userSnapshot = await getDocs(
-        query(collection(db, COLLECTIONS.USERS), where("email", "==", normalizedEmail))
-      );
+      const userSnapshot = await adminDb
+        .collection(COLLECTIONS.USERS)
+        .where("email", "==", normalizedEmail)
+        .get();
       if (!userSnapshot.empty) {
         const userDoc = userSnapshot.docs[0];
-        await updateDoc(userDoc.ref, {
+        await userDoc.ref.update({
           role: role,
           isAffiliate: role === "affiliate",
           updatedAt: Timestamp.now(),

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/schema";
 
 export async function POST(request: NextRequest) {
@@ -14,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!db) {
+    if (!adminDb) {
       return NextResponse.json(
         { error: "Database not initialized" },
         { status: 500 }
@@ -22,29 +21,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Update team_members collection
-    const teamMembersRef = collection(db, COLLECTIONS.TEAM_MEMBERS);
-    const teamQuery = query(teamMembersRef, where("emailPrimary", "==", email));
-    const teamSnapshot = await getDocs(teamQuery);
+    const teamSnapshot = await adminDb
+      .collection(COLLECTIONS.TEAM_MEMBERS)
+      .where("emailPrimary", "==", email)
+      .get();
 
     let teamMemberUpdated = false;
     for (const docSnap of teamSnapshot.docs) {
-      await updateDoc(doc(db, COLLECTIONS.TEAM_MEMBERS, docSnap.id), {
-        role: newRole,
-      });
+      await docSnap.ref.update({ role: newRole });
       teamMemberUpdated = true;
       console.log(`Updated team member ${docSnap.id} role to ${newRole}`);
     }
 
     // Also update users collection if exists
-    const usersRef = collection(db, COLLECTIONS.USERS);
-    const usersQuery = query(usersRef, where("email", "==", email));
-    const usersSnapshot = await getDocs(usersQuery);
+    const usersSnapshot = await adminDb
+      .collection(COLLECTIONS.USERS)
+      .where("email", "==", email)
+      .get();
 
     let userUpdated = false;
     for (const docSnap of usersSnapshot.docs) {
-      await updateDoc(doc(db, COLLECTIONS.USERS, docSnap.id), {
-        role: newRole,
-      });
+      await docSnap.ref.update({ role: newRole });
       userUpdated = true;
       console.log(`Updated user ${docSnap.id} role to ${newRole}`);
     }
