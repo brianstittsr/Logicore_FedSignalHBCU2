@@ -65,6 +65,11 @@ export default function ControlAssessmentDetailPage() {
   const [assessorNotes, setAssessorNotes] = useState("");
   const [artifactsReviewed, setArtifactsReviewed] = useState("");
   const [hasFinding, setHasFinding] = useState(false);
+  const [findingSeverity, setFindingSeverity] = useState<"critical" | "high" | "medium" | "low">("medium");
+
+  // Track original state to detect changes
+  const [originalHasFinding, setOriginalHasFinding] = useState(false);
+  const [existingFindingId, setExistingFindingId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -83,6 +88,8 @@ export default function ControlAssessmentDetailPage() {
           setAssessorNotes(data.assessorNotes ?? "");
           setArtifactsReviewed((data.artifactsReviewed ?? []).join("\n"));
           setHasFinding(data.hasFinding ?? false);
+          setOriginalHasFinding(data.hasFinding ?? false);
+          setExistingFindingId(data.findingId ?? null);
         } else {
           toast.error("Control assessment not found");
         }
@@ -99,6 +106,53 @@ export default function ControlAssessmentDetailPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // ── 1. Handle Finding creation / deletion ──────────────────────────────
+      let newFindingId = existingFindingId;
+
+      if (hasFinding && !originalHasFinding) {
+        // Toggle ON → create a Finding document
+        const fRes = await fetch("/api/cmmc/findings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            assessmentId,
+            controlId: control?.controlId,
+            controlAssessmentId: controlDocId,
+            title: `Finding: ${control?.controlDefinition?.title ?? control?.controlId}`,
+            description:
+              implementationDescription ||
+              `Control ${control?.controlId} has been flagged as a deficiency requiring remediation.`,
+            severity: findingSeverity,
+            identifiedBy: "Assessor",
+          }),
+        });
+        if (fRes.ok) {
+          const fData = await fRes.json();
+          newFindingId = fData.findingId;
+          setExistingFindingId(fData.findingId);
+          setOriginalHasFinding(true);
+        } else {
+          toast.error("Failed to create finding");
+          setSaving(false);
+          return;
+        }
+      } else if (!hasFinding && originalHasFinding && existingFindingId) {
+        // Toggle OFF → delete the existing Finding document
+        const dRes = await fetch(`/api/cmmc/findings?id=${existingFindingId}`, {
+          method: "DELETE",
+        });
+        if (dRes.ok) {
+          newFindingId = null;
+          setExistingFindingId(null);
+          setOriginalHasFinding(false);
+        } else {
+          toast.error("Failed to remove finding");
+          setSaving(false);
+          return;
+        }
+      }
+
+      // ── 2. Save the control assessment ────────────────────────────────────
       const res = await fetch("/api/cmmc/controls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,6 +168,7 @@ export default function ControlAssessmentDetailPage() {
             .map(s => s.trim())
             .filter(Boolean),
           hasFinding,
+          findingId: newFindingId ?? undefined,
         }),
       });
 
@@ -406,17 +461,43 @@ export default function ControlAssessmentDetailPage() {
           </div>
 
           {/* Finding flag */}
-          <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50 border-red-100">
-            <div className="space-y-0.5">
-              <Label className="text-sm font-medium text-red-800">Flag as Finding</Label>
-              <p className="text-xs text-red-700">
-                Mark this control as having a deficiency that requires a POAM
-              </p>
+          <div className="space-y-3 p-3 border rounded-lg bg-red-50 border-red-100">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium text-red-800">Flag as Finding</Label>
+                <p className="text-xs text-red-700">
+                  Mark this control as having a deficiency that requires a POAM
+                </p>
+              </div>
+              <Switch
+                checked={hasFinding}
+                onCheckedChange={setHasFinding}
+              />
             </div>
-            <Switch
-              checked={hasFinding}
-              onCheckedChange={setHasFinding}
-            />
+            {hasFinding && (
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-red-800">Finding Severity</Label>
+                <Select
+                  value={findingSeverity}
+                  onValueChange={v => setFindingSeverity(v as typeof findingSeverity)}
+                >
+                  <SelectTrigger className="bg-white border-red-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critical"><span className="text-red-700 font-medium">Critical</span></SelectItem>
+                    <SelectItem value="high"><span className="text-red-500 font-medium">High</span></SelectItem>
+                    <SelectItem value="medium"><span className="text-amber-600 font-medium">Medium</span></SelectItem>
+                    <SelectItem value="low"><span className="text-blue-600 font-medium">Low</span></SelectItem>
+                  </SelectContent>
+                </Select>
+                {existingFindingId && originalHasFinding && (
+                  <p className="text-xs text-red-600 mt-1">
+                    ✓ Finding already recorded — toggle off and save to remove it.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
