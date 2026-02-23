@@ -230,10 +230,78 @@ export async function fetchOpportunityDetails(
     return null;
   }
 
-  const data = await response.json();
-  // Detail endpoint returns the opportunity directly (not wrapped in opportunitiesData)
-  const transformed = transformSamResponse([data]);
-  return transformed[0] || null;
+  const raw = await response.json();
+
+  // v2 detail API wraps most fields inside data2
+  const data2 = raw.data2 || {};
+  const resolvedNoticeId = raw.opportunityId || raw.id || noticeId;
+
+  // naics: v2 returns [{code: ["541715"], type: "primary"}] — extract first code string
+  const naicsRaw: any[] = data2.naics || [];
+  const naicsCode: string | undefined = naicsRaw[0]?.code?.[0] || naicsRaw[0]?.code || undefined;
+
+  // type: v2 returns short code "o","k","s" etc — map to readable label
+  const typeCodeMap: Record<string, string> = {
+    o: "Solicitation", k: "Combined Synopsis/Solicitation", p: "Presolicitation",
+    r: "Sources Sought", g: "Sale of Surplus Property", s: "Special Notice",
+    i: "Intent to Bundle", a: "Award Notice", u: "Justification",
+    j: "Justification and Approval", m: "Modification/Amendment",
+  };
+  const typeCode = data2.type || "";
+  const typeLabel = typeCodeMap[typeCode] || typeCode;
+
+  // setAside: v2 returns plain string "NONE", "SBA", etc — pass through as-is
+  const typeOfSetAside = data2.solicitation?.setAside || undefined;
+
+  // contacts: v2 uses fullName not name
+  const rawContacts: any[] = data2.pointOfContact || [];
+  const contacts = rawContacts.map((c: any) => ({
+    name: c.fullName || c.name || "",
+    email: c.email || "",
+    phone: c.phone || "",
+    title: c.title || "",
+    type: c.type || "",
+  }));
+
+  // description: top-level array [{body: "<html>..."}]
+  const descArr: any[] = Array.isArray(raw.description) ? raw.description : [];
+  const description = descArr[0]?.body || descArr[0]?.content || "";
+
+  // placeOfPerformance: v2 returns object directly (not array)
+  const pop = data2.placeOfPerformance || {};
+  const placeOfPerformance = pop ? {
+    city: pop.city?.name || pop.city || undefined,
+    state: pop.state?.code || pop.state?.name || pop.state || undefined,
+    zip: pop.zip || pop.zipCode || undefined,
+    country: pop.country?.code || pop.country?.name || pop.country || undefined,
+  } : undefined;
+
+  // Build a fully normalized object — bypass transformSamResponse for v2 detail
+  const opportunity: SamOpportunity = {
+    noticeId: resolvedNoticeId,
+    title: data2.title || "Untitled",
+    solicitationNumber: data2.solicitationNumber || undefined,
+    type: typeLabel,
+    active: raw.archived === false && raw.cancelled === false ? "Yes" : "No",
+    postedDate: raw.postedDate,
+    responseDeadLine: data2.solicitation?.deadlines?.response || undefined,
+    archiveDate: data2.archive?.date || undefined,
+    lastModifiedDate: raw.modifiedDate || raw.lastModifiedDate || undefined,
+    naicsCode,
+    classificationCode: typeof data2.classificationCode === "string" ? data2.classificationCode : undefined,
+    typeOfSetAside,
+    description,
+    pointOfContact: contacts,
+    resourceLinks: [],
+    uiLink: `https://sam.gov/opp/${resolvedNoticeId}/view`,
+    placeOfPerformance,
+    organizationHierarchy: undefined,
+    department: undefined,
+    subTier: undefined,
+    office: undefined,
+  };
+
+  return opportunity;
 }
 
 /**
