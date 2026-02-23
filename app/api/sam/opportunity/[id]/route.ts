@@ -7,14 +7,6 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const apiKey = process.env.SAM_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "SAM.gov API key not configured" },
-        { status: 500 }
-      );
-    }
 
     if (!id) {
       return NextResponse.json(
@@ -23,7 +15,7 @@ export async function GET(
       );
     }
 
-    const opportunity = await fetchOpportunityDetails(id, apiKey);
+    const opportunity = await fetchOpportunityDetails(id);
 
     if (!opportunity) {
       return NextResponse.json(
