@@ -212,19 +212,22 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // SAM.gov entity search requires authentication (index=ent returns 401)
-    // Workaround: Search opportunities and extract unique organizations from award data
-    // This finds companies that have won or are bidding on federal contracts
+    // Workaround: Search award notices on the public opportunity API (index=opp)
+    // and extract unique awardee companies from the results
     const urlParams: Record<string, string> = {
-      index: "opp",              // opportunities (publicly accessible)
-      limit: String(Math.min(limit * 2, 100)), // Get more results since we'll filter
+      index: "opp",
+      limit: String(Math.min(limit, 100)),
       page: String(page),
       sort: "-modifiedDate",
       random: String(Date.now()),
     };
 
-    // Search by organization/company name in the query
+    // Search by company name / keyword
     if (keyword.trim()) {
       urlParams.q = keyword.trim();
+    } else {
+      // Without a keyword, search for award notices to get awardee companies
+      urlParams.notice_type = "a";  // "a" = Award Notice
     }
 
     // State filter (place of performance)
@@ -236,9 +239,6 @@ export async function POST(request: NextRequest) {
     if (naicsCode) {
       urlParams.naics = naicsCode.trim();
     }
-
-    // Include both active and archived to get more company data
-    urlParams.is_active = "all";
 
     let url = SAM_SEARCH_URL + "?";
     Object.keys(urlParams).forEach((key) => {
@@ -252,9 +252,10 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error("[Company Search] SAM.gov error:", response.status, text.substring(0, 300));
+      console.error("[Company Search] SAM.gov error:", response.status, url);
+      console.error("[Company Search] SAM.gov response body:", text.substring(0, 500));
       return NextResponse.json(
-        { error: `SAM.gov returned ${response.status}`, details: text.substring(0, 200) },
+        { error: `SAM.gov returned ${response.status}`, details: text.substring(0, 300) },
         { status: 502 }
       );
     }
