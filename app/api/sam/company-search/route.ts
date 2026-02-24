@@ -359,13 +359,23 @@ export async function POST(request: NextRequest) {
           registrationStatus: "Active",
           naicsCode,
           cageCode: awardee?.cageCode || undefined,
-          physicalAddress: loc ? {
-            addressLine1: loc.streetAddress || loc.street || loc.addressLine1,
-            city: loc.city?.name || loc.city,
-            stateOrProvinceCode: loc.state?.code || loc.state,
-            zipCode: loc.zip || loc.zipCode || loc.postalCode,
-            countryCode: loc.country?.code || loc.country,
-          } : undefined,
+          physicalAddress: loc ? (() => {
+            const rawCity = loc.city?.name || loc.city || "";
+            // SAM sometimes stores a zip code (numeric) in the city field — discard it
+            const cityVal = rawCity && /^\d+$/.test(String(rawCity).trim()) ? "" : rawCity;
+            const rawState = loc.state?.code || loc.state?.name || loc.state || "";
+            // SAM sometimes stores full state name in state field — normalise to 2-letter code
+            const stateVal = typeof rawState === "string" && rawState.length > 2
+              ? rawState.substring(0, 2).toUpperCase()
+              : rawState;
+            return {
+              addressLine1: loc.streetAddress || loc.street || loc.addressLine1,
+              city: cityVal || undefined,
+              stateOrProvinceCode: stateVal || undefined,
+              zipCode: loc.zip || loc.zipCode || loc.postalCode || undefined,
+              countryCode: loc.country?.code || loc.country || undefined,
+            };
+          })() : undefined,
         };
       };
 
@@ -401,12 +411,16 @@ export async function POST(request: NextRequest) {
     // Convert map to array and apply additional filters
     let companies = Array.from(companyMap.values());
 
-    // Filter by company physical address state (not place-of-performance)
+    // Filter by company physical address state.
+    // SAM.gov rarely returns location data in the public API, so most companies have no state.
+    // Strategy: only EXCLUDE companies whose state is explicitly known AND doesn't match.
+    // Companies with no address data are included (they may still be in the selected state).
     if (state) {
       const stateUpper = state.toUpperCase();
       companies = companies.filter((c) => {
-        const co = c.physicalAddress?.stateOrProvinceCode;
-        return co && co.toUpperCase() === stateUpper;
+        const knownState = c.physicalAddress?.stateOrProvinceCode;
+        if (!knownState) return true; // no data — keep it
+        return knownState.toUpperCase() === stateUpper;
       });
     }
 
