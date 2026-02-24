@@ -177,10 +177,10 @@ export function CompanySearchTab() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-slate-700">Step 2 — Physical Address State</Label>
-              <Select value={state} onValueChange={setState}>
+              <Select value={state || "__all__"} onValueChange={(v) => setState(v === "__all__" ? "" : v)}>
                 <SelectTrigger className="border-slate-300"><SelectValue placeholder="Any state" /></SelectTrigger>
                 <SelectContent className="max-h-72">
-                  <SelectItem value="">Any State</SelectItem>
+                  <SelectItem value="__all__">Any State</SelectItem>
                   {US_STATES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label} ({s.value})</SelectItem>)}
                 </SelectContent>
               </Select>
