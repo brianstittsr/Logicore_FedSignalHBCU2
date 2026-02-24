@@ -232,67 +232,67 @@ export async function POST(request: NextRequest) {
       ? naicsCodesParam
       : naicsCode ? [naicsCode] : [];
 
-    // SAM.gov entity search (index=ent) requires an API key.
-    // Workaround: fetch a large batch of opportunities and extract awardee data.
-    // ~20-30% of SAM opportunity records have award.awardee populated.
-    // Fetching 2000 records yields ~400-600 unique companies.
+    // SAM.gov entity search (index=ent) requires an API key — not available here.
+    // Strategy: fire parallel keyword searches against common gov-contractor terms.
+    // Each keyword query returns award-heavy results with populated awardee fields.
+    // 20 parallel fetches × 100 results × ~30% awardee fill = ~600 unique companies.
     const trimmedKeyword = keyword.trim();
 
-    // Build a single page URL
-    const buildUrl = (samPage: number) => {
+    // Common government contracting keywords that reliably return award notices with awardee data
+    const DEFAULT_KEYWORDS = [
+      "construction", "services", "support", "systems", "technology",
+      "engineering", "solutions", "management", "logistics", "maintenance",
+      "consulting", "security", "information", "supply", "defense",
+      "communications", "training", "research", "medical", "facilities",
+    ];
+
+    // Build one fetch URL
+    const buildUrl = (q: string, samPage = 0) => {
       const p: Record<string, string> = {
         index: "opp",
         limit: "100",
         page: String(samPage),
         sort: "-modifiedDate",
-        random: String(Date.now() + samPage), // vary to avoid cache
+        q,
       };
-      if (trimmedKeyword) p.q = trimmedKeyword;
       if (state) p.pop_state = state.toUpperCase();
-      // Single NAICS: let SAM filter server-side for better results
       if (naicsCodeList.length === 1) p.naics = naicsCodeList[0];
-
       let u = SAM_SEARCH_URL + "?";
       Object.keys(p).forEach((k) => { u += `${k}=${encodeURIComponent(p[k])}&`; });
       return u.slice(0, -1);
     };
 
-    // Fetch page 0 first to get total count
-    const firstUrl = buildUrl(0);
-    console.log("[Company Search] Fetching page 0:", firstUrl);
+    // Decide which keywords to query
+    const queryKeywords = trimmedKeyword
+      ? [trimmedKeyword]          // user typed a keyword — fetch 5 pages of it
+      : DEFAULT_KEYWORDS;         // blank — fan out across 20 broad terms
 
-    const firstResponse = await fetch(firstUrl, { method: "GET", headers: SAM_HEADERS });
-    if (!firstResponse.ok) {
-      const text = await firstResponse.text();
-      console.error("[Company Search] SAM.gov error:", firstResponse.status);
-      return NextResponse.json(
-        { error: `SAM.gov returned ${firstResponse.status}`, details: text.substring(0, 300) },
-        { status: 502 }
-      );
+    // Build the list of fetch tasks
+    const fetchTasks: Promise<any[]>[] = [];
+    if (trimmedKeyword) {
+      // For a user keyword: fetch up to 5 pages (500 results) in parallel
+      for (let p = 0; p < 5; p++) {
+        fetchTasks.push(
+          fetch(buildUrl(trimmedKeyword, p), { method: "GET", headers: SAM_HEADERS })
+            .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
+            .then((d: any) => (d._embedded?.results || []) as any[])
+        );
+      }
+    } else {
+      // For blank search: fire one request per keyword simultaneously
+      for (const kw of queryKeywords) {
+        fetchTasks.push(
+          fetch(buildUrl(kw, 0), { method: "GET", headers: SAM_HEADERS })
+            .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
+            .then((d: any) => (d._embedded?.results || []) as any[])
+        );
+      }
     }
 
-    const firstData = await firstResponse.json();
-    const samTotal: number = firstData.totalCount || firstData.total || 0;
-    const firstBatch: any[] = firstData._embedded?.results || [];
-
-    // Fetch up to 19 more pages in parallel (total ≤ 2000 opportunities)
-    // ~20-30% have awardee data → expect 400-600 unique companies
-    const maxExtraPages = 19;
-    const availableExtraPages = Math.max(0, Math.ceil(samTotal / 100) - 1);
-    const extraPageCount = Math.min(availableExtraPages, maxExtraPages);
-
-    const extraFetches = extraPageCount > 0
-      ? await Promise.all(
-          Array.from({ length: extraPageCount }, (_, i) =>
-            fetch(buildUrl(i + 1), { method: "GET", headers: SAM_HEADERS })
-              .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
-              .then((d: any) => (d._embedded?.results || []) as any[])
-          )
-        )
-      : [];
-
-    const opportunities: any[] = [firstBatch, ...extraFetches].flat();
-    console.log(`[Company Search] Fetched ${opportunities.length} opps (SAM total: ${samTotal}, extra pages: ${extraPageCount})`);
+    // Run all fetches in parallel (SAM.gov handles concurrent requests fine)
+    const batchResults = await Promise.all(fetchTasks);
+    const opportunities: any[] = batchResults.flat();
+    console.log(`[Company Search] Fetched ${opportunities.length} opps via ${fetchTasks.length} parallel queries`);
 
     type RelatedOpp = NonNullable<SamCompany["relatedOpportunities"]>[number];
 
