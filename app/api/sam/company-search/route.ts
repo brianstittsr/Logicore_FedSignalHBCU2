@@ -3,14 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 /**
- * SAM.gov Entity Management API v3 (official, requires free API key)
- * Docs: https://open.gsa.gov/api/entity-api/
- * Get a free key: https://sam.gov → Sign In → Account Details → Public API Key
+ * SAM.gov public web API endpoint (no API key required)
+ * Uses the same /sgs/v1/search/ endpoint as the SAM.gov website itself
+ * index=ent filters to entities/companies
  */
-const SAM_ENTITY_API_URL = "https://api.sam.gov/entity-information/v3/entities";
+const SAM_ENTITY_SEARCH_URL = "https://sam.gov/api/prod/sgs/v1/search/";
 
 const SAM_HEADERS = {
-  Accept: "application/json",
+  Accept: "application/json, text/plain, */*",
+  "Content-Type": "application/json",
   "User-Agent": "SamGovApiServer/1.0.0",
 };
 
@@ -197,18 +198,6 @@ function transformEntityResult(raw: any): SamCompany {
 }
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.SAM_GOV_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error: "SAM.gov API key not configured",
-        missingApiKey: true,
-        details: "Add SAM_GOV_API_KEY to .env.local — get a free key at sam.gov → Sign In → Account Details → Public API Key",
-      },
-      { status: 503 }
-    );
-  }
-
   try {
     const body: CompanySearchParams = await request.json();
     const {
@@ -222,57 +211,75 @@ export async function POST(request: NextRequest) {
       page = 0,
     } = body;
 
-    /**
-     * SAM.gov Entity Management API v3 query params
-     * Docs: https://open.gsa.gov/api/entity-api/
-     *
-     * Key fields:
-     *   api_key          — required
-     *   entityName       — company name keyword search
-     *   physicalAddressStateOrProvinceCode — 2-letter state
-     *   naicsCode        — 6-digit NAICS
-     *   entityStructureCode — comma-separated entity structure codes (2L, 8H, 2J, MF, 2A, 2I, 2S, 8W)
-     *   businessTypeCode — comma-separated SBA business type codes (A2, A5, QF, A6, XX, 27)
-     *   registrationStatus — "A" (active) | "E" (expired/inactive)
-     *   includeSections  — what data to return
-     *   size             — number of results
-     *   page             — 0-based page number
-     */
-    const params = new URLSearchParams();
-    params.set("api_key", apiKey);
-    params.set("includeSections", "entityRegistration,coreData,assertions,repsAndCerts");
-    params.set("size", String(Math.min(limit, 100)));
-    params.set("page", String(page));
+    // Build SAM.gov entity search URL params (index=ent for entities)
+    // Uses the same public web API as opportunity search (no API key required)
+    const urlParams: Record<string, string> = {
+      index: "ent",              // entities only
+      limit: String(Math.min(limit, 100)),
+      page: String(page),
+      sort: "-lastModifiedDate",
+      random: String(Date.now()),
+    };
 
+    // Keyword search
     if (keyword.trim()) {
-      params.set("entityName", keyword.trim());
-    }
-    if (state) {
-      params.set("physicalAddressStateOrProvinceCode", state.toUpperCase());
-    }
-    if (naicsCode) {
-      params.set("naicsCode", naicsCode.trim());
-    }
-    if (registrationStatus === "active") {
-      params.set("registrationStatus", "A");
-    } else if (registrationStatus === "inactive") {
-      params.set("registrationStatus", "E");
-    }
-    if (entityTypes.length > 0) {
-      params.set("entityStructureCode", entityTypes.join("~"));
-    }
-    if (businessTypes.length > 0) {
-      params.set("businessTypeCode", businessTypes.join("~"));
+      urlParams.q = keyword.trim();
     }
 
-    const url = `${SAM_ENTITY_API_URL}?${params.toString()}`;
-    console.log("[Company Search] URL:", url.replace(apiKey, "***"));
+    // Physical address state filter
+    if (state) {
+      urlParams["physicalAddress.stateOrProvinceCode"] = state.toUpperCase();
+    }
+
+    // NAICS code filter
+    if (naicsCode) {
+      urlParams.naicsCode = naicsCode.trim();
+    }
+
+    // Registration status: A = Active, E = Expired/Inactive
+    if (registrationStatus === "active") {
+      urlParams.registrationStatus = "A";
+    } else if (registrationStatus === "inactive") {
+      urlParams.registrationStatus = "E";
+    }
+
+    // Entity type filters (comma-separated codes)
+    if (entityTypes.length > 0) {
+      urlParams.entityStructure = entityTypes.join(",");
+    }
+
+    // Business type / set-aside filters
+    if (businessTypes.length > 0) {
+      urlParams.businessType = businessTypes.join(",");
+    }
+
+    let url = SAM_ENTITY_SEARCH_URL + "?";
+    Object.keys(urlParams).forEach((key) => {
+      url += `${key}=${encodeURIComponent(urlParams[key])}&`;
+    });
+    url = url.slice(0, -1);
+
+    console.log("[Company Search] URL:", url);
 
     const response = await fetch(url, { method: "GET", headers: SAM_HEADERS });
 
     if (!response.ok) {
       const text = await response.text();
       console.error("[Company Search] SAM.gov error:", response.status, text.substring(0, 300));
+      
+      // If SAM.gov returns 401, it means this endpoint requires auth
+      // Return a helpful error message
+      if (response.status === 401) {
+        return NextResponse.json(
+          { 
+            error: "SAM.gov entity search requires authentication. The public web API for entities may have changed.", 
+            details: "Entity search currently requires a SAM.gov API key. Please add SAM_GOV_API_KEY to your environment variables.",
+            requiresApiKey: true
+          },
+          { status: 503 }
+        );
+      }
+      
       return NextResponse.json(
         { error: `SAM.gov returned ${response.status}`, details: text.substring(0, 200) },
         { status: 502 }
@@ -280,12 +287,18 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    
+    // Response shape: { _embedded: { results: [...] }, page: { totalElements: N } }
+    const rawResults: any[] = data._embedded?.results || [];
+    const total: number = data.page?.totalElements || rawResults.length;
 
-    // Entity API v3 response shape: { entityData: [...], totalRecords: N, ... }
-    const rawResults: any[] = data.entityData || [];
-    const total: number = data.totalRecords || rawResults.length;
+    // Filter to entity results only
+    const entityResults = rawResults.filter((r: any) => {
+      const type = r._samdotgovType || r._type || "";
+      return type === "entity" || r.legalBusinessName || r.ueiSAM;
+    });
 
-    const companies: SamCompany[] = rawResults.map(transformEntityResult);
+    const companies: SamCompany[] = entityResults.map(transformEntityResult);
 
     return NextResponse.json({
       companies,
