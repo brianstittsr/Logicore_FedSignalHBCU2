@@ -163,7 +163,8 @@ function exportToCSV(companies: SamCompany[]) {
 
 export function CompanySearchTab() {
   const [keyword, setKeyword] = useState("");
-  const [state, setState] = useState("");
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [stateSearchInput, setStateSearchInput] = useState("");
   const [naicsCodes, setNaicsCodes] = useState<string[]>([]);
   const [naicsInput, setNaicsInput] = useState("");
   const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>(["2L", "8H", "2J", "MF", "2A", "2I"]);
@@ -204,6 +205,9 @@ export function CompanySearchTab() {
     setNaicsInput("");
   };
 
+  const toggleState = (v: string) =>
+    setSelectedStates((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
+
   const toggleEntityType = (v: string) =>
     setSelectedEntityTypes((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
 
@@ -223,7 +227,7 @@ export function CompanySearchTab() {
         body: JSON.stringify({
           // Send a space when empty so SAM.gov still returns results
           keyword: keyword.trim() || " ",
-          state: state || undefined,
+          states: selectedStates.length > 0 ? selectedStates : undefined,
           naicsCodes: naicsCodes.length > 0 ? naicsCodes : undefined,
           entityTypes: selectedEntityTypes,
           businessTypes: selectedBusinessTypes,
@@ -253,7 +257,7 @@ export function CompanySearchTab() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const handleReset = () => {
-    setKeyword(""); setState("");
+    setKeyword(""); setSelectedStates([]); setStateSearchInput("");
     setSelectedEntityTypes(["2L", "8H", "2J", "MF", "2A", "2I"]);
     setSelectedBusinessTypes(["A2"]); setRegStatus("active");
     setNaicsCodes([]); setNaicsInput("");
@@ -285,14 +289,58 @@ export function CompanySearchTab() {
                 className="border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951]" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-slate-700">Step 2 — Physical Address State</Label>
-              <Select value={state || "__all__"} onValueChange={(v) => setState(v === "__all__" ? "" : v)}>
-                <SelectTrigger className="border-slate-300"><SelectValue placeholder="Any state" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  <SelectItem value="__all__">Any State</SelectItem>
-                  {US_STATES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label} ({s.value})</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-slate-700">Step 2 — Physical Address State</Label>
+                {selectedStates.length > 0 && (
+                  <button type="button" onClick={() => setSelectedStates([])} className="text-xs text-slate-400 hover:text-red-500 transition-colors">Clear all</button>
+                )}
+              </div>
+              {/* Selected state tags */}
+              {selectedStates.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedStates.map((s) => (
+                    <span key={s} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#1e3a5f] text-white">
+                      {s}
+                      <button type="button" onClick={() => toggleState(s)} className="hover:text-red-300 transition-colors"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Searchable dropdown */}
+              <div className="relative">
+                <Input
+                  placeholder="Search & select states..."
+                  value={stateSearchInput}
+                  onChange={(e) => setStateSearchInput(e.target.value)}
+                  className="border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951] text-sm"
+                />
+                {stateSearchInput && (
+                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                    {US_STATES.filter((s) =>
+                      s.label.toLowerCase().includes(stateSearchInput.toLowerCase()) ||
+                      s.value.toLowerCase().includes(stateSearchInput.toLowerCase())
+                    ).map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => { toggleState(s.value); setStateSearchInput(""); }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center justify-between ${
+                          selectedStates.includes(s.value) ? "bg-blue-50 text-[#1e3a5f] font-semibold" : "text-slate-700"
+                        }`}
+                      >
+                        <span>{s.label} ({s.value})</span>
+                        {selectedStates.includes(s.value) && <CheckSquare className="h-3.5 w-3.5 text-[#1e3a5f]" />}
+                      </button>
+                    ))}
+                    {US_STATES.filter((s) =>
+                      s.label.toLowerCase().includes(stateSearchInput.toLowerCase()) ||
+                      s.value.toLowerCase().includes(stateSearchInput.toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-400">No states found</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-1.5 md:col-span-1">
               <div className="flex items-center justify-between">

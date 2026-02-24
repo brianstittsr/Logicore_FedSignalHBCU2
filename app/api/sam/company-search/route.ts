@@ -17,8 +17,9 @@ const SAM_HEADERS = {
 
 export interface CompanySearchParams {
   keyword?: string;
-  state?: string;
-  naicsCode?: string;   // legacy single
+  state?: string;        // legacy single
+  states?: string[];     // multi-select
+  naicsCode?: string;    // legacy single
   naicsCodes?: string[]; // multi-select
   entityTypes?: string[];
   businessTypes?: string[];
@@ -218,6 +219,7 @@ export async function POST(request: NextRequest) {
     const {
       keyword = "",
       state,
+      states: statesParam,
       naicsCode,
       naicsCodes: naicsCodesParam,
       entityTypes = [],
@@ -226,6 +228,13 @@ export async function POST(request: NextRequest) {
       limit = 100,
       page = 0,
     } = body;
+
+    // Normalise to a single array of uppercase 2-letter codes
+    const stateList: string[] = (
+      statesParam && statesParam.length > 0 ? statesParam
+      : state ? [state]
+      : []
+    ).map((s) => s.trim().toUpperCase().substring(0, 2));
 
     // Normalise to a single array (support both legacy single and new multi)
     const naicsCodeList: string[] = naicsCodesParam && naicsCodesParam.length > 0
@@ -411,16 +420,16 @@ export async function POST(request: NextRequest) {
     // Convert map to array and apply additional filters
     let companies = Array.from(companyMap.values());
 
-    // Filter by company physical address state.
-    // SAM.gov rarely returns location data in the public API, so most companies have no state.
-    // Strategy: only EXCLUDE companies whose state is explicitly known AND doesn't match.
-    // Companies with no address data are included (they may still be in the selected state).
-    if (state) {
-      const stateUpper = state.toUpperCase();
+    // Filter by company physical address state — exact 2-letter code match.
+    // SAM.gov rarely returns location data for awardees in the public API.
+    // Only exclude companies whose state is KNOWN and does NOT match any selected state.
+    if (stateList.length > 0) {
       companies = companies.filter((c) => {
-        const knownState = c.physicalAddress?.stateOrProvinceCode;
-        if (!knownState) return true; // no data — keep it
-        return knownState.toUpperCase() === stateUpper;
+        const rawState = c.physicalAddress?.stateOrProvinceCode || "";
+        // Normalise: trim, uppercase, take first 2 chars
+        const knownState = rawState.trim().toUpperCase().substring(0, 2);
+        if (!knownState) return true; // no address data — keep it
+        return stateList.includes(knownState);
       });
     }
 
