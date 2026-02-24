@@ -323,8 +323,7 @@ export function CompanySearchTab() {
                   </div>
                   <div className="flex gap-1.5 shrink-0">
                     <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(company.samUrl, "_blank"); }}>
-                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                      {company.hasRealUei ? "Entity Page" : "Search"}
+                      <ExternalLink className="h-3.5 w-3.5 mr-1" />SAM.gov
                     </Button>
                   </div>
                 </div>
@@ -354,8 +353,7 @@ export function CompanySearchTab() {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#152d4a]" onClick={() => window.open(selectedCompany.samUrl, "_blank")}>
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    {selectedCompany.hasRealUei ? "Entity Page" : "Search SAM.gov"}
+                    <ExternalLink className="h-4 w-4 mr-1" />View on SAM.gov
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setSelectedCompany(null)}>Close</Button>
                 </div>

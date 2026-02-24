@@ -320,9 +320,10 @@ export async function POST(request: NextRequest) {
               ueiSAM: realUei || "",
               legalBusinessName: name,
               hasRealUei: !!realUei,
-              // Use entity page if we have a real UEI, otherwise search page
+              // Always use search URL - the direct /entity/{uei}/core-data path returns 404
+              // Searching by UEI returns the exact entity match
               samUrl: realUei
-                ? `https://sam.gov/entity/${realUei}/core-data`
+                ? `https://sam.gov/search?index=ent&q=${encodeURIComponent(realUei)}`
                 : `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
               samSearchUrl: `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
               registrationStatus: "Active",
