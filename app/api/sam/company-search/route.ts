@@ -226,57 +226,65 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // SAM.gov entity search requires authentication (index=ent returns 401)
-    // Workaround: Search award notices on the public opportunity API (index=opp)
-    // and extract unique awardee companies from the results
-    const urlParams: Record<string, string> = {
-      index: "opp",
-      limit: String(Math.min(limit, 100)),
-      page: String(page),
-      sort: "-modifiedDate",
-      random: String(Date.now()),
+    // Workaround: Fetch a large batch of award notices from the public opportunity API,
+    // extract unique awardee companies, then paginate the result set server-side.
+    const trimmedKeyword = keyword.trim();
+
+    // Build base params — always fetch SAM.gov's max (100 per request)
+    const buildUrl = (samPage: number) => {
+      const p: Record<string, string> = {
+        index: "opp",
+        limit: "100",        // SAM.gov max per request
+        page: String(samPage),
+        sort: "-modifiedDate",
+        random: String(Date.now()),
+      };
+      if (trimmedKeyword) {
+        p.q = trimmedKeyword;
+      } else {
+        p.notice_type = "a"; // Award Notices have the richest awardee data
+      }
+      if (state) p.pop_state = state.toUpperCase();
+      if (naicsCode) p.naics = naicsCode.trim();
+
+      let u = SAM_SEARCH_URL + "?";
+      Object.keys(p).forEach((k) => { u += `${k}=${encodeURIComponent(p[k])}&`; });
+      return u.slice(0, -1);
     };
 
-    // Search by company name / keyword
-    const trimmedKeyword = keyword.trim();
-    if (trimmedKeyword) {
-      urlParams.q = trimmedKeyword;
-    } else {
-      // Without a keyword, search for award notices to get awardee companies
-      urlParams.notice_type = "a";  // "a" = Award Notice
-    }
+    // Fetch page 0 first to learn the total, then fetch additional pages in parallel
+    const firstUrl = buildUrl(0);
+    console.log("[Company Search] Fetching page 0:", firstUrl);
 
-    // State filter (place of performance)
-    if (state) {
-      urlParams.pop_state = state.toUpperCase();
-    }
-
-    // NAICS code filter
-    if (naicsCode) {
-      urlParams.naics = naicsCode.trim();
-    }
-
-    let url = SAM_SEARCH_URL + "?";
-    Object.keys(urlParams).forEach((key) => {
-      url += `${key}=${encodeURIComponent(urlParams[key])}&`;
-    });
-    url = url.slice(0, -1);
-
-    console.log("[Company Search] Using opportunity search to find companies:", url);
-
-    const response = await fetch(url, { method: "GET", headers: SAM_HEADERS });
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("[Company Search] SAM.gov error:", response.status, url);
-      console.error("[Company Search] SAM.gov response body:", text.substring(0, 500));
+    const firstResponse = await fetch(firstUrl, { method: "GET", headers: SAM_HEADERS });
+    if (!firstResponse.ok) {
+      const text = await firstResponse.text();
+      console.error("[Company Search] SAM.gov error:", firstResponse.status, firstUrl);
+      console.error("[Company Search] body:", text.substring(0, 500));
       return NextResponse.json(
-        { error: `SAM.gov returned ${response.status}`, details: text.substring(0, 300) },
+        { error: `SAM.gov returned ${firstResponse.status}`, details: text.substring(0, 300) },
         { status: 502 }
       );
     }
 
-    const data = await response.json();
-    const opportunities: any[] = data._embedded?.results || [];
+    const firstData = await firstResponse.json();
+    const samTotal: number = firstData.totalCount || firstData.total || 0;
+    const firstBatch: any[] = firstData._embedded?.results || [];
+
+    // Fetch up to 9 more pages in parallel (total ≤ 1000 opportunities)
+    const extraPageCount = Math.min(Math.ceil(samTotal / 100) - 1, 9);
+    const extraFetches = extraPageCount > 0
+      ? await Promise.all(
+          Array.from({ length: extraPageCount }, (_, i) =>
+            fetch(buildUrl(i + 1), { method: "GET", headers: SAM_HEADERS })
+              .then((r) => r.ok ? r.json() : Promise.resolve({ _embedded: { results: [] } }))
+              .then((d) => (d._embedded?.results || []) as any[])
+          )
+        )
+      : [];
+
+    const opportunities: any[] = [firstBatch, ...extraFetches].flat();
+    console.log(`[Company Search] Total opportunities fetched: ${opportunities.length} (SAM total: ${samTotal})`);
 
     // Extract unique companies from opportunity data
     // Look for: award.awardee, organizationHierarchy, pointOfContacts, etc.
