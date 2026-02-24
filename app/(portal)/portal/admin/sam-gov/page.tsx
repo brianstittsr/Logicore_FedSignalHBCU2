@@ -57,6 +57,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useUserProfile } from "@/contexts/user-profile-context";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CompanySearchTab } from "@/components/sam/CompanySearchTab";
 
 interface SamOpportunity {
   noticeId: string;
@@ -348,13 +350,25 @@ export default function SamGovSearchPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#1e3a5f]">SAM.gov Opportunity Search</h1>
+          <h1 className="text-3xl font-bold text-[#1e3a5f]">SAM.gov Search</h1>
           <p className="text-muted-foreground mt-1">
-            Search federal contract opportunities using natural language or advanced filters
+            Search federal contract opportunities and registered companies on SAM.gov
           </p>
         </div>
         <Building className="h-8 w-8 text-[#C8A951]" />
       </div>
+
+      <Tabs defaultValue="opportunities" className="space-y-5">
+        <TabsList>
+          <TabsTrigger value="opportunities">Opportunity Search</TabsTrigger>
+          <TabsTrigger value="companies">Company Search</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="companies" className="mt-0">
+          <CompanySearchTab />
+        </TabsContent>
+
+        <TabsContent value="opportunities" className="mt-0 space-y-5">
 
       {/* Search Section */}
       <Card>
@@ -954,6 +968,9 @@ export default function SamGovSearchPage() {
           </Card>
         </div>
       )}
+
+        </TabsContent>
+      </Tabs>
 
       {/* Save & Tag Dialog */}
       <Dialog open={!!saveTarget} onOpenChange={(o) => !o && setSaveTarget(null)}>
