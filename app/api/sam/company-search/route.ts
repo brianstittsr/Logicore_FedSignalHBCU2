@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const SAM_ENTITY_SEARCH_URL = "https://sam.gov/api/prod/sgs/v1/search/";
+/**
+ * SAM.gov Entity Management API v3 (official, requires free API key)
+ * Docs: https://open.gsa.gov/api/entity-api/
+ * Get a free key: https://sam.gov → Sign In → Account Details → Public API Key
+ */
+const SAM_ENTITY_API_URL = "https://api.sam.gov/entity-information/v3/entities";
 
 const SAM_HEADERS = {
-  Accept: "application/json, text/plain, */*",
-  "Content-Type": "application/json",
+  Accept: "application/json",
   "User-Agent": "SamGovApiServer/1.0.0",
 };
 
@@ -193,6 +197,18 @@ function transformEntityResult(raw: any): SamCompany {
 }
 
 export async function POST(request: NextRequest) {
+  const apiKey = process.env.SAM_GOV_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      {
+        error: "SAM.gov API key not configured",
+        missingApiKey: true,
+        details: "Add SAM_GOV_API_KEY to .env.local — get a free key at sam.gov → Sign In → Account Details → Public API Key",
+      },
+      { status: 503 }
+    );
+  }
+
   try {
     const body: CompanySearchParams = await request.json();
     const {
@@ -206,54 +222,51 @@ export async function POST(request: NextRequest) {
       page = 0,
     } = body;
 
-    // Build SAM.gov entity search URL params (index=ent)
-    const urlParams: Record<string, string> = {
-      index: "ent",
-      limit: String(Math.min(limit, 200)),
-      page: String(page),
-      sort: "-lastModifiedDate",
-      random: String(Date.now()),
-    };
+    /**
+     * SAM.gov Entity Management API v3 query params
+     * Docs: https://open.gsa.gov/api/entity-api/
+     *
+     * Key fields:
+     *   api_key          — required
+     *   entityName       — company name keyword search
+     *   physicalAddressStateOrProvinceCode — 2-letter state
+     *   naicsCode        — 6-digit NAICS
+     *   entityStructureCode — comma-separated entity structure codes (2L, 8H, 2J, MF, 2A, 2I, 2S, 8W)
+     *   businessTypeCode — comma-separated SBA business type codes (A2, A5, QF, A6, XX, 27)
+     *   registrationStatus — "A" (active) | "E" (expired/inactive)
+     *   includeSections  — what data to return
+     *   size             — number of results
+     *   page             — 0-based page number
+     */
+    const params = new URLSearchParams();
+    params.set("api_key", apiKey);
+    params.set("includeSections", "entityRegistration,coreData,assertions,repsAndCerts");
+    params.set("size", String(Math.min(limit, 100)));
+    params.set("page", String(page));
 
     if (keyword.trim()) {
-      urlParams.q = keyword.trim();
+      params.set("entityName", keyword.trim());
     }
-
-    // Physical address state filter — maps to sam.gov physicalAddress.stateOrProvinceCode
     if (state) {
-      urlParams["physicalAddress.stateOrProvinceCode"] = state.toUpperCase();
+      params.set("physicalAddressStateOrProvinceCode", state.toUpperCase());
     }
-
-    // NAICS code filter
     if (naicsCode) {
-      urlParams.naicsCode = naicsCode.trim();
+      params.set("naicsCode", naicsCode.trim());
     }
-
-    // Registration / entity status
     if (registrationStatus === "active") {
-      urlParams.registration_status = "A";
+      params.set("registrationStatus", "A");
     } else if (registrationStatus === "inactive") {
-      urlParams.registration_status = "E";
+      params.set("registrationStatus", "E");
     }
-
-    // Entity type filters from the attachments:
-    // Corporate Entity Not Tax Exempt, LLC, S-Corp, Manufacturer of Goods, For Profit, Partnership, Sole Proprietorship
     if (entityTypes.length > 0) {
-      urlParams.entity_structure = entityTypes.join(",");
+      params.set("entityStructureCode", entityTypes.join("~"));
     }
-
-    // Business type / set-aside (SBA types)
     if (businessTypes.length > 0) {
-      urlParams.bus_type = businessTypes.join(",");
+      params.set("businessTypeCode", businessTypes.join("~"));
     }
 
-    let url = SAM_ENTITY_SEARCH_URL + "?";
-    Object.keys(urlParams).forEach((key) => {
-      url += `${key}=${encodeURIComponent(urlParams[key])}&`;
-    });
-    url = url.slice(0, -1);
-
-    console.log("[Company Search] URL:", url);
+    const url = `${SAM_ENTITY_API_URL}?${params.toString()}`;
+    console.log("[Company Search] URL:", url.replace(apiKey, "***"));
 
     const response = await fetch(url, { method: "GET", headers: SAM_HEADERS });
 
@@ -262,21 +275,17 @@ export async function POST(request: NextRequest) {
       console.error("[Company Search] SAM.gov error:", response.status, text.substring(0, 300));
       return NextResponse.json(
         { error: `SAM.gov returned ${response.status}`, details: text.substring(0, 200) },
-        { status: response.status }
+        { status: 502 }
       );
     }
 
     const data = await response.json();
-    const rawResults: any[] = data._embedded?.results || [];
-    const total: number = data.page?.totalElements || rawResults.length;
 
-    // Filter to entity results only (exclude opportunities that might slip through)
-    const entityResults = rawResults.filter((r: any) => {
-      const type = r._samdotgovType || r._type || "";
-      return type === "entity" || type === "" || r.legalBusinessName || r.ueiSAM;
-    });
+    // Entity API v3 response shape: { entityData: [...], totalRecords: N, ... }
+    const rawResults: any[] = data.entityData || [];
+    const total: number = data.totalRecords || rawResults.length;
 
-    const companies: SamCompany[] = entityResults.map(transformEntityResult);
+    const companies: SamCompany[] = rawResults.map(transformEntityResult);
 
     return NextResponse.json({
       companies,

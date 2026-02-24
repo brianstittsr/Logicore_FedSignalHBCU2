@@ -130,7 +130,14 @@ export function CompanySearchTab() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || "Company search failed"); return; }
+      if (!res.ok) {
+        if (data.missingApiKey) {
+          toast.error("SAM.gov API key not configured. Add SAM_GOV_API_KEY to .env.local — get a free key at sam.gov → Sign In → Account Details → Public API Key", { duration: 12000 });
+        } else {
+          toast.error(data.error || "Company search failed");
+        }
+        return;
+      }
       const incoming: SamCompany[] = data.companies || [];
       setResults((p) => append ? [...p, ...incoming] : incoming);
       setTotal(data.total || 0);
