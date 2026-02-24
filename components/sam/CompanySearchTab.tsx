@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2, ExternalLink, Factory, MapPin, X, CheckSquare, Square, FileText, DollarSign, Building2, Calendar } from "lucide-react";
+import { Search, Loader2, ExternalLink, Factory, MapPin, X, CheckSquare, Square, FileText, DollarSign, Building2, Calendar, Download, ListChecks, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface RelatedOpportunity {
@@ -107,6 +107,54 @@ const US_STATES = [
   { value: "DC", label: "District of Columbia" },
 ];
 
+/** Build and trigger a CSV download from an array of companies */
+function exportToCSV(companies: SamCompany[]) {
+  const headers = [
+    "Company Name", "DBA Name", "UEI SAM", "CAGE Code",
+    "Registration Status", "NAICS Code", "Entity Structure",
+    "Address", "City", "State", "Zip", "Country",
+    "Small Business", "WOSB", "Veteran-Owned", "SDVOSB", "HUBZone", "8(a)",
+    "Related Contracts", "SAM.gov Link",
+  ];
+
+  const escape = (v: string | undefined) => {
+    const s = (v ?? "").replace(/"/g, '""');
+    return s.includes(",") || s.includes("\"") || s.includes("\n") ? `"${s}"` : s;
+  };
+
+  const rows = companies.map((c) => [
+    escape(c.legalBusinessName),
+    escape(c.dbaName),
+    escape(c.ueiSAM),
+    escape(c.cageCode),
+    escape(c.registrationStatus === "A" ? "Active" : c.registrationStatus),
+    escape(c.naicsCode),
+    escape(c.entityStructure),
+    escape(c.physicalAddress?.addressLine1),
+    escape(c.physicalAddress?.city),
+    escape(c.physicalAddress?.stateOrProvinceCode),
+    escape(c.physicalAddress?.zipCode),
+    escape(c.physicalAddress?.countryCode),
+    c.isSmallBusiness ? "Yes" : "No",
+    c.isWomanOwned ? "Yes" : "No",
+    c.isVeteranOwned ? "Yes" : "No",
+    c.isServiceDisabledVeteranOwned ? "Yes" : "No",
+    c.isHubZone ? "Yes" : "No",
+    c.is8aProgram ? "Yes" : "No",
+    escape(String(c.relatedOpportunities?.length ?? 0)),
+    escape(c.samUrl),
+  ].join(","));
+
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `sam-companies-${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function CompanySearchTab() {
   const [keyword, setKeyword] = useState("");
   const [state, setState] = useState("");
@@ -119,6 +167,24 @@ export function CompanySearchTab() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
   const [selectedCompany, setSelectedCompany] = useState<SamCompany | null>(null);
+  const [checkedKeys, setCheckedKeys] = useState<Set<string>>(new Set());
+
+  const getKey = (c: SamCompany) => c.ueiSAM || c.legalBusinessName;
+
+  const toggleCheck = (c: SamCompany, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const key = getKey(c);
+    setCheckedKeys((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const selectAll = () => setCheckedKeys(new Set(results.map(getKey)));
+  const clearAll = () => setCheckedKeys(new Set());
+
+  const checkedCompanies = results.filter((c) => checkedKeys.has(getKey(c)));
 
   const toggleEntityType = (v: string) =>
     setSelectedEntityTypes((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
@@ -166,7 +232,7 @@ export function CompanySearchTab() {
     setKeyword(""); setState(""); setNaicsCode("");
     setSelectedEntityTypes(["2L", "8H", "2J", "MF", "2A", "2I"]);
     setSelectedBusinessTypes(["A2"]); setRegStatus("active");
-    setResults([]); setTotal(0);
+    setResults([]); setTotal(0); setCheckedKeys(new Set());
   };
 
   return (
@@ -285,51 +351,123 @@ export function CompanySearchTab() {
         </CardContent>
       </Card>
 
+      {/* ── Selection Toolbar ── */}
+      {results.length > 0 && (
+        <div className="sticky top-0 z-20 flex items-center gap-3 flex-wrap px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+          <button
+            type="button"
+            onClick={checkedKeys.size === results.length ? clearAll : selectAll}
+            className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-[#1e3a5f] transition-colors"
+          >
+            {checkedKeys.size === results.length
+              ? <CheckSquare className="h-4 w-4 text-[#1e3a5f]" />
+              : <Square className="h-4 w-4" />}
+            {checkedKeys.size === results.length ? "Deselect All" : "Select All"}
+          </button>
+          <span className="text-slate-300">|</span>
+          <span className="text-sm text-slate-500">
+            <strong className="text-[#1e3a5f]">{checkedKeys.size}</strong> of {results.length} selected
+          </span>
+          {checkedKeys.size > 0 && (
+            <>
+              <Button
+                size="sm"
+                className="bg-[#C8A951] hover:bg-[#b8983f] text-white ml-auto"
+                onClick={() => {
+                  exportToCSV(checkedCompanies);
+                  toast.success(`Exported ${checkedCompanies.length} companies to CSV`);
+                }}
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Export {checkedKeys.size} to CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={clearAll}>
+                <Trash2 className="h-3.5 w-3.5 mr-1" />Clear
+              </Button>
+            </>
+          )}
+          {checkedKeys.size === 0 && (
+            <span className="text-xs text-slate-400 ml-auto">Click checkboxes or cards to select companies</span>
+          )}
+        </div>
+      )}
+
       {/* ── Results ── */}
       {results.length > 0 && (
         <div className="space-y-3">
-          {results.map((company) => (
-            <Card key={company.ueiSAM} className="hover:shadow-md transition-shadow cursor-pointer border border-slate-200" onClick={() => setSelectedCompany(company)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <h3 className="font-semibold text-[#1e3a5f] text-base">{company.legalBusinessName}</h3>
-                      {company.dbaName && <span className="text-xs text-slate-400">dba {company.dbaName}</span>}
+          {results.map((company) => {
+            const key = getKey(company);
+            const isChecked = checkedKeys.has(key);
+            return (
+              <Card
+                key={key}
+                className={`hover:shadow-md transition-all cursor-pointer border ${
+                  isChecked ? "border-[#1e3a5f] bg-[#1e3a5f]/[0.03] shadow-sm" : "border-slate-200"
+                }`}
+                onClick={() => setSelectedCompany(company)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    {/* Checkbox */}
+                    <button
+                      type="button"
+                      className="mt-0.5 shrink-0 text-slate-400 hover:text-[#1e3a5f] transition-colors"
+                      onClick={(e) => toggleCheck(company, e)}
+                      aria-label={isChecked ? "Deselect" : "Select"}
+                    >
+                      {isChecked
+                        ? <CheckSquare className="h-5 w-5 text-[#1e3a5f]" />
+                        : <Square className="h-5 w-5" />}
+                    </button>
+
+                    {/* Main content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <h3 className="font-semibold text-[#1e3a5f] text-base">{company.legalBusinessName}</h3>
+                        {company.dbaName && <span className="text-xs text-slate-400">dba {company.dbaName}</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 text-xs">
+                        {company.ueiSAM && <Badge variant="secondary" className="font-mono text-xs">{company.ueiSAM}</Badge>}
+                        {company.cageCode && <Badge variant="outline" className="font-mono text-xs">CAGE: {company.cageCode}</Badge>}
+                        {company.physicalAddress?.stateOrProvinceCode && (
+                          <Badge variant="outline" className="text-xs">
+                            <MapPin className="h-2.5 w-2.5 mr-0.5" />
+                            {company.physicalAddress.city ? `${company.physicalAddress.city}, ` : ""}{company.physicalAddress.stateOrProvinceCode}
+                          </Badge>
+                        )}
+                        {company.naicsCode && <Badge variant="outline" className="font-mono text-xs bg-blue-50 text-blue-700 border-blue-200">NAICS {company.naicsCode}</Badge>}
+                        {company.registrationStatus && (
+                          <Badge className={company.registrationStatus === "Active" || company.registrationStatus === "A" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}>
+                            {company.registrationStatus === "A" ? "Active" : company.registrationStatus}
+                          </Badge>
+                        )}
+                        {company.isSmallBusiness && <Badge className="bg-amber-100 text-amber-700 text-xs">SB</Badge>}
+                        {company.isWomanOwned && <Badge className="bg-purple-100 text-purple-700 text-xs">WOSB</Badge>}
+                        {company.isVeteranOwned && <Badge className="bg-blue-100 text-blue-700 text-xs">VOB</Badge>}
+                        {company.isServiceDisabledVeteranOwned && <Badge className="bg-red-100 text-red-700 text-xs">SDVOSB</Badge>}
+                        {company.isHubZone && <Badge className="bg-green-100 text-green-700 text-xs">HUBZone</Badge>}
+                        {company.is8aProgram && <Badge className="bg-indigo-100 text-indigo-700 text-xs">8(a)</Badge>}
+                        {(company.relatedOpportunities?.length ?? 0) > 0 && (
+                          <Badge variant="outline" className="text-xs text-slate-500">
+                            <FileText className="h-2.5 w-2.5 mr-0.5" />
+                            {company.relatedOpportunities!.length} contract{company.relatedOpportunities!.length !== 1 ? "s" : ""}
+                          </Badge>
+                        )}
+                      </div>
+                      {company.entityStructure && <p className="text-xs text-slate-400 mt-1">{company.entityStructure}</p>}
                     </div>
-                    <div className="flex flex-wrap gap-1.5 text-xs">
-                      {company.ueiSAM && <Badge variant="secondary" className="font-mono text-xs">{company.ueiSAM}</Badge>}
-                      {company.cageCode && <Badge variant="outline" className="font-mono text-xs">CAGE: {company.cageCode}</Badge>}
-                      {company.physicalAddress?.stateOrProvinceCode && (
-                        <Badge variant="outline" className="text-xs">
-                          <MapPin className="h-2.5 w-2.5 mr-0.5" />
-                          {company.physicalAddress.city ? `${company.physicalAddress.city}, ` : ""}{company.physicalAddress.stateOrProvinceCode}
-                        </Badge>
-                      )}
-                      {company.naicsCode && <Badge variant="outline" className="font-mono text-xs bg-blue-50 text-blue-700 border-blue-200">NAICS {company.naicsCode}</Badge>}
-                      {company.registrationStatus && (
-                        <Badge className={company.registrationStatus === "Active" || company.registrationStatus === "A" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}>
-                          {company.registrationStatus === "A" ? "Active" : company.registrationStatus}
-                        </Badge>
-                      )}
-                      {company.isSmallBusiness && <Badge className="bg-amber-100 text-amber-700 text-xs">SB</Badge>}
-                      {company.isWomanOwned && <Badge className="bg-purple-100 text-purple-700 text-xs">WOSB</Badge>}
-                      {company.isVeteranOwned && <Badge className="bg-blue-100 text-blue-700 text-xs">VOB</Badge>}
-                      {company.isServiceDisabledVeteranOwned && <Badge className="bg-red-100 text-red-700 text-xs">SDVOSB</Badge>}
-                      {company.isHubZone && <Badge className="bg-green-100 text-green-700 text-xs">HUBZone</Badge>}
-                      {company.is8aProgram && <Badge className="bg-indigo-100 text-indigo-700 text-xs">8(a)</Badge>}
+
+                    {/* Actions */}
+                    <div className="flex gap-1.5 shrink-0">
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(company.samUrl, "_blank"); }}>
+                        <ExternalLink className="h-3.5 w-3.5 mr-1" />SAM.gov
+                      </Button>
                     </div>
-                    {company.entityStructure && <p className="text-xs text-slate-400 mt-1">{company.entityStructure}</p>}
                   </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(company.samUrl, "_blank"); }}>
-                      <ExternalLink className="h-3.5 w-3.5 mr-1" />SAM.gov
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
           {results.length < total && (
             <div className="text-center pt-2">
               <Button variant="outline" onClick={() => doSearch(page + 1, true)} disabled={loading}>
