@@ -260,7 +260,8 @@ export async function POST(request: NextRequest) {
         sort: "-modifiedDate",
         q,
       };
-      if (state) p.pop_state = state.toUpperCase();
+      // NOTE: pop_state filters place-of-performance (contract work location), NOT company address.
+      // State filtering is applied client-side below on the company's physicalAddress.
       if (naicsCodeList.length === 1) p.naics = naicsCodeList[0];
       let u = SAM_SEARCH_URL + "?";
       Object.keys(p).forEach((k) => { u += `${k}=${encodeURIComponent(p[k])}&`; });
@@ -399,6 +400,15 @@ export async function POST(request: NextRequest) {
 
     // Convert map to array and apply additional filters
     let companies = Array.from(companyMap.values());
+
+    // Filter by company physical address state (not place-of-performance)
+    if (state) {
+      const stateUpper = state.toUpperCase();
+      companies = companies.filter((c) => {
+        const co = c.physicalAddress?.stateOrProvinceCode;
+        return co && co.toUpperCase() === stateUpper;
+      });
+    }
 
     // Filter by NAICS codes when multiple are selected (single code already filtered by SAM.gov)
     if (naicsCodeList.length > 1) {
