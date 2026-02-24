@@ -4,10 +4,10 @@ export const runtime = "nodejs";
 
 /**
  * SAM.gov public web API endpoint (no API key required)
- * Uses the same /sgs/v1/search/ endpoint as the SAM.gov website itself
- * index=ent filters to entities/companies
+ * Uses the /sgs/v1/search/ endpoint with index=opp (opportunities)
+ * Then extracts unique organizations/companies from award data
  */
-const SAM_ENTITY_SEARCH_URL = "https://sam.gov/api/prod/sgs/v1/search/";
+const SAM_SEARCH_URL = "https://sam.gov/api/prod/sgs/v1/search/";
 
 const SAM_HEADERS = {
   Accept: "application/json, text/plain, */*",
@@ -211,75 +211,48 @@ export async function POST(request: NextRequest) {
       page = 0,
     } = body;
 
-    // Build SAM.gov entity search URL params (index=ent for entities)
-    // Uses the same public web API as opportunity search (no API key required)
+    // SAM.gov entity search requires authentication (index=ent returns 401)
+    // Workaround: Search opportunities and extract unique organizations from award data
+    // This finds companies that have won or are bidding on federal contracts
     const urlParams: Record<string, string> = {
-      index: "ent",              // entities only
-      limit: String(Math.min(limit, 100)),
+      index: "opp",              // opportunities (publicly accessible)
+      limit: String(Math.min(limit * 2, 100)), // Get more results since we'll filter
       page: String(page),
-      sort: "-lastModifiedDate",
+      sort: "-modifiedDate",
       random: String(Date.now()),
     };
 
-    // Keyword search
+    // Search by organization/company name in the query
     if (keyword.trim()) {
       urlParams.q = keyword.trim();
     }
 
-    // Physical address state filter
+    // State filter (place of performance)
     if (state) {
-      urlParams["physicalAddress.stateOrProvinceCode"] = state.toUpperCase();
+      urlParams.pop_state = state.toUpperCase();
     }
 
     // NAICS code filter
     if (naicsCode) {
-      urlParams.naicsCode = naicsCode.trim();
+      urlParams.naics = naicsCode.trim();
     }
 
-    // Registration status: A = Active, E = Expired/Inactive
-    if (registrationStatus === "active") {
-      urlParams.registrationStatus = "A";
-    } else if (registrationStatus === "inactive") {
-      urlParams.registrationStatus = "E";
-    }
+    // Include both active and archived to get more company data
+    urlParams.is_active = "all";
 
-    // Entity type filters (comma-separated codes)
-    if (entityTypes.length > 0) {
-      urlParams.entityStructure = entityTypes.join(",");
-    }
-
-    // Business type / set-aside filters
-    if (businessTypes.length > 0) {
-      urlParams.businessType = businessTypes.join(",");
-    }
-
-    let url = SAM_ENTITY_SEARCH_URL + "?";
+    let url = SAM_SEARCH_URL + "?";
     Object.keys(urlParams).forEach((key) => {
       url += `${key}=${encodeURIComponent(urlParams[key])}&`;
     });
     url = url.slice(0, -1);
 
-    console.log("[Company Search] URL:", url);
+    console.log("[Company Search] Using opportunity search to find companies:", url);
 
     const response = await fetch(url, { method: "GET", headers: SAM_HEADERS });
 
     if (!response.ok) {
       const text = await response.text();
       console.error("[Company Search] SAM.gov error:", response.status, text.substring(0, 300));
-      
-      // If SAM.gov returns 401, it means this endpoint requires auth
-      // Return a helpful error message
-      if (response.status === 401) {
-        return NextResponse.json(
-          { 
-            error: "SAM.gov entity search requires authentication. The public web API for entities may have changed.", 
-            details: "Entity search currently requires a SAM.gov API key. Please add SAM_GOV_API_KEY to your environment variables.",
-            requiresApiKey: true
-          },
-          { status: 503 }
-        );
-      }
-      
       return NextResponse.json(
         { error: `SAM.gov returned ${response.status}`, details: text.substring(0, 200) },
         { status: 502 }
@@ -287,24 +260,98 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    
-    // Response shape: { _embedded: { results: [...] }, page: { totalElements: N } }
-    const rawResults: any[] = data._embedded?.results || [];
-    const total: number = data.page?.totalElements || rawResults.length;
+    const opportunities: any[] = data._embedded?.results || [];
 
-    // Filter to entity results only
-    const entityResults = rawResults.filter((r: any) => {
-      const type = r._samdotgovType || r._type || "";
-      return type === "entity" || r.legalBusinessName || r.ueiSAM;
-    });
+    // Extract unique companies from opportunity data
+    // Look for: award.awardee, organizationHierarchy, pointOfContacts, etc.
+    const companyMap = new Map<string, SamCompany>();
 
-    const companies: SamCompany[] = entityResults.map(transformEntityResult);
+    for (const opp of opportunities) {
+      // Extract from award data (awardee = company that won the contract)
+      const award = opp.award || opp.data2?.award;
+      if (award?.awardee) {
+        const awardee = award.awardee;
+        const uei = awardee.ueiSAM || awardee.uei || awardee.name;
+        if (uei && !companyMap.has(uei)) {
+          companyMap.set(uei, {
+            ueiSAM: uei,
+            legalBusinessName: awardee.name || "Unknown",
+            physicalAddress: awardee.address ? {
+              addressLine1: awardee.address.streetAddress,
+              city: awardee.address.city?.name || awardee.address.city,
+              stateOrProvinceCode: awardee.address.state?.code || awardee.address.state,
+              zipCode: awardee.address.zip || awardee.address.zipCode,
+              countryCode: awardee.address.country?.code || awardee.address.country,
+            } : undefined,
+            samUrl: `https://sam.gov/entity/${uei}/core-data`,
+            registrationStatus: "Active",
+            naicsCode: extractNaicsFromOpp(opp),
+          });
+        }
+      }
+
+      // Extract from organization hierarchy (contracting office)
+      const orgArray: any[] = Array.isArray(opp.organizationHierarchy) ? opp.organizationHierarchy : [];
+      
+      // Extract from point of contact (sometimes contains company info)
+      const contacts: any[] = opp.pointOfContacts || opp.pointOfContact || opp.contacts || [];
+      for (const contact of contacts) {
+        if (contact.organization) {
+          const orgName = typeof contact.organization === "string" 
+            ? contact.organization 
+            : contact.organization.name;
+          if (orgName && !companyMap.has(orgName)) {
+            companyMap.set(orgName, {
+              ueiSAM: orgName,
+              legalBusinessName: orgName,
+              samUrl: `https://sam.gov/search?index=ent&q=${encodeURIComponent(orgName)}`,
+              registrationStatus: "Unknown",
+              naicsCode: extractNaicsFromOpp(opp),
+            });
+          }
+        }
+      }
+    }
+
+    // Convert map to array and apply additional filters
+    let companies = Array.from(companyMap.values());
+
+    // Filter by business type keywords if specified
+    if (businessTypes.length > 0) {
+      const typeKeywords = businessTypes.flatMap((code) => {
+        const keywords: Record<string, string[]> = {
+          A2: ["small business", "small"],
+          A5: ["woman", "women", "wosb"],
+          QF: ["veteran", "vet"],
+          A6: ["service disabled", "sdvosb"],
+          XX: ["hubzone", "hub zone"],
+          "27": ["8a", "8(a)"],
+        };
+        return keywords[code] || [];
+      });
+      
+      companies = companies.filter((c) =>
+        typeKeywords.some((kw) =>
+          c.legalBusinessName.toLowerCase().includes(kw) ||
+          (c.entityStructure?.toLowerCase() || "").includes(kw)
+        )
+      );
+    }
+
+    // Sort by company name
+    companies.sort((a, b) => a.legalBusinessName.localeCompare(b.legalBusinessName));
+
+    // Apply pagination
+    const total = companies.length;
+    const start = page * limit;
+    const paginated = companies.slice(start, start + limit);
 
     return NextResponse.json({
-      companies,
+      companies: paginated,
       total,
       page,
       query: { keyword, state, naicsCode, entityTypes, businessTypes, registrationStatus },
+      _note: "Results extracted from opportunity award data. For full SAM.gov entity search, an API key is required.",
     });
   } catch (error) {
     console.error("[Company Search] Error:", error);
@@ -313,4 +360,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper to extract NAICS from opportunity data
+function extractNaicsFromOpp(opp: any): string | undefined {
+  const naicsArr: any[] = Array.isArray(opp.naics) ? opp.naics
+    : Array.isArray(opp.naicsCode) ? opp.naicsCode
+    : Array.isArray(opp.naicsCodes) ? opp.naicsCodes : [];
+  return naicsArr[0]?.code || (typeof opp.naicsCode === "string" ? opp.naicsCode : undefined);
 }

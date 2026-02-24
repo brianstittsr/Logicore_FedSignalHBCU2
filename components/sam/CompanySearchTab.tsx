@@ -131,11 +131,7 @@ export function CompanySearchTab() {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (data.requiresApiKey || data.missingApiKey) {
-          toast.error("SAM.gov entity search requires an API key. Please contact your administrator to configure SAM_GOV_API_KEY.", { duration: 10000 });
-        } else {
-          toast.error(data.error || "Company search failed");
-        }
+        toast.error(data.error || "Company search failed");
         return;
       }
       const incoming: SamCompany[] = data.companies || [];
