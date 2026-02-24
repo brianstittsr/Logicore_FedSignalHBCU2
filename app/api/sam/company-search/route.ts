@@ -233,18 +233,23 @@ export async function POST(request: NextRequest) {
       : naicsCode ? [naicsCode] : [];
 
     // SAM.gov entity search (index=ent) requires an API key — not available here.
-    // Strategy: fire parallel keyword searches against common gov-contractor terms.
-    // Each keyword query returns award-heavy results with populated awardee fields.
-    // 20 parallel fetches × 100 results × ~30% awardee fill = ~600 unique companies.
+    // Strategy: fan out across many keywords × multiple pages in parallel.
+    // 30 keywords × 3 pages × 100 results × ~30% awardee fill ≈ 2,700 unique companies.
     const trimmedKeyword = keyword.trim();
 
-    // Common government contracting keywords that reliably return award notices with awardee data
+    // 30 broad gov-contracting terms — each reliably returns award-heavy results
     const DEFAULT_KEYWORDS = [
       "construction", "services", "support", "systems", "technology",
       "engineering", "solutions", "management", "logistics", "maintenance",
       "consulting", "security", "information", "supply", "defense",
       "communications", "training", "research", "medical", "facilities",
+      "aviation", "software", "hardware", "infrastructure", "environmental",
+      "transportation", "manufacturing", "staffing", "intelligence", "cyber",
     ];
+
+    // How many SAM pages to fetch per keyword (100 results each)
+    const PAGES_PER_KEYWORD = 3;  // 30 kw × 3 pages = 90 requests = 9,000 opportunities
+    const PAGES_FOR_USER_KW  = 10; // user keyword: 10 pages = 1,000 results
 
     // Build one fetch URL
     const buildUrl = (q: string, samPage = 0) => {
@@ -262,37 +267,32 @@ export async function POST(request: NextRequest) {
       return u.slice(0, -1);
     };
 
-    // Decide which keywords to query
-    const queryKeywords = trimmedKeyword
-      ? [trimmedKeyword]          // user typed a keyword — fetch 5 pages of it
-      : DEFAULT_KEYWORDS;         // blank — fan out across 20 broad terms
+    const fetchOne = (q: string, pg: number): Promise<any[]> =>
+      fetch(buildUrl(q, pg), { method: "GET", headers: SAM_HEADERS })
+        .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
+        .then((d: any) => (d._embedded?.results || []) as any[]);
 
-    // Build the list of fetch tasks
+    // Build all fetch tasks
     const fetchTasks: Promise<any[]>[] = [];
+
     if (trimmedKeyword) {
-      // For a user keyword: fetch up to 5 pages (500 results) in parallel
-      for (let p = 0; p < 5; p++) {
-        fetchTasks.push(
-          fetch(buildUrl(trimmedKeyword, p), { method: "GET", headers: SAM_HEADERS })
-            .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
-            .then((d: any) => (d._embedded?.results || []) as any[])
-        );
+      // User typed a keyword: fetch 10 pages of that single keyword
+      for (let pg = 0; pg < PAGES_FOR_USER_KW; pg++) {
+        fetchTasks.push(fetchOne(trimmedKeyword, pg));
       }
     } else {
-      // For blank search: fire one request per keyword simultaneously
-      for (const kw of queryKeywords) {
-        fetchTasks.push(
-          fetch(buildUrl(kw, 0), { method: "GET", headers: SAM_HEADERS })
-            .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
-            .then((d: any) => (d._embedded?.results || []) as any[])
-        );
+      // Blank search: 30 keywords × 3 pages each = 90 parallel requests
+      for (const kw of DEFAULT_KEYWORDS) {
+        for (let pg = 0; pg < PAGES_PER_KEYWORD; pg++) {
+          fetchTasks.push(fetchOne(kw, pg));
+        }
       }
     }
 
-    // Run all fetches in parallel (SAM.gov handles concurrent requests fine)
+    // Fire everything in parallel
     const batchResults = await Promise.all(fetchTasks);
     const opportunities: any[] = batchResults.flat();
-    console.log(`[Company Search] Fetched ${opportunities.length} opps via ${fetchTasks.length} parallel queries`);
+    console.log(`[Company Search] Fetched ${opportunities.length} opps via ${fetchTasks.length} parallel requests`);
 
     type RelatedOpp = NonNullable<SamCompany["relatedOpportunities"]>[number];
 
