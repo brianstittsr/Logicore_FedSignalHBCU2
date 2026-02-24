@@ -237,8 +237,9 @@ export async function POST(request: NextRequest) {
     };
 
     // Search by company name / keyword
-    if (keyword.trim()) {
-      urlParams.q = keyword.trim();
+    const trimmedKeyword = keyword.trim();
+    if (trimmedKeyword) {
+      urlParams.q = trimmedKeyword;
     } else {
       // Without a keyword, search for award notices to get awardee companies
       urlParams.notice_type = "a";  // "a" = Award Notice

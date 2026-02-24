@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2, ExternalLink, Factory, MapPin, X, CheckSquare, Square, FileText, DollarSign, Building2, Calendar, Download, ListChecks, Trash2 } from "lucide-react";
+import { Search, Loader2, ExternalLink, Factory, MapPin, X, CheckSquare, Square, FileText, DollarSign, Building2, Calendar, Download, ListChecks, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface RelatedOpportunity {
@@ -192,21 +192,25 @@ export function CompanySearchTab() {
   const toggleBusinessType = (v: string) =>
     setSelectedBusinessTypes((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
 
-  const doSearch = async (pageNum = 0, append = false) => {
+  const PAGE_SIZE = 25;
+
+  const doSearch = async (pageNum = 0) => {
     setLoading(true);
-    if (!append) setResults([]);
+    setResults([]);
+    setCheckedKeys(new Set());
     try {
       const res = await fetch("/api/sam/company-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          keyword: keyword.trim(),
+          // Send a space when empty so SAM.gov still returns results
+          keyword: keyword.trim() || " ",
           state: state || undefined,
           naicsCode: naicsCode.trim() || undefined,
           entityTypes: selectedEntityTypes,
           businessTypes: selectedBusinessTypes,
           registrationStatus: regStatus,
-          limit: 100,
+          limit: PAGE_SIZE,
           page: pageNum,
         }),
       });
@@ -216,23 +220,25 @@ export function CompanySearchTab() {
         return;
       }
       const incoming: SamCompany[] = data.companies || [];
-      setResults((p) => append ? [...p, ...incoming] : incoming);
+      setResults(incoming);
       setTotal(data.total || 0);
       setPage(pageNum);
-      if (!append) {
-        incoming.length > 0
-          ? toast.success(`Found ${(data.total || 0).toLocaleString()} companies (showing ${incoming.length})`)
-          : toast.info("No companies found. Try broadening your filters.");
+      if (incoming.length > 0) {
+        toast.success(`Page ${pageNum + 1} — ${incoming.length} companies`);
+      } else {
+        toast.info("No companies found. Try broadening your filters.");
       }
     } catch { toast.error("Failed to search SAM.gov companies"); }
     finally { setLoading(false); }
   };
 
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
   const handleReset = () => {
     setKeyword(""); setState(""); setNaicsCode("");
     setSelectedEntityTypes(["2L", "8H", "2J", "MF", "2A", "2I"]);
     setSelectedBusinessTypes(["A2"]); setRegStatus("active");
-    setResults([]); setTotal(0); setCheckedKeys(new Set());
+    setResults([]); setTotal(0); setPage(0); setCheckedKeys(new Set());
   };
 
   return (
@@ -468,12 +474,52 @@ export function CompanySearchTab() {
               </Card>
             );
           })}
-          {results.length < total && (
-            <div className="text-center pt-2">
-              <Button variant="outline" onClick={() => doSearch(page + 1, true)} disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Load More ({(total - results.length).toLocaleString()} remaining)
-              </Button>
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-sm text-slate-500">
+                Page <strong className="text-[#1e3a5f]">{page + 1}</strong> of <strong className="text-[#1e3a5f]">{totalPages}</strong>
+                <span className="ml-2 text-slate-400">({total.toLocaleString()} total)</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" disabled={page === 0 || loading} onClick={() => doSearch(0)} title="First page">
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="outline" disabled={page === 0 || loading} onClick={() => doSearch(page - 1)} title="Previous page">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {/* Page number pills */}
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let p: number;
+                  if (totalPages <= 7) {
+                    p = i;
+                  } else if (page < 4) {
+                    p = i;
+                  } else if (page > totalPages - 5) {
+                    p = totalPages - 7 + i;
+                  } else {
+                    p = page - 3 + i;
+                  }
+                  return (
+                    <Button
+                      key={p}
+                      size="sm"
+                      variant={p === page ? "default" : "outline"}
+                      className={p === page ? "bg-[#1e3a5f] text-white hover:bg-[#152d4a] min-w-[2rem]" : "min-w-[2rem]"}
+                      disabled={loading}
+                      onClick={() => p !== page && doSearch(p)}
+                    >
+                      {p + 1}
+                    </Button>
+                  );
+                })}
+                <Button size="sm" variant="outline" disabled={page >= totalPages - 1 || loading} onClick={() => doSearch(page + 1)} title="Next page">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="outline" disabled={page >= totalPages - 1 || loading} onClick={() => doSearch(totalPages - 1)} title="Last page">
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
