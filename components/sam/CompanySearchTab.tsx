@@ -341,7 +341,7 @@ export function CompanySearchTab() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
               Search Companies
             </Button>
-            <Button variant="outline" onClick={handleReset} disabled={loading}>
+            <Button variant="outline" onClick={handleReset} disabled={loading} className="border-slate-700 text-slate-700 hover:bg-slate-700 hover:text-white font-semibold" size="lg">
               <X className="h-4 w-4 mr-1" />Reset
             </Button>
             {results.length > 0 && (
