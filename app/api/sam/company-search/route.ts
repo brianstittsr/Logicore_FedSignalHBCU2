@@ -232,28 +232,24 @@ export async function POST(request: NextRequest) {
       ? naicsCodesParam
       : naicsCode ? [naicsCode] : [];
 
-    // SAM.gov entity search requires authentication (index=ent returns 401)
-    // Workaround: Fetch a large batch of award notices from the public opportunity API,
-    // extract unique awardee companies, then paginate the result set server-side.
+    // SAM.gov entity search (index=ent) requires an API key.
+    // Workaround: fetch a large batch of opportunities and extract awardee data.
+    // ~20-30% of SAM opportunity records have award.awardee populated.
+    // Fetching 2000 records yields ~400-600 unique companies.
     const trimmedKeyword = keyword.trim();
 
-    // Build base params — always fetch SAM.gov's max (100 per request)
+    // Build a single page URL
     const buildUrl = (samPage: number) => {
       const p: Record<string, string> = {
         index: "opp",
-        limit: "100",        // SAM.gov max per request
+        limit: "100",
         page: String(samPage),
         sort: "-modifiedDate",
-        random: String(Date.now()),
+        random: String(Date.now() + samPage), // vary to avoid cache
       };
-      if (trimmedKeyword) {
-        p.q = trimmedKeyword;
-      } else {
-        p.notice_type = "a"; // Award Notices have the richest awardee data
-      }
+      if (trimmedKeyword) p.q = trimmedKeyword;
       if (state) p.pop_state = state.toUpperCase();
-      // When exactly one NAICS code is selected, pass it directly to SAM.gov
-      // for a tighter server-side filter. With multiple codes we filter client-side below.
+      // Single NAICS: let SAM filter server-side for better results
       if (naicsCodeList.length === 1) p.naics = naicsCodeList[0];
 
       let u = SAM_SEARCH_URL + "?";
@@ -261,15 +257,14 @@ export async function POST(request: NextRequest) {
       return u.slice(0, -1);
     };
 
-    // Fetch page 0 first to learn the total, then fetch additional pages in parallel
+    // Fetch page 0 first to get total count
     const firstUrl = buildUrl(0);
     console.log("[Company Search] Fetching page 0:", firstUrl);
 
     const firstResponse = await fetch(firstUrl, { method: "GET", headers: SAM_HEADERS });
     if (!firstResponse.ok) {
       const text = await firstResponse.text();
-      console.error("[Company Search] SAM.gov error:", firstResponse.status, firstUrl);
-      console.error("[Company Search] body:", text.substring(0, 500));
+      console.error("[Company Search] SAM.gov error:", firstResponse.status);
       return NextResponse.json(
         { error: `SAM.gov returned ${firstResponse.status}`, details: text.substring(0, 300) },
         { status: 502 }
@@ -280,27 +275,51 @@ export async function POST(request: NextRequest) {
     const samTotal: number = firstData.totalCount || firstData.total || 0;
     const firstBatch: any[] = firstData._embedded?.results || [];
 
-    // Fetch up to 9 more pages in parallel (total ≤ 1000 opportunities)
-    const extraPageCount = Math.min(Math.ceil(samTotal / 100) - 1, 9);
+    // Fetch up to 19 more pages in parallel (total ≤ 2000 opportunities)
+    // ~20-30% have awardee data → expect 400-600 unique companies
+    const maxExtraPages = 19;
+    const availableExtraPages = Math.max(0, Math.ceil(samTotal / 100) - 1);
+    const extraPageCount = Math.min(availableExtraPages, maxExtraPages);
+
     const extraFetches = extraPageCount > 0
       ? await Promise.all(
           Array.from({ length: extraPageCount }, (_, i) =>
             fetch(buildUrl(i + 1), { method: "GET", headers: SAM_HEADERS })
-              .then((r) => r.ok ? r.json() : Promise.resolve({ _embedded: { results: [] } }))
-              .then((d) => (d._embedded?.results || []) as any[])
+              .then((r) => r.ok ? r.json() : { _embedded: { results: [] } })
+              .then((d: any) => (d._embedded?.results || []) as any[])
           )
         )
       : [];
 
     const opportunities: any[] = [firstBatch, ...extraFetches].flat();
-    console.log(`[Company Search] Total opportunities fetched: ${opportunities.length} (SAM total: ${samTotal})`);
+    console.log(`[Company Search] Fetched ${opportunities.length} opps (SAM total: ${samTotal}, extra pages: ${extraPageCount})`);
+
+    type RelatedOpp = NonNullable<SamCompany["relatedOpportunities"]>[number];
+
+    // Helper to add or update a company in the map
+    const upsertCompany = (
+      mapKey: string,
+      company: SamCompany,
+      relatedOpp: RelatedOpp | undefined
+    ) => {
+      if (!companyMap.has(mapKey)) {
+        companyMap.set(mapKey, {
+          ...company,
+          relatedOpportunities: relatedOpp ? [relatedOpp] : [],
+        });
+      } else {
+        const existing = companyMap.get(mapKey)!;
+        if (relatedOpp?.noticeId && !existing.relatedOpportunities?.find(r => r.noticeId === relatedOpp.noticeId)) {
+          existing.relatedOpportunities = [...(existing.relatedOpportunities || []), relatedOpp];
+        }
+      }
+    };
 
     // Extract unique companies from opportunity data
-    // Look for: award.awardee, organizationHierarchy, pointOfContacts, etc.
     const companyMap = new Map<string, SamCompany>();
 
     for (const opp of opportunities) {
-      const noticeId = opp.noticeId || opp._id || "";
+      const noticeId = opp.noticeId || opp.id || opp._id || "";
       const naicsCode = extractNaicsFromOpp(opp);
 
       // Build org hierarchy label
@@ -309,9 +328,8 @@ export async function POST(request: NextRequest) {
 
       // Type label
       const typeObj = opp.type;
-      const typeLabel = typeof typeObj === "object" ? typeObj?.value || typeObj?.code : typeObj;
+      const typeLabel = typeof typeObj === "object" ? (typeObj?.value || typeObj?.code) : typeObj;
 
-      // Build the related opportunity entry
       const relatedOpp = {
         noticeId,
         title: opp.title || "Untitled",
@@ -321,50 +339,62 @@ export async function POST(request: NextRequest) {
         awardAmount: opp.award?.amount ? Number(opp.award.amount) : undefined,
         awardDate: opp.award?.date,
         department,
-        uiLink: opp.uiLink || `https://sam.gov/opp/${noticeId}/view`,
+        uiLink: opp.uiLink || (noticeId ? `https://sam.gov/opp/${noticeId}/view` : ""),
       };
 
-      // Extract from award data (awardee = company that won the contract)
-      const award = opp.award;
-      if (award?.awardee) {
-        const awardee = award.awardee;
-        const realUei = awardee.ueiSAM || awardee.uei;
-        const name = awardee.name || awardee.legalBusinessName || "Unknown";
-        const mapKey = realUei || name;
+      // Helper to build a SamCompany from an awardee-like object
+      const makeCompany = (awardee: any, nameOverride?: string): SamCompany => {
+        const realUei = awardee?.ueiSAM || awardee?.uei || "";
+        const name = nameOverride || awardee?.name || awardee?.legalBusinessName || "";
+        const loc = awardee?.location || awardee?.address || awardee?.physicalAddress;
+        return {
+          ueiSAM: realUei,
+          legalBusinessName: name,
+          hasRealUei: !!realUei,
+          samUrl: realUei
+            ? `https://sam.gov/search?index=ent&q=${encodeURIComponent(realUei)}`
+            : `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
+          samSearchUrl: `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
+          registrationStatus: "Active",
+          naicsCode,
+          cageCode: awardee?.cageCode || undefined,
+          physicalAddress: loc ? {
+            addressLine1: loc.streetAddress || loc.street || loc.addressLine1,
+            city: loc.city?.name || loc.city,
+            stateOrProvinceCode: loc.state?.code || loc.state,
+            zipCode: loc.zip || loc.zipCode || loc.postalCode,
+            countryCode: loc.country?.code || loc.country,
+          } : undefined,
+        };
+      };
 
-        if (mapKey) {
-          if (!companyMap.has(mapKey)) {
-            companyMap.set(mapKey, {
-              ueiSAM: realUei || "",
-              legalBusinessName: name,
-              hasRealUei: !!realUei,
-              // Always use search URL - the direct /entity/{uei}/core-data path returns 404
-              // Searching by UEI returns the exact entity match
-              samUrl: realUei
-                ? `https://sam.gov/search?index=ent&q=${encodeURIComponent(realUei)}`
-                : `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
-              samSearchUrl: `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
-              registrationStatus: "Active",
-              naicsCode,
-              cageCode: awardee.cageCode || undefined,
-              physicalAddress: awardee.location || awardee.address ? {
-                addressLine1: (awardee.location || awardee.address)?.streetAddress,
-                city: (awardee.location || awardee.address)?.city?.name || (awardee.location || awardee.address)?.city,
-                stateOrProvinceCode: (awardee.location || awardee.address)?.state?.code || (awardee.location || awardee.address)?.state,
-                zipCode: (awardee.location || awardee.address)?.zip || (awardee.location || awardee.address)?.zipCode,
-                countryCode: (awardee.location || awardee.address)?.country?.code || (awardee.location || awardee.address)?.country,
-              } : undefined,
-              relatedOpportunities: noticeId ? [relatedOpp] : [],
-            });
-          } else {
-            // Append this opportunity to existing company
-            const existing = companyMap.get(mapKey)!;
-            if (noticeId && !existing.relatedOpportunities?.find(r => r.noticeId === noticeId)) {
-              existing.relatedOpportunities = [...(existing.relatedOpportunities || []), relatedOpp];
-            }
-          }
+      // Extract from award.awardee — only if name is actually populated (not null)
+      const award = opp.award || opp.data2?.award;
+      const awardee = award?.awardee;
+      const awardeeName = awardee?.name || awardee?.legalBusinessName || "";
+      const awardeeUei = awardee?.ueiSAM || awardee?.uei || "";
+
+      if (awardeeName || awardeeUei) {
+        const mapKey = awardeeUei || awardeeName;
+        upsertCompany(mapKey, makeCompany(awardee), relatedOpp);
+      }
+
+      // award.awardees array (multi-award contracts)
+      const awardees: any[] = award?.awardees || [];
+      for (const ae of awardees) {
+        const aeName = ae.name || ae.legalBusinessName || "";
+        const aeUei = ae.ueiSAM || ae.uei || "";
+        if (aeName || aeUei) {
+          upsertCompany(aeUei || aeName, makeCompany(ae), relatedOpp);
         }
       }
+    }
+
+    console.log(`[Company Search] Unique companies extracted: ${companyMap.size}`);
+    if (companyMap.size === 0 && opportunities.length > 0) {
+      // Log the raw keys of a few opportunities so we can see the real structure
+      const sample = opportunities.slice(0, 3);
+      console.log("[Company Search] No companies found. Sample keys:", sample.map(o => Object.keys(o).join(",")));
     }
 
     // Convert map to array and apply additional filters
