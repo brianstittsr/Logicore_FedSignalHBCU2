@@ -66,6 +66,8 @@ export interface SamCompany {
   cageCode?: string;
   dodaac?: string;
   samUrl?: string;
+  samSearchUrl?: string;
+  hasRealUei?: boolean;
   // Certifications / set-asides
   sbaBusinessTypes?: string[];
   isSmallBusiness?: boolean;
@@ -74,6 +76,18 @@ export interface SamCompany {
   isServiceDisabledVeteranOwned?: boolean;
   isHubZone?: boolean;
   is8aProgram?: boolean;
+  // Related contracts (from opportunity search)
+  relatedOpportunities?: Array<{
+    noticeId: string;
+    title: string;
+    type?: string;
+    postedDate?: string;
+    naicsCode?: string;
+    awardAmount?: number;
+    awardDate?: string;
+    department?: string;
+    uiLink: string;
+  }>;
 }
 
 function transformEntityResult(raw: any): SamCompany {
@@ -268,47 +282,67 @@ export async function POST(request: NextRequest) {
     const companyMap = new Map<string, SamCompany>();
 
     for (const opp of opportunities) {
+      const noticeId = opp.noticeId || opp._id || "";
+      const naicsCode = extractNaicsFromOpp(opp);
+
+      // Build org hierarchy label
+      const orgArray: any[] = Array.isArray(opp.organizationHierarchy) ? opp.organizationHierarchy : [];
+      const department = orgArray.find((h: any) => h.level === 1)?.name || orgArray[0]?.name || "";
+
+      // Type label
+      const typeObj = opp.type;
+      const typeLabel = typeof typeObj === "object" ? typeObj?.value || typeObj?.code : typeObj;
+
+      // Build the related opportunity entry
+      const relatedOpp = {
+        noticeId,
+        title: opp.title || "Untitled",
+        type: typeLabel,
+        postedDate: opp.postedDate || opp.publishDate,
+        naicsCode,
+        awardAmount: opp.award?.amount ? Number(opp.award.amount) : undefined,
+        awardDate: opp.award?.date,
+        department,
+        uiLink: opp.uiLink || `https://sam.gov/opp/${noticeId}/view`,
+      };
+
       // Extract from award data (awardee = company that won the contract)
-      const award = opp.award || opp.data2?.award;
+      const award = opp.award;
       if (award?.awardee) {
         const awardee = award.awardee;
-        const uei = awardee.ueiSAM || awardee.uei || awardee.name;
-        if (uei && !companyMap.has(uei)) {
-          companyMap.set(uei, {
-            ueiSAM: uei,
-            legalBusinessName: awardee.name || "Unknown",
-            physicalAddress: awardee.address ? {
-              addressLine1: awardee.address.streetAddress,
-              city: awardee.address.city?.name || awardee.address.city,
-              stateOrProvinceCode: awardee.address.state?.code || awardee.address.state,
-              zipCode: awardee.address.zip || awardee.address.zipCode,
-              countryCode: awardee.address.country?.code || awardee.address.country,
-            } : undefined,
-            samUrl: `https://sam.gov/entity/${uei}/core-data`,
-            registrationStatus: "Active",
-            naicsCode: extractNaicsFromOpp(opp),
-          });
-        }
-      }
+        const realUei = awardee.ueiSAM || awardee.uei;
+        const name = awardee.name || awardee.legalBusinessName || "Unknown";
+        const mapKey = realUei || name;
 
-      // Extract from organization hierarchy (contracting office)
-      const orgArray: any[] = Array.isArray(opp.organizationHierarchy) ? opp.organizationHierarchy : [];
-      
-      // Extract from point of contact (sometimes contains company info)
-      const contacts: any[] = opp.pointOfContacts || opp.pointOfContact || opp.contacts || [];
-      for (const contact of contacts) {
-        if (contact.organization) {
-          const orgName = typeof contact.organization === "string" 
-            ? contact.organization 
-            : contact.organization.name;
-          if (orgName && !companyMap.has(orgName)) {
-            companyMap.set(orgName, {
-              ueiSAM: orgName,
-              legalBusinessName: orgName,
-              samUrl: `https://sam.gov/search?index=ent&q=${encodeURIComponent(orgName)}`,
-              registrationStatus: "Unknown",
-              naicsCode: extractNaicsFromOpp(opp),
+        if (mapKey) {
+          if (!companyMap.has(mapKey)) {
+            companyMap.set(mapKey, {
+              ueiSAM: realUei || "",
+              legalBusinessName: name,
+              hasRealUei: !!realUei,
+              // Use entity page if we have a real UEI, otherwise search page
+              samUrl: realUei
+                ? `https://sam.gov/entity/${realUei}/core-data`
+                : `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
+              samSearchUrl: `https://sam.gov/search?index=ent&q=${encodeURIComponent(name)}`,
+              registrationStatus: "Active",
+              naicsCode,
+              cageCode: awardee.cageCode || undefined,
+              physicalAddress: awardee.location || awardee.address ? {
+                addressLine1: (awardee.location || awardee.address)?.streetAddress,
+                city: (awardee.location || awardee.address)?.city?.name || (awardee.location || awardee.address)?.city,
+                stateOrProvinceCode: (awardee.location || awardee.address)?.state?.code || (awardee.location || awardee.address)?.state,
+                zipCode: (awardee.location || awardee.address)?.zip || (awardee.location || awardee.address)?.zipCode,
+                countryCode: (awardee.location || awardee.address)?.country?.code || (awardee.location || awardee.address)?.country,
+              } : undefined,
+              relatedOpportunities: noticeId ? [relatedOpp] : [],
             });
+          } else {
+            // Append this opportunity to existing company
+            const existing = companyMap.get(mapKey)!;
+            if (noticeId && !existing.relatedOpportunities?.find(r => r.noticeId === noticeId)) {
+              existing.relatedOpportunities = [...(existing.relatedOpportunities || []), relatedOpp];
+            }
           }
         }
       }

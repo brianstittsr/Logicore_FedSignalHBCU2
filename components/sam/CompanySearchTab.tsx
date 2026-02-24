@@ -9,8 +9,20 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2, ExternalLink, Factory, MapPin, X, CheckSquare, Square } from "lucide-react";
+import { Search, Loader2, ExternalLink, Factory, MapPin, X, CheckSquare, Square, FileText, DollarSign, Building2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+
+interface RelatedOpportunity {
+  noticeId: string;
+  title: string;
+  type?: string;
+  postedDate?: string;
+  naicsCode?: string;
+  awardAmount?: number;
+  awardDate?: string;
+  department?: string;
+  uiLink: string;
+}
 
 interface SamCompany {
   ueiSAM: string;
@@ -25,6 +37,8 @@ interface SamCompany {
   physicalAddress?: { addressLine1?: string; city?: string; stateOrProvinceCode?: string; zipCode?: string; countryCode?: string; };
   cageCode?: string;
   samUrl?: string;
+  samSearchUrl?: string;
+  hasRealUei?: boolean;
   sbaBusinessTypes?: string[];
   isSmallBusiness?: boolean;
   isWomanOwned?: boolean;
@@ -32,6 +46,7 @@ interface SamCompany {
   isServiceDisabledVeteranOwned?: boolean;
   isHubZone?: boolean;
   is8aProgram?: boolean;
+  relatedOpportunities?: RelatedOpportunity[];
 }
 
 const ENTITY_TYPE_OPTIONS = [
@@ -306,9 +321,12 @@ export function CompanySearchTab() {
                     </div>
                     {company.entityStructure && <p className="text-xs text-slate-400 mt-1">{company.entityStructure}</p>}
                   </div>
-                  <Button size="sm" variant="outline" className="shrink-0" onClick={(e) => { e.stopPropagation(); window.open(company.samUrl, "_blank"); }}>
-                    <ExternalLink className="h-3.5 w-3.5 mr-1" />SAM.gov
-                  </Button>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); window.open(company.samUrl, "_blank"); }}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                      {company.hasRealUei ? "Entity Page" : "Search"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -327,43 +345,58 @@ export function CompanySearchTab() {
       {/* ── Company Detail Modal ── */}
       {selectedCompany && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedCompany(null)}>
-          <Card className="max-w-2xl w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <CardHeader>
+          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <CardHeader className="border-b border-slate-100 bg-slate-50/60 rounded-t-xl">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <CardTitle className="text-xl text-[#1e3a5f]">{selectedCompany.legalBusinessName}</CardTitle>
                   {selectedCompany.dbaName && <p className="text-sm text-slate-400 mt-0.5">dba {selectedCompany.dbaName}</p>}
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <Button size="sm" onClick={() => window.open(selectedCompany.samUrl, "_blank")}>
-                    <ExternalLink className="h-4 w-4 mr-1" />View on SAM.gov
+                  <Button size="sm" className="bg-[#1e3a5f] hover:bg-[#152d4a]" onClick={() => window.open(selectedCompany.samUrl, "_blank")}>
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    {selectedCompany.hasRealUei ? "Entity Page" : "Search SAM.gov"}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setSelectedCompany(null)}>Close</Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "UEI SAM", value: selectedCompany.ueiSAM, mono: true },
-                  { label: "CAGE Code", value: selectedCompany.cageCode, mono: true },
-                  { label: "Registration Status", value: selectedCompany.registrationStatus === "A" ? "Active" : selectedCompany.registrationStatus },
-                  { label: "Registration Expires", value: selectedCompany.registrationExpirationDate ? new Date(selectedCompany.registrationExpirationDate).toLocaleDateString() : undefined },
-                ].map(({ label, value, mono }) => (
-                  <div key={label} className="p-3 bg-slate-50 rounded-lg">
-                    <div className="text-xs text-slate-400 mb-1">{label}</div>
-                    <p className={`font-medium text-sm ${mono ? "font-mono" : ""}`}>{value || "N/A"}</p>
-                  </div>
-                ))}
-                <div className="p-3 bg-slate-50 rounded-lg col-span-2">
-                  <div className="text-xs text-slate-400 mb-1">Entity Structure</div>
-                  <p className="font-medium text-sm">{selectedCompany.entityStructure || "N/A"}</p>
+            <CardContent className="space-y-6 pt-5">
+
+              {/* IDs & Status */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-400 mb-1">UEI SAM</div>
+                  <p className="font-mono font-medium text-sm">{selectedCompany.ueiSAM || "—"}</p>
                 </div>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-400 mb-1">CAGE Code</div>
+                  <p className="font-mono font-medium text-sm">{selectedCompany.cageCode || "—"}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <div className="text-xs text-slate-400 mb-1">Registration</div>
+                  <p className="font-medium text-sm">{selectedCompany.registrationStatus === "A" ? "Active" : selectedCompany.registrationStatus || "—"}</p>
+                </div>
+                {selectedCompany.naicsCode && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="text-xs text-blue-400 mb-1">Primary NAICS</div>
+                    <p className="font-mono font-medium text-sm text-blue-700">{selectedCompany.naicsCode}</p>
+                  </div>
+                )}
+                {selectedCompany.entityStructure && (
+                  <div className="p-3 bg-slate-50 rounded-lg col-span-2">
+                    <div className="text-xs text-slate-400 mb-1">Entity Structure</div>
+                    <p className="font-medium text-sm">{selectedCompany.entityStructure}</p>
+                  </div>
+                )}
               </div>
 
-              {selectedCompany.physicalAddress && (
+              {/* Physical Address */}
+              {selectedCompany.physicalAddress && Object.values(selectedCompany.physicalAddress).some(Boolean) && (
                 <div>
-                  <h3 className="font-semibold mb-2 text-sm text-slate-700">Physical Address</h3>
+                  <h3 className="font-semibold mb-2 text-sm text-slate-700 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-slate-400" />Physical Address
+                  </h3>
                   <div className="p-3 bg-slate-50 rounded-lg text-sm space-y-0.5">
                     {selectedCompany.physicalAddress.addressLine1 && <p>{selectedCompany.physicalAddress.addressLine1}</p>}
                     <p>{[selectedCompany.physicalAddress.city, selectedCompany.physicalAddress.stateOrProvinceCode, selectedCompany.physicalAddress.zipCode].filter(Boolean).join(", ")}</p>
@@ -372,47 +405,79 @@ export function CompanySearchTab() {
                 </div>
               )}
 
-              {selectedCompany.naicsCodes && selectedCompany.naicsCodes.length > 0 && (
+              {/* Certifications badges */}
+              {(selectedCompany.isSmallBusiness || selectedCompany.isWomanOwned || selectedCompany.isVeteranOwned || selectedCompany.isServiceDisabledVeteranOwned || selectedCompany.isHubZone || selectedCompany.is8aProgram) && (
                 <div>
-                  <h3 className="font-semibold mb-2 text-sm text-slate-700">NAICS Codes</h3>
+                  <h3 className="font-semibold mb-2 text-sm text-slate-700">Certifications</h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedCompany.naicsCodes.map((code) => (
-                      <Badge key={code} variant="outline" className="font-mono text-xs bg-blue-50 text-blue-700 border-blue-200">{code}</Badge>
+                    {selectedCompany.isSmallBusiness && <Badge className="bg-amber-100 text-amber-700">Small Business</Badge>}
+                    {selectedCompany.isWomanOwned && <Badge className="bg-purple-100 text-purple-700">WOSB</Badge>}
+                    {selectedCompany.isVeteranOwned && <Badge className="bg-blue-100 text-blue-700">Veteran-Owned</Badge>}
+                    {selectedCompany.isServiceDisabledVeteranOwned && <Badge className="bg-red-100 text-red-700">SDVOSB</Badge>}
+                    {selectedCompany.isHubZone && <Badge className="bg-green-100 text-green-700">HUBZone</Badge>}
+                    {selectedCompany.is8aProgram && <Badge className="bg-indigo-100 text-indigo-700">8(a)</Badge>}
+                  </div>
+                </div>
+              )}
+
+              {/* Related Contracts / Opportunities */}
+              {selectedCompany.relatedOpportunities && selectedCompany.relatedOpportunities.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3 text-sm text-slate-700 flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-slate-400" />
+                    Related Federal Contracts ({selectedCompany.relatedOpportunities.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedCompany.relatedOpportunities.map((opp) => (
+                      <div key={opp.noticeId} className="p-3 border border-slate-200 rounded-lg bg-white hover:border-[#1e3a5f]/30 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-slate-800 leading-tight">{opp.title}</p>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {opp.type && (
+                                <Badge variant="outline" className="text-xs">{opp.type}</Badge>
+                              )}
+                              {opp.naicsCode && (
+                                <Badge variant="outline" className="font-mono text-xs bg-blue-50 text-blue-700 border-blue-200">{opp.naicsCode}</Badge>
+                              )}
+                              {opp.awardAmount != null && (
+                                <Badge className="bg-green-100 text-green-700 text-xs">
+                                  <DollarSign className="h-3 w-3 mr-0.5" />
+                                  {opp.awardAmount.toLocaleString()}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex gap-3 mt-1 text-xs text-slate-400">
+                              {opp.department && (
+                                <span className="flex items-center gap-1">
+                                  <Building2 className="h-3 w-3" />{opp.department}
+                                </span>
+                              )}
+                              {(opp.awardDate || opp.postedDate) && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {opp.awardDate
+                                    ? `Awarded ${new Date(opp.awardDate).toLocaleDateString()}`
+                                    : `Posted ${new Date(opp.postedDate!).toLocaleDateString()}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Button size="sm" variant="outline" className="shrink-0 text-xs" onClick={() => window.open(opp.uiLink, "_blank")}>
+                            <ExternalLink className="h-3 w-3 mr-1" />View
+                          </Button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {selectedCompany.businessTypes && selectedCompany.businessTypes.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2 text-sm text-slate-700">Business Types</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCompany.businessTypes.map((bt, i) => (
-                      <Badge key={i} variant="outline" className="text-xs">{bt}</Badge>
-                    ))}
-                  </div>
-                </div>
+              {/* No contracts found notice */}
+              {(!selectedCompany.relatedOpportunities || selectedCompany.relatedOpportunities.length === 0) && (
+                <p className="text-sm text-slate-400 text-center py-2">No related contract records found for this company in the current search results.</p>
               )}
 
-              {selectedCompany.sbaBusinessTypes && selectedCompany.sbaBusinessTypes.length > 0 && (
-                <div>
-                  <h3 className="font-semibold mb-2 text-sm text-slate-700">SBA Certifications</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCompany.sbaBusinessTypes.map((cert, i) => (
-                      <Badge key={i} className="bg-amber-100 text-amber-800 text-xs">{cert}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                {selectedCompany.isSmallBusiness && <Badge className="bg-amber-100 text-amber-700">Small Business</Badge>}
-                {selectedCompany.isWomanOwned && <Badge className="bg-purple-100 text-purple-700">WOSB</Badge>}
-                {selectedCompany.isVeteranOwned && <Badge className="bg-blue-100 text-blue-700">Veteran-Owned</Badge>}
-                {selectedCompany.isServiceDisabledVeteranOwned && <Badge className="bg-red-100 text-red-700">SDVOSB</Badge>}
-                {selectedCompany.isHubZone && <Badge className="bg-green-100 text-green-700">HUBZone</Badge>}
-                {selectedCompany.is8aProgram && <Badge className="bg-indigo-100 text-indigo-700">8(a)</Badge>}
-              </div>
             </CardContent>
           </Card>
         </div>
