@@ -76,6 +76,12 @@ const SUGGESTED_NAICS = [
   { code: "541715", label: "R&D Defense" },
   { code: "541330", label: "Engineering Services" },
   { code: "334511", label: "Navigation/Guidance Instruments" },
+  { code: "541512", label: "Computer Systems Design" },
+  { code: "541519", label: "Other IT Services" },
+  { code: "541611", label: "Management Consulting" },
+  { code: "561210", label: "Facilities Support" },
+  { code: "237310", label: "Highway/Street Construction" },
+  { code: "332710", label: "Machine Shops" },
 ];
 
 const US_STATES = [
@@ -158,7 +164,8 @@ function exportToCSV(companies: SamCompany[]) {
 export function CompanySearchTab() {
   const [keyword, setKeyword] = useState("");
   const [state, setState] = useState("");
-  const [naicsCode, setNaicsCode] = useState("");
+  const [naicsCodes, setNaicsCodes] = useState<string[]>([]);
+  const [naicsInput, setNaicsInput] = useState("");
   const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>(["2L", "8H", "2J", "MF", "2A", "2I"]);
   const [selectedBusinessTypes, setSelectedBusinessTypes] = useState<string[]>(["A2"]);
   const [regStatus, setRegStatus] = useState<"active" | "inactive" | "all">("active");
@@ -186,6 +193,17 @@ export function CompanySearchTab() {
 
   const checkedCompanies = results.filter((c) => checkedKeys.has(getKey(c)));
 
+  const toggleNaics = (code: string) =>
+    setNaicsCodes((p) => p.includes(code) ? p.filter((x) => x !== code) : [...p, code]);
+
+  const addNaicsManual = () => {
+    const code = naicsInput.trim().replace(/\D/g, "");
+    if (code && !naicsCodes.includes(code)) {
+      setNaicsCodes((p) => [...p, code]);
+    }
+    setNaicsInput("");
+  };
+
   const toggleEntityType = (v: string) =>
     setSelectedEntityTypes((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
 
@@ -206,7 +224,7 @@ export function CompanySearchTab() {
           // Send a space when empty so SAM.gov still returns results
           keyword: keyword.trim() || " ",
           state: state || undefined,
-          naicsCode: naicsCode.trim() || undefined,
+          naicsCodes: naicsCodes.length > 0 ? naicsCodes : undefined,
           entityTypes: selectedEntityTypes,
           businessTypes: selectedBusinessTypes,
           registrationStatus: regStatus,
@@ -235,9 +253,10 @@ export function CompanySearchTab() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const handleReset = () => {
-    setKeyword(""); setState(""); setNaicsCode("");
+    setKeyword(""); setState("");
     setSelectedEntityTypes(["2L", "8H", "2J", "MF", "2A", "2I"]);
     setSelectedBusinessTypes(["A2"]); setRegStatus("active");
+    setNaicsCodes([]); setNaicsInput("");
     setResults([]); setTotal(0); setPage(0); setCheckedKeys(new Set());
   };
 
@@ -275,15 +294,51 @@ export function CompanySearchTab() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-slate-700">Step 4 — NAICS Code</Label>
-              <Input placeholder="e.g., 336411" value={naicsCode}
-                onChange={(e) => setNaicsCode(e.target.value)}
-                className="font-mono border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951]" />
+            <div className="space-y-1.5 md:col-span-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-slate-700">Step 4 — NAICS Codes</Label>
+                {naicsCodes.length > 0 && (
+                  <button type="button" onClick={() => setNaicsCodes([])} className="text-xs text-slate-400 hover:text-red-500 transition-colors">
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {/* Selected tags */}
+              {naicsCodes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {naicsCodes.map((code) => (
+                    <span key={code} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono bg-[#1e3a5f] text-white">
+                      {code}
+                      <button type="button" onClick={() => toggleNaics(code)} className="hover:text-red-300 transition-colors">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Manual entry */}
+              <div className="flex gap-1.5">
+                <Input
+                  placeholder="Type a code e.g. 336411"
+                  value={naicsInput}
+                  onChange={(e) => setNaicsInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNaicsManual(); } }}
+                  className="font-mono border-slate-300 focus-visible:ring-[#C8A951] focus-visible:border-[#C8A951] text-sm"
+                  maxLength={6}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addNaicsManual} disabled={!naicsInput.trim()} className="shrink-0">
+                  Add
+                </Button>
+              </div>
+              {/* Quick-pick chips */}
               <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {SUGGESTED_NAICS.map((n) => (
-                  <button key={n.code} type="button" onClick={() => setNaicsCode(n.code)} title={n.label}
-                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${naicsCode === n.code ? "bg-[#1e3a5f] text-white border-[#1e3a5f]" : "bg-white text-slate-500 border-slate-200 hover:border-[#1e3a5f]/40 hover:text-[#1e3a5f]"}`}>
+                  <button key={n.code} type="button" onClick={() => toggleNaics(n.code)} title={n.label}
+                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${
+                      naicsCodes.includes(n.code)
+                        ? "bg-[#1e3a5f] text-white border-[#1e3a5f]"
+                        : "bg-white text-slate-500 border-slate-200 hover:border-[#1e3a5f]/40 hover:text-[#1e3a5f]"
+                    }`}>
                     {n.code}
                   </button>
                 ))}

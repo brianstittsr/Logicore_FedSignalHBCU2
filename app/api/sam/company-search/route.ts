@@ -18,7 +18,8 @@ const SAM_HEADERS = {
 export interface CompanySearchParams {
   keyword?: string;
   state?: string;
-  naicsCode?: string;
+  naicsCode?: string;   // legacy single
+  naicsCodes?: string[]; // multi-select
   entityTypes?: string[];
   businessTypes?: string[];
   registrationStatus?: "active" | "inactive" | "all";
@@ -218,12 +219,18 @@ export async function POST(request: NextRequest) {
       keyword = "",
       state,
       naicsCode,
+      naicsCodes: naicsCodesParam,
       entityTypes = [],
       businessTypes = [],
       registrationStatus = "active",
       limit = 100,
       page = 0,
     } = body;
+
+    // Normalise to a single array (support both legacy single and new multi)
+    const naicsCodeList: string[] = naicsCodesParam && naicsCodesParam.length > 0
+      ? naicsCodesParam
+      : naicsCode ? [naicsCode] : [];
 
     // SAM.gov entity search requires authentication (index=ent returns 401)
     // Workaround: Fetch a large batch of award notices from the public opportunity API,
@@ -245,7 +252,9 @@ export async function POST(request: NextRequest) {
         p.notice_type = "a"; // Award Notices have the richest awardee data
       }
       if (state) p.pop_state = state.toUpperCase();
-      if (naicsCode) p.naics = naicsCode.trim();
+      // When exactly one NAICS code is selected, pass it directly to SAM.gov
+      // for a tighter server-side filter. With multiple codes we filter client-side below.
+      if (naicsCodeList.length === 1) p.naics = naicsCodeList[0];
 
       let u = SAM_SEARCH_URL + "?";
       Object.keys(p).forEach((k) => { u += `${k}=${encodeURIComponent(p[k])}&`; });
@@ -361,6 +370,17 @@ export async function POST(request: NextRequest) {
     // Convert map to array and apply additional filters
     let companies = Array.from(companyMap.values());
 
+    // Filter by NAICS codes when multiple are selected (single code already filtered by SAM.gov)
+    if (naicsCodeList.length > 1) {
+      companies = companies.filter((c) =>
+        naicsCodeList.some((nc) =>
+          c.naicsCode === nc ||
+          (c.naicsCodes || []).includes(nc) ||
+          c.relatedOpportunities?.some((o) => o.naicsCode === nc)
+        )
+      );
+    }
+
     // Filter by business type keywords if specified
     if (businessTypes.length > 0) {
       const typeKeywords = businessTypes.flatMap((code) => {
@@ -395,7 +415,7 @@ export async function POST(request: NextRequest) {
       companies: paginated,
       total,
       page,
-      query: { keyword, state, naicsCode, entityTypes, businessTypes, registrationStatus },
+      query: { keyword, state, naicsCodes: naicsCodeList, entityTypes, businessTypes, registrationStatus },
       _note: "Results extracted from opportunity award data. For full SAM.gov entity search, an API key is required.",
     });
   } catch (error) {
