@@ -68,6 +68,7 @@ import {
   FolderOpen,
   Settings,
   RotateCcw,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -250,6 +251,24 @@ export default function ProposalsPage() {
   const [emailMessage, setEmailMessage] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [editingProposalId, setEditingProposalId] = useState<string | null>(null);
+  const [deletingProposalId, setDeletingProposalId] = useState<string | null>(null);
+  const [isDeletingProposal, setIsDeletingProposal] = useState(false);
+
+  const deleteProposal = async (proposal: Proposal) => {
+    if (!db) return;
+    setIsDeletingProposal(true);
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.PROPOSALS, proposal.id));
+      setProposals((prev) => prev.filter((p) => p.id !== proposal.id));
+      toast.success(`"${proposal.name}" deleted successfully`);
+    } catch (error) {
+      console.error("Failed to delete proposal:", error);
+      toast.error("Failed to delete proposal");
+    } finally {
+      setIsDeletingProposal(false);
+      setDeletingProposalId(null);
+    }
+  };
 
   // Template management state
   const [activeTab, setActiveTab] = useState<"proposals" | "templates">("proposals");
@@ -2534,6 +2553,40 @@ Workflow:
                           <Button variant="ghost" size="icon" title="Download Draft" onClick={() => downloadProposal(proposal)}><Download className="h-4 w-4" /></Button>
                         )}
                         <Button variant="ghost" size="icon" title="Send for Signature" onClick={() => openEmailDialog(proposal)}><Send className="h-4 w-4" /></Button>
+                        {deletingProposalId === proposal.id ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Confirm Delete"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={isDeletingProposal}
+                              onClick={() => deleteProposal(proposal)}
+                            >
+                              {isDeletingProposal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Cancel"
+                              className="text-slate-500 hover:text-slate-700"
+                              disabled={isDeletingProposal}
+                              onClick={() => setDeletingProposalId(null)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Delete Proposal"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => setDeletingProposalId(proposal.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         {(proposal.status === "signed" || proposal.status === "signed_countersigned" || proposal.status === "pending_signature") && (
                           <Button
                             variant="ghost"
