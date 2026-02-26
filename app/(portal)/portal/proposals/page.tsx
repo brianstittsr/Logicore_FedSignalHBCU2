@@ -1622,14 +1622,15 @@ Make it clear, professional, and highlight the value proposition and expected ou
 
       // 207 = signing record saved but email NOT sent
       if (response.status === 207 || data.emailSent === false) {
+        const reason = data.emailError ? `\n\nReason: ${data.emailError}` : "";
         toast.warning(
-          `Signing record saved, but email could NOT be sent. Share this link manually: ${data.signingUrl}`,
-          { duration: 15000 }
+          `Signing record saved, but email could NOT be sent.${reason}\n\nSigning link (also copied to clipboard): ${data.signingUrl}`,
+          { duration: 20000 }
         );
-        // Also copy to clipboard for convenience
         if (data.signingUrl) {
           navigator.clipboard.writeText(data.signingUrl).catch(() => {});
         }
+        console.error("[proposals] Email send failed:", data.emailError);
         return;
       }
 
@@ -2050,6 +2051,21 @@ Workflow:
       });
 
       const result = await response.json();
+
+      // 207 = record saved but email NOT sent (agreement call site)
+      if (response.status === 207 || result.emailSent === false) {
+        const reason = result.emailError ? `\n\nReason: ${result.emailError}` : "";
+        toast.warning(
+          `Agreement record saved, but email could NOT be sent.${reason}\n\nSigning link (also copied to clipboard): ${result.signingUrl}`,
+          { duration: 20000 }
+        );
+        if (result.signingUrl) {
+          navigator.clipboard.writeText(result.signingUrl).catch(() => {});
+        }
+        console.error("[proposals] Agreement email send failed:", result.emailError);
+        setProposalData((prev) => ({ ...prev, signatureStatus: "pending", status: "pending_signature" }));
+        return;
+      }
 
       if (result.success) {
         // Create styled success dialog

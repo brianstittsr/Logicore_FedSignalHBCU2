@@ -104,9 +104,19 @@ export async function POST(request: NextRequest) {
       });
       emailSent = result.success;
       emailError = result.error || null;
+      if (!emailSent) {
+        console.error(`[send-for-signature] sendEmail FAILED to ${recipientEmail}: ${emailError}`);
+      } else {
+        console.log(`[send-for-signature] Email sent OK to ${recipientEmail}`);
+      }
     } else {
-      console.warn("Azure Graph credentials not configured. Signing URL:", signingUrl);
-      emailError = "Email service not configured — AZURE_TENANT_ID, AZURE_CLIENT_ID, and AZURE_CLIENT_SECRET must be set in environment variables.";
+      const missing = [
+        !process.env.AZURE_TENANT_ID && "AZURE_TENANT_ID",
+        !process.env.AZURE_CLIENT_ID && "AZURE_CLIENT_ID",
+        !process.env.AZURE_CLIENT_SECRET && "AZURE_CLIENT_SECRET",
+      ].filter(Boolean).join(", ");
+      console.error(`[send-for-signature] Email NOT configured — missing env vars: ${missing}`);
+      emailError = `Email service not configured — missing environment variables: ${missing || "(unknown)"}. Set them in Vercel → Settings → Environment Variables.`;
     }
 
     // If email failed, return a 207 (partial success) so the UI can show a clear warning
