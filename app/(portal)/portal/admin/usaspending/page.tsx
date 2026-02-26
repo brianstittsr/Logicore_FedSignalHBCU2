@@ -355,349 +355,232 @@ export default function USASpendingSearchPage() {
     setFetchError(null);
   };
 
+  // ── Advanced filters panel toggle
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-[#f2f1ec] p-6 space-y-4">
 
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <DollarSign className="h-8 w-8 text-primary" />
-            Federal Award Search
-            <Badge variant="secondary" className="text-xs font-semibold">LIVE</Badge>
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Search contracts, grants, loans &amp; financial assistance via{" "}
-            <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer"
-              className="text-primary hover:underline font-medium">
-              USASpending.gov
-            </a>
-            {" "}— no API key required
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Federal Award Search</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Search USASpending.gov for contracts, grants, loans &amp; financial assistance
           </p>
         </div>
-        <div className="hidden md:flex gap-3">
-          {[
-            { label: "$6.8T+", sub: "Awards tracked" },
-            { label: "400+", sub: "Federal agencies" },
-          ].map(({ label, sub }) => (
-            <Card key={sub}>
-              <CardContent className="p-3 text-center">
-                <div className="text-lg font-bold text-primary">{label}</div>
-                <div className="text-xs text-muted-foreground">{sub}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Button
+          onClick={handleSearch}
+          disabled={isLoading}
+          className="bg-[#e8c84a] hover:bg-[#d4b53a] text-gray-900 font-semibold gap-1.5 shadow-none"
+        >
+          {isLoading
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <Search className="h-4 w-4" />}
+          {isLoading ? "Searching…" : "Search Awards"}
+        </Button>
       </div>
 
-      {/* ── Main layout: sidebar filters + results ── */}
-      <div className="flex flex-col md:flex-row gap-6 items-start">
+      {/* ── 4 Stat Cards ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Total Results", value: hasSearched ? total.toLocaleString() : "—", sub: hasSearched ? `${results.length} shown` : "Run a search" },
+          { label: "Fiscal Years", value: filters.fiscalYears.length ? filters.fiscalYears.join(", ") : "All years", sub: "Selected period" },
+          { label: "Award Types", value: filters.awardTypes.length || "All", sub: filters.awardTypes.length ? "Types selected" : "No filter applied" },
+          { label: "Active Filters", value: activeFilterCount || 0, sub: activeFilterCount > 0 ? "Filters applied" : "No filters set" },
+        ].map(({ label, value, sub }) => (
+          <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs font-semibold text-gray-500 mb-2">{label}</p>
+            <p className="text-xl font-bold text-gray-900 truncate">{value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* ══ FILTER SIDEBAR ══ */}
-        <aside className="w-full md:w-[280px] flex-shrink-0">
-          <Card className="sticky top-4">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">Search Filters</CardTitle>
-                  {activeFilterCount > 0 && (
-                    <Badge variant="default" className="h-5 px-1.5 text-xs">{activeFilterCount}</Badge>
-                  )}
-                </div>
-                {activeFilterCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive">
-                    <RotateCcw className="h-3 w-3 mr-1" /> Clear all
-                  </Button>
-                )}
+      {/* ── Search + Filter Bar ── */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        {/* Primary row: keyword + key dropdowns + search button */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search keywords, recipient, description..."
+              value={filters.keywords}
+              onChange={(e) => setFilter("keywords", e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="pl-9 h-9 bg-gray-50 border-gray-200 text-sm focus-visible:ring-1"
+            />
+          </div>
+          <Select value={filters.awardingAgency} onValueChange={(v) => setFilter("awardingAgency", v === "__all__" ? "" : v)}>
+            <SelectTrigger className="h-9 text-sm w-full sm:w-[200px] bg-gray-50 border-gray-200">
+              <SelectValue placeholder="All Agencies" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="__all__">All Agencies</SelectItem>
+              {TOP_AGENCIES.map((a) => <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.awardTypes.length === 1 ? filters.awardTypes[0] : filters.awardTypes.length > 1 ? "__multi__" : "__all__"}
+            onValueChange={(v) => {
+              if (v === "__all__") setFilter("awardTypes", []);
+              else if (v !== "__multi__") setFilter("awardTypes", [v]);
+            }}
+          >
+            <SelectTrigger className="h-9 text-sm w-full sm:w-[160px] bg-gray-50 border-gray-200">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Types</SelectItem>
+              {filters.awardTypes.length > 1 && <SelectItem value="__multi__">{filters.awardTypes.length} types</SelectItem>}
+              {AWARD_TYPE_GROUPS.flatMap(g => g.types).map(({ code, label }) => (
+                <SelectItem key={code} value={code} className="text-xs">{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.fiscalYears.length === 1 ? filters.fiscalYears[0] : filters.fiscalYears.length > 1 ? "__multi__" : "__all__"}
+            onValueChange={(v) => {
+              if (v === "__all__") setFilter("fiscalYears", []);
+              else if (v !== "__multi__") setFilter("fiscalYears", [v]);
+            }}
+          >
+            <SelectTrigger className="h-9 text-sm w-full sm:w-[130px] bg-gray-50 border-gray-200">
+              <SelectValue placeholder="All Years" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Years</SelectItem>
+              {filters.fiscalYears.length > 1 && <SelectItem value="__multi__">{filters.fiscalYears.length} years</SelectItem>}
+              {FISCAL_YEARS.map((yr) => <SelectItem key={yr} value={yr}>{yr}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 px-3 text-xs text-gray-500 hover:text-gray-900 whitespace-nowrap"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            <Filter className="h-3.5 w-3.5 mr-1" />
+            {showAdvanced ? "Less" : "More filters"}
+            {activeFilterCount > 0 && <span className="ml-1.5 bg-[#e8c84a] text-gray-900 rounded-full px-1.5 py-0.5 text-[10px] font-bold">{activeFilterCount}</span>}
+          </Button>
+        </div>
+
+        {/* Advanced filters panel */}
+        {showAdvanced && (
+          <div className="border-t border-gray-100 pt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Recipient */}
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Recipient Name</Label>
+              <Input placeholder="Company or org name..." value={filters.recipientName}
+                onChange={(e) => setFilter("recipientName", e.target.value)}
+                className="h-8 text-sm bg-gray-50 border-gray-200" />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Recipient State</Label>
+              <Select value={filters.recipientState} onValueChange={(v) => setFilter("recipientState", v === "__all__" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs bg-gray-50 border-gray-200"><SelectValue placeholder="Any state" /></SelectTrigger>
+                <SelectContent className="max-h-48">
+                  <SelectItem value="__all__">Any State</SelectItem>
+                  {US_STATES.map((s) => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Funding Agency</Label>
+              <Select value={filters.fundingAgency} onValueChange={(v) => setFilter("fundingAgency", v === "__all__" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs bg-gray-50 border-gray-200"><SelectValue placeholder="Any agency" /></SelectTrigger>
+                <SelectContent className="max-h-48">
+                  <SelectItem value="__all__">Any Agency</SelectItem>
+                  {TOP_AGENCIES.map((a) => <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Min Amount ($)</Label>
+              <Input placeholder="e.g. 100000" value={filters.awardAmountMin} type="number" min={0}
+                onChange={(e) => setFilter("awardAmountMin", e.target.value)}
+                className="h-8 text-sm bg-gray-50 border-gray-200" />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Max Amount ($)</Label>
+              <Input placeholder="e.g. 10000000" value={filters.awardAmountMax} type="number" min={0}
+                onChange={(e) => setFilter("awardAmountMax", e.target.value)}
+                className="h-8 text-sm bg-gray-50 border-gray-200" />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">NAICS Code</Label>
+              <div className="flex gap-1.5">
+                <Input placeholder="e.g. 541512" value={naicsInput} maxLength={6}
+                  onChange={(e) => setNaicsInput(e.target.value.replace(/\D/g, ""))}
+                  className="h-8 text-sm bg-gray-50 border-gray-200" />
+                <Button type="button" size="sm" variant="outline" className="h-8 px-2.5 text-xs flex-shrink-0"
+                  onClick={() => { if (naicsInput) setFilter("naicsCode", naicsInput); }}>Set</Button>
               </div>
-            </CardHeader>
-            <CardContent className="pb-2 space-y-0 divide-y max-h-[calc(100vh-240px)] overflow-y-auto">
-
-              <FilterSection title="Keyword Search" icon={Search}>
-                <Input
-                  placeholder="e.g. cybersecurity, construction..."
-                  value={filters.keywords}
-                  onChange={(e) => setFilter("keywords", e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="h-8 text-sm"
-                />
-              </FilterSection>
-
-              <FilterSection title="Time Period (Fiscal Year)" icon={TrendingUp}>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {FISCAL_YEARS.map((yr) => (
-                    <button
-                      key={yr}
-                      type="button"
-                      onClick={() => toggleFiscalYear(yr)}
-                      className={`text-xs py-1.5 rounded border transition-colors font-medium ${
-                        filters.fiscalYears.includes(yr)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-muted-foreground border-border hover:border-primary hover:text-primary"
-                      }`}
-                    >
-                      {yr}
-                    </button>
-                  ))}
-                </div>
-              </FilterSection>
-
-              <FilterSection title="Award Type" icon={FileText}>
-                <div className="space-y-3">
-                  {AWARD_TYPE_GROUPS.map(({ group, types }) => (
-                    <div key={group}>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
-                      <div className="space-y-1.5">
-                        {types.map(({ code, label }) => (
-                          <div key={code} className="flex items-center gap-2">
-                            <Checkbox
-                              id={`at-${code}`}
-                              checked={filters.awardTypes.includes(code)}
-                              onCheckedChange={() => toggleAwardType(code)}
-                              className="h-3.5 w-3.5"
-                            />
-                            <label htmlFor={`at-${code}`} className="text-xs text-muted-foreground cursor-pointer leading-none">
-                              {label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </FilterSection>
-
-              <FilterSection title="Agency" icon={Building2}>
-                <div className="space-y-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Awarding Agency</Label>
-                    <Select value={filters.awardingAgency} onValueChange={(v) => setFilter("awardingAgency", v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Any agency" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        <SelectItem value="__all__">Any Agency</SelectItem>
-                        {TOP_AGENCIES.map((a) => <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Funding Agency</Label>
-                    <Select value={filters.fundingAgency} onValueChange={(v) => setFilter("fundingAgency", v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Any agency" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        <SelectItem value="__all__">Any Agency</SelectItem>
-                        {TOP_AGENCIES.map((a) => <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </FilterSection>
-
-              <FilterSection title="Recipient" icon={Building2} defaultOpen={false}>
-                <div className="space-y-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Recipient Name</Label>
-                    <Input
-                      placeholder="Company or org name..."
-                      value={filters.recipientName}
-                      onChange={(e) => setFilter("recipientName", e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Recipient State</Label>
-                    <Select value={filters.recipientState} onValueChange={(v) => setFilter("recipientState", v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Any state" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        <SelectItem value="__all__">Any State</SelectItem>
-                        {US_STATES.map((s) => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </FilterSection>
-
-              <FilterSection title="Award Amount" icon={DollarSign} defaultOpen={false}>
-                <div className="space-y-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Minimum ($)</Label>
-                    <Input
-                      placeholder="e.g. 100000"
-                      value={filters.awardAmountMin}
-                      onChange={(e) => setFilter("awardAmountMin", e.target.value)}
-                      className="h-8 text-sm"
-                      type="number"
-                      min={0}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Maximum ($)</Label>
-                    <Input
-                      placeholder="e.g. 10000000"
-                      value={filters.awardAmountMax}
-                      onChange={(e) => setFilter("awardAmountMax", e.target.value)}
-                      className="h-8 text-sm"
-                      type="number"
-                      min={0}
-                    />
-                  </div>
-                </div>
-              </FilterSection>
-
-              <FilterSection title="Industry Codes" icon={Hash} defaultOpen={false}>
-                <div className="space-y-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">NAICS Code</Label>
-                    <div className="flex gap-1.5">
-                      <Input
-                        placeholder="e.g. 541512"
-                        value={naicsInput}
-                        onChange={(e) => setNaicsInput(e.target.value.replace(/\D/g, ""))}
-                        className="h-8 text-sm"
-                        maxLength={6}
-                      />
-                      <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs flex-shrink-0"
-                        onClick={() => { if (naicsInput) { setFilter("naicsCode", naicsInput); } }}>
-                        Set
-                      </Button>
-                    </div>
-                    {filters.naicsCode && (
-                      <div className="mt-1.5">
-                        <FilterChip label={filters.naicsCode} onRemove={() => { setFilter("naicsCode", ""); setNaicsInput(""); }} />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">PSC Code</Label>
-                    <div className="flex gap-1.5">
-                      <Input
-                        placeholder="e.g. D302"
-                        value={pscInput}
-                        onChange={(e) => setPscInput(e.target.value.toUpperCase())}
-                        className="h-8 text-sm"
-                        maxLength={4}
-                      />
-                      <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs flex-shrink-0"
-                        onClick={() => { if (pscInput) { setFilter("pscCode", pscInput); } }}>
-                        Set
-                      </Button>
-                    </div>
-                    {filters.pscCode && (
-                      <div className="mt-1.5">
-                        <FilterChip label={filters.pscCode} onRemove={() => { setFilter("pscCode", ""); setPscInput(""); }} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </FilterSection>
-
-              <FilterSection title="Award ID" icon={Hash} defaultOpen={false}>
-                <Input
-                  placeholder="e.g. CONT_AWD_..."
-                  value={filters.awardIdSearch}
-                  onChange={(e) => setFilter("awardIdSearch", e.target.value)}
-                  className="h-8 text-sm"
-                />
-              </FilterSection>
-
-            </CardContent>
-
-            <div className="p-4 pt-3">
-              <Button
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="w-full gap-2"
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                {isLoading ? "Searching…" : "Search Awards"}
-              </Button>
             </div>
-          </Card>
-        </aside>
-
-        {/* ══ RESULTS PANEL ══ */}
-        <div ref={resultsRef} className="flex-1 min-w-0 space-y-4">
-
-          {/* Active filter chips */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {filters.keywords && <FilterChip label={`Keyword: ${filters.keywords}`} onRemove={() => setFilter("keywords", "")} />}
-              {filters.fiscalYears.map((yr) => <FilterChip key={yr} label={`FY ${yr}`} onRemove={() => toggleFiscalYear(yr)} />)}
-              {filters.awardTypes.map((code) => {
-                const label = AWARD_TYPE_GROUPS.flatMap((g) => g.types).find((t) => t.code === code)?.label || code;
-                return <FilterChip key={code} label={label} onRemove={() => toggleAwardType(code)} />;
-              })}
-              {filters.awardingAgency && <FilterChip label={`Awarding: ${filters.awardingAgency}`} onRemove={() => setFilter("awardingAgency", "")} />}
-              {filters.fundingAgency && <FilterChip label={`Funding: ${filters.fundingAgency}`} onRemove={() => setFilter("fundingAgency", "")} />}
-              {filters.recipientName && <FilterChip label={`Recipient: ${filters.recipientName}`} onRemove={() => setFilter("recipientName", "")} />}
-              {filters.recipientState && <FilterChip label={`State: ${filters.recipientState}`} onRemove={() => setFilter("recipientState", "")} />}
-              {filters.naicsCode && <FilterChip label={`NAICS: ${filters.naicsCode}`} onRemove={() => { setFilter("naicsCode", ""); setNaicsInput(""); }} />}
-              {filters.pscCode && <FilterChip label={`PSC: ${filters.pscCode}`} onRemove={() => { setFilter("pscCode", ""); setPscInput(""); }} />}
-              {filters.awardAmountMin && <FilterChip label={`Min: $${Number(filters.awardAmountMin).toLocaleString()}`} onRemove={() => setFilter("awardAmountMin", "")} />}
-              {filters.awardAmountMax && <FilterChip label={`Max: $${Number(filters.awardAmountMax).toLocaleString()}`} onRemove={() => setFilter("awardAmountMax", "")} />}
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">PSC Code</Label>
+              <div className="flex gap-1.5">
+                <Input placeholder="e.g. D302" value={pscInput} maxLength={4}
+                  onChange={(e) => setPscInput(e.target.value.toUpperCase())}
+                  className="h-8 text-sm bg-gray-50 border-gray-200" />
+                <Button type="button" size="sm" variant="outline" className="h-8 px-2.5 text-xs flex-shrink-0"
+                  onClick={() => { if (pscInput) setFilter("pscCode", pscInput); }}>Set</Button>
+              </div>
             </div>
-          )}
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Award ID</Label>
+              <Input placeholder="e.g. CONT_AWD_..." value={filters.awardIdSearch}
+                onChange={(e) => setFilter("awardIdSearch", e.target.value)}
+                className="h-8 text-sm bg-gray-50 border-gray-200" />
+            </div>
+            <div className="flex items-end">
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={handleReset}
+                  className="h-8 text-xs text-gray-400 hover:text-red-500 gap-1">
+                  <RotateCcw className="h-3 w-3" /> Clear all filters
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
-          {/* Error */}
-          {fetchError && (
-            <Card className="border-destructive/50 bg-destructive/5">
-              <CardContent className="flex items-start gap-3 py-4">
-                <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-destructive">Search Error</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{fetchError}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Active filter chips */}
+        {activeFilterCount > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {filters.keywords && <FilterChip label={`"${filters.keywords}"`} onRemove={() => setFilter("keywords", "")} />}
+            {filters.fiscalYears.map((yr) => <FilterChip key={yr} label={`FY ${yr}`} onRemove={() => toggleFiscalYear(yr)} />)}
+            {filters.awardTypes.map((code) => {
+              const lbl = AWARD_TYPE_GROUPS.flatMap((g) => g.types).find((t) => t.code === code)?.label || code;
+              return <FilterChip key={code} label={lbl} onRemove={() => toggleAwardType(code)} />;
+            })}
+            {filters.awardingAgency && <FilterChip label={filters.awardingAgency.replace("Department of ", "Dept. ")} onRemove={() => setFilter("awardingAgency", "")} />}
+            {filters.fundingAgency && <FilterChip label={`Funding: ${filters.fundingAgency.replace("Department of ", "Dept. ")}`} onRemove={() => setFilter("fundingAgency", "")} />}
+            {filters.recipientName && <FilterChip label={`Recipient: ${filters.recipientName}`} onRemove={() => setFilter("recipientName", "")} />}
+            {filters.recipientState && <FilterChip label={`State: ${filters.recipientState}`} onRemove={() => setFilter("recipientState", "")} />}
+            {filters.naicsCode && <FilterChip label={`NAICS: ${filters.naicsCode}`} onRemove={() => { setFilter("naicsCode", ""); setNaicsInput(""); }} />}
+            {filters.pscCode && <FilterChip label={`PSC: ${filters.pscCode}`} onRemove={() => { setFilter("pscCode", ""); setPscInput(""); }} />}
+            {filters.awardAmountMin && <FilterChip label={`≥ $${Number(filters.awardAmountMin).toLocaleString()}`} onRemove={() => setFilter("awardAmountMin", "")} />}
+            {filters.awardAmountMax && <FilterChip label={`≤ $${Number(filters.awardAmountMax).toLocaleString()}`} onRemove={() => setFilter("awardAmountMax", "")} />}
+          </div>
+        )}
+      </div>
 
-          {/* Empty / initial state */}
-          {!hasSearched && !isLoading && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Search className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Search Federal Awards</h3>
-                <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-                  Use the filters on the left to search contracts, grants, loans and other financial assistance.
-                  Data is fetched live from USASpending.gov — no API key required.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
-                  {[
-                    { label: "Defense contracts 2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Defense"); } },
-                    { label: "HHS grants 2024", action: () => { setFilter("awardTypes", ["02","03","04","05"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Health and Human Services"); } },
-                    { label: "NASA contracts 2023–2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2023","2024"]); setFilter("awardingAgency","National Aeronautics and Space Administration"); } },
-                    { label: "VA IT contracts", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("naicsCode","541512"); setNaicsInput("541512"); setFilter("awardingAgency","Department of Veterans Affairs"); } },
-                  ].map(({ label, action }) => (
-                    <button key={label} onClick={() => { action(); setTimeout(handleSearch, 100); }}
-                      className="text-left text-sm px-3 py-2.5 rounded-lg border bg-card hover:bg-muted transition-colors flex items-center gap-2">
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+      {/* ── Results Table Card ── */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" ref={resultsRef}>
 
-          {/* Results header bar */}
-          {hasSearched && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                {isLoading ? "Searching…" : (
-                  <><span className="font-semibold text-foreground">{total.toLocaleString()}</span> awards found · showing {results.length}</>
-                )}
-              </p>
-              <div className="flex items-center gap-2">
+        {/* Table toolbar */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <p className="text-sm text-gray-500">
+            {isLoading ? "Searching…" : hasSearched
+              ? <><span className="font-semibold text-gray-900">{total.toLocaleString()}</span> awards found · showing {results.length}</>
+              : "Use the search bar above to find federal awards"}
+          </p>
+          <div className="flex items-center gap-2">
+            {hasSearched && (
+              <>
                 <Select value={sortField} onValueChange={setSortField}>
-                  <SelectTrigger className="h-8 text-xs w-[160px]">
+                  <SelectTrigger className="h-7 text-xs w-[150px] border-gray-200 bg-gray-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -706,117 +589,136 @@ export default function USASpendingSearchPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 border-gray-200"
                   onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}>
                   <ArrowUpDown className="h-3 w-3" />
                   {sortDir === "desc" ? "Desc" : "Asc"}
                 </Button>
-                {results.length > 0 && (
-                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5"
-                    onClick={() => exportCsv(results)}>
-                    <Download className="h-3.5 w-3.5" /> Export CSV
-                  </Button>
-                )}
-                <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-                    USASpending.gov <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </a>
+              </>
+            )}
+            {results.length > 0 && (
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-gray-200"
+                onClick={() => exportCsv(results)}>
+                <Download className="h-3 w-3" /> Export CSV
+              </Button>
+            )}
+            <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer">
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-gray-400 hover:text-gray-700">
+                USASpending.gov <ExternalLink className="h-3 w-3" />
+              </Button>
+            </a>
+          </div>
+        </div>
+
+        {/* Error */}
+        {fetchError && (
+          <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border-b border-red-100 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold">Search error: </span>
+              <span className="text-xs">{fetchError}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-7 w-7 animate-spin text-gray-300" />
+          </div>
+        )}
+
+        {/* Table */}
+        {!isLoading && results.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 hover:bg-gray-50">
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recipient</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Award Amount</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Type</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Awarding Agency</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Description</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Start Date</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Link</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {results.map((r, i) => {
+                  const name = String(r["Recipient Name"] || "—");
+                  const amount = r["Award Amount"];
+                  const type = r["Award Type"] || "";
+                  const agency = String(r["Awarding Agency"] || "—");
+                  const desc = String(r["Description"] || "—");
+                  const startDate = r["Start Date"] ? new Date(r["Start Date"]).toLocaleDateString() : "—";
+                  const link = awardPermalink(r);
+                  return (
+                    <TableRow key={i} className="hover:bg-gray-50 border-gray-100">
+                      <TableCell className="font-medium text-gray-900 max-w-[200px]">
+                        <span className="block truncate text-sm" title={name}>{name}</span>
+                      </TableCell>
+                      <TableCell className="font-semibold text-gray-900 whitespace-nowrap text-sm">
+                        {formatCurrency(amount)}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {type ? <Badge variant="outline" className="text-xs font-normal border-gray-200 text-gray-600 whitespace-nowrap">{type}</Badge> : "—"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell max-w-[180px]">
+                        <span className="block truncate text-xs text-gray-500" title={agency}>{agency}</span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell max-w-[220px]">
+                        <span className="block truncate text-xs text-gray-400" title={desc}>{desc}</span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs text-gray-400 whitespace-nowrap">
+                        {startDate}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <a href={link} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-[#c8a000] hover:text-[#a07800] hover:underline whitespace-nowrap font-medium">
+                          View <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Empty — initial state */}
+        {!isLoading && !hasSearched && !fetchError && (
+          <div className="flex flex-col items-center justify-center py-16 px-6">
+            <div className="h-12 w-12 rounded-full border-2 border-gray-200 flex items-center justify-center mb-4">
+              <div className="h-6 w-6 rounded-full border-2 border-gray-200 flex items-center justify-center">
+                <div className="h-2 w-2 rounded-full bg-gray-300" />
               </div>
             </div>
-          )}
+            <p className="text-sm font-medium text-gray-500 mb-4">No awards yet</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {[
+                { label: "+ Defense contracts 2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Defense"); } },
+                { label: "+ HHS grants 2024", action: () => { setFilter("awardTypes", ["02","03","04","05"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Health and Human Services"); } },
+                { label: "+ NASA contracts", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","National Aeronautics and Space Administration"); } },
+                { label: "+ VA IT contracts", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("naicsCode","541512"); setNaicsInput("541512"); setFilter("awardingAgency","Department of Veterans Affairs"); } },
+              ].map(({ label, action }) => (
+                <button key={label} onClick={() => { action(); setTimeout(handleSearch, 100); }}
+                  className="text-xs px-4 py-2 rounded-full bg-[#e8c84a] hover:bg-[#d4b53a] text-gray-900 font-semibold transition-colors">
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {/* Loading skeleton */}
-          {isLoading && (
-            <Card>
-              <CardContent className="py-12">
-                <div className="flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Results table */}
-          {!isLoading && results.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Results</CardTitle>
-                <CardDescription>{results.length} of {total.toLocaleString()} awards</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Recipient</TableHead>
-                        <TableHead>Award Amount</TableHead>
-                        <TableHead className="hidden sm:table-cell">Type</TableHead>
-                        <TableHead className="hidden md:table-cell">Awarding Agency</TableHead>
-                        <TableHead className="hidden lg:table-cell">Description</TableHead>
-                        <TableHead className="hidden lg:table-cell">Start Date</TableHead>
-                        <TableHead className="text-right">Link</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {results.map((r, i) => {
-                        const name = String(r["Recipient Name"] || "—");
-                        const amount = r["Award Amount"];
-                        const type = r["Award Type"] || "";
-                        const agency = String(r["Awarding Agency"] || "—");
-                        const desc = String(r["Description"] || "—");
-                        const startDate = r["Start Date"] ? new Date(r["Start Date"]).toLocaleDateString() : "—";
-                        const link = awardPermalink(r);
-
-                        return (
-                          <TableRow key={i} className="hover:bg-muted/50">
-                            <TableCell className="font-medium max-w-[180px]">
-                              <span className="block truncate" title={name}>{name}</span>
-                            </TableCell>
-                            <TableCell className="font-semibold text-green-600 whitespace-nowrap">
-                              {formatCurrency(amount)}
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              {type ? <Badge variant="outline" className="text-xs font-normal whitespace-nowrap">{type}</Badge> : "—"}
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell max-w-[160px]">
-                              <span className="block truncate text-xs text-muted-foreground" title={agency}>{agency}</span>
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell max-w-[200px]">
-                              <span className="block truncate text-xs text-muted-foreground" title={desc}>{desc}</span>
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">
-                              {startDate}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <a href={link} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline whitespace-nowrap">
-                                View <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* No results */}
-          {!isLoading && hasSearched && results.length === 0 && !fetchError && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Search className="h-10 w-10 text-muted-foreground mb-3" />
-                <p className="font-semibold">No awards found</p>
-                <p className="text-sm text-muted-foreground mt-1 text-center max-w-sm">
-                  Try broadening your search — remove some filters or change the fiscal year range.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Empty — no results after search */}
+        {!isLoading && hasSearched && results.length === 0 && !fetchError && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Search className="h-8 w-8 text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-500">No awards found</p>
+            <p className="text-xs text-gray-400 mt-1">Try removing some filters or broadening the fiscal year range</p>
+          </div>
+        )}
       </div>
     </div>
   );
