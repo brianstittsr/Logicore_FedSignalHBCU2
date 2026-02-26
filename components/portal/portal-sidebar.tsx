@@ -321,6 +321,12 @@ const adminToolsItems = [
     badge: "NEW",
   },
   {
+    title: "USASpending Search",
+    href: "/portal/admin/usaspending",
+    icon: DollarSign,
+    badge: "AI",
+  },
+  {
     title: "Marketing Hub",
     href: "/portal/admin/marketing-hub",
     icon: Megaphone,
