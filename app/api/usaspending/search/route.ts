@@ -352,6 +352,47 @@ ${resultsText}`;
   return `Found **${total.toLocaleString()}** matching records on USASpending.gov.\n\n**Top result:** ${topName} — ${fmtAmt}\n\nShowing the top ${results.length} results sorted by award amount.\n\n[View full results on USASpending.gov →](https://www.usaspending.gov/search)`;
 }
 
+// ─── PUT handler: structured form proxy (no AI, no API key needed) ───────────
+//
+// Used by the USASpending search form page so the browser never calls
+// api.usaspending.gov directly (avoids CORS issues on public access versions).
+// Accepts the same body shape the form currently builds and forwards it
+// server-side to USASpending, then returns results + page_metadata.
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body: unknown = await request.json();
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const upstream = await fetch("https://api.usaspending.gov/api/v2/search/spending_by_award/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      // Next.js server-side fetch — no CORS restrictions
+    });
+
+    if (!upstream.ok) {
+      const text = await upstream.text();
+      return NextResponse.json(
+        { error: `USASpending API error ${upstream.status}`, detail: text.substring(0, 400) },
+        { status: upstream.status }
+      );
+    }
+
+    const data = await upstream.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("[USASpending proxy] PUT error:", error);
+    return NextResponse.json(
+      { error: "Proxy request failed", detail: error instanceof Error ? error.message : "Unknown" },
+      { status: 500 }
+    );
+  }
+}
+
 // ─── Main POST handler ────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {

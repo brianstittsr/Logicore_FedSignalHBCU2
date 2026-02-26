@@ -320,15 +320,19 @@ export default function USASpendingSearchPage() {
         subawards: false,
       };
 
-      const res = await fetch("https://api.usaspending.gov/api/v2/search/spending_by_award/", {
-        method: "POST",
+      const res = await fetch("/api/usaspending/search", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`USASpending API error ${res.status}: ${text.substring(0, 200)}`);
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          errData.error
+            ? `${errData.error}${errData.detail ? ` — ${errData.detail}` : ""}`
+            : `Search failed (${res.status})`
+        );
       }
 
       const data = await res.json();
