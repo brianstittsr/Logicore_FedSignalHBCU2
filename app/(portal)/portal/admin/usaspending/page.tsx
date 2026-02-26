@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Search,
   Loader2,
   ExternalLink,
@@ -35,6 +43,7 @@ import {
   Hash,
   Filter,
   AlertCircle,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -204,17 +213,30 @@ function FilterSection({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors">
+      <CollapsibleTrigger className="flex w-full items-center justify-between py-2.5 text-sm font-medium hover:text-primary transition-colors">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-slate-500" />
+          <Icon className="h-4 w-4 text-muted-foreground" />
           {title}
         </div>
-        {open ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+        {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="pb-4 pt-1">{children}</div>
+        <div className="pb-3 pt-1">{children}</div>
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+// ─── FilterChip helper ────────────────────────────────────────────────────────
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <Badge variant="secondary" className="gap-1 pr-1 font-normal">
+      {label}
+      <button onClick={onRemove} className="hover:text-destructive transition-colors ml-0.5 rounded-full">
+        <X className="h-3 w-3" />
+      </button>
+    </Badge>
   );
 }
 
@@ -256,7 +278,6 @@ export default function USASpendingSearchPage() {
     setIsLoading(true);
     setFetchError(null);
     try {
-      // Build USASpending-compatible filters
       const apiFilters: Record<string, unknown> = {};
 
       if (filters.keywords) apiFilters.keywords = [filters.keywords];
@@ -335,75 +356,74 @@ export default function USASpendingSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="container mx-auto p-6 space-y-6">
+
       {/* ── Page Header ── */}
-      <div className="bg-[#112e51] text-white px-6 py-5">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-6 w-6 text-yellow-400" />
-              <h1 className="text-xl font-bold tracking-tight">Federal Award Search</h1>
-              <Badge className="bg-yellow-400 text-[#112e51] font-bold text-xs hover:bg-yellow-400">LIVE</Badge>
-            </div>
-            <p className="text-blue-200 text-sm">
-              Search federal contracts, grants, loans & other financial assistance from{" "}
-              <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer"
-                className="text-yellow-300 hover:underline font-medium">
-                USASpending.gov
-              </a>
-            </p>
-          </div>
-          <div className="flex gap-3 text-center hidden md:flex">
-            {[
-              { label: "$6.8T+", sub: "Awards tracked" },
-              { label: "400+", sub: "Federal agencies" },
-              { label: "No API key", sub: "Required" },
-            ].map(({ label, sub }) => (
-              <div key={sub} className="bg-white/10 rounded-lg px-4 py-2">
-                <div className="text-lg font-bold text-yellow-300">{label}</div>
-                <div className="text-xs text-blue-200">{sub}</div>
-              </div>
-            ))}
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <DollarSign className="h-8 w-8 text-primary" />
+            Federal Award Search
+            <Badge variant="secondary" className="text-xs font-semibold">LIVE</Badge>
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Search contracts, grants, loans &amp; financial assistance via{" "}
+            <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer"
+              className="text-primary hover:underline font-medium">
+              USASpending.gov
+            </a>
+            {" "}— no API key required
+          </p>
+        </div>
+        <div className="hidden md:flex gap-3">
+          {[
+            { label: "$6.8T+", sub: "Awards tracked" },
+            { label: "400+", sub: "Federal agencies" },
+          ].map(({ label, sub }) => (
+            <Card key={sub}>
+              <CardContent className="p-3 text-center">
+                <div className="text-lg font-bold text-primary">{label}</div>
+                <div className="text-xs text-muted-foreground">{sub}</div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 
       {/* ── Main layout: sidebar filters + results ── */}
-      <div className="max-w-screen-2xl mx-auto flex gap-0 md:gap-5 p-4 md:p-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
 
         {/* ══ FILTER SIDEBAR ══ */}
-        <aside className="w-full md:w-[300px] flex-shrink-0 space-y-1">
-          <Card className="border-slate-200 shadow-sm sticky top-4">
-            <CardHeader className="pb-2 pt-4 px-4">
+        <aside className="w-full md:w-[280px] flex-shrink-0">
+          <Card className="sticky top-4">
+            <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-slate-600" />
-                  <CardTitle className="text-sm font-bold text-slate-800">Search Filters</CardTitle>
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">Search Filters</CardTitle>
                   {activeFilterCount > 0 && (
-                    <Badge className="bg-[#112e51] text-white text-xs h-5 px-1.5">{activeFilterCount}</Badge>
+                    <Badge variant="default" className="h-5 px-1.5 text-xs">{activeFilterCount}</Badge>
                   )}
                 </div>
                 {activeFilterCount > 0 && (
-                  <button onClick={handleReset} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
-                    <RotateCcw className="h-3 w-3" /> Clear
-                  </button>
+                  <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive">
+                    <RotateCcw className="h-3 w-3 mr-1" /> Clear all
+                  </Button>
                 )}
               </div>
             </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-0 divide-y divide-slate-100 max-h-[calc(100vh-220px)] overflow-y-auto">
+            <CardContent className="pb-2 space-y-0 divide-y max-h-[calc(100vh-240px)] overflow-y-auto">
 
-              {/* Keyword */}
               <FilterSection title="Keyword Search" icon={Search}>
                 <Input
                   placeholder="e.g. cybersecurity, construction..."
                   value={filters.keywords}
                   onChange={(e) => setFilter("keywords", e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="border-slate-300 text-sm h-8"
+                  className="h-8 text-sm"
                 />
               </FilterSection>
 
-              {/* Time Period */}
               <FilterSection title="Time Period (Fiscal Year)" icon={TrendingUp}>
                 <div className="grid grid-cols-4 gap-1.5">
                   {FISCAL_YEARS.map((yr) => (
@@ -413,8 +433,8 @@ export default function USASpendingSearchPage() {
                       onClick={() => toggleFiscalYear(yr)}
                       className={`text-xs py-1.5 rounded border transition-colors font-medium ${
                         filters.fiscalYears.includes(yr)
-                          ? "bg-[#112e51] text-white border-[#112e51]"
-                          : "bg-white text-slate-600 border-slate-200 hover:border-[#112e51] hover:text-[#112e51]"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-muted-foreground border-border hover:border-primary hover:text-primary"
                       }`}
                     >
                       {yr}
@@ -423,12 +443,11 @@ export default function USASpendingSearchPage() {
                 </div>
               </FilterSection>
 
-              {/* Award Type */}
               <FilterSection title="Award Type" icon={FileText}>
                 <div className="space-y-3">
                   {AWARD_TYPE_GROUPS.map(({ group, types }) => (
                     <div key={group}>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{group}</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
                       <div className="space-y-1.5">
                         {types.map(({ code, label }) => (
                           <div key={code} className="flex items-center gap-2">
@@ -438,7 +457,7 @@ export default function USASpendingSearchPage() {
                               onCheckedChange={() => toggleAwardType(code)}
                               className="h-3.5 w-3.5"
                             />
-                            <label htmlFor={`at-${code}`} className="text-xs text-slate-600 cursor-pointer leading-none">
+                            <label htmlFor={`at-${code}`} className="text-xs text-muted-foreground cursor-pointer leading-none">
                               {label}
                             </label>
                           </div>
@@ -449,13 +468,12 @@ export default function USASpendingSearchPage() {
                 </div>
               </FilterSection>
 
-              {/* Agencies */}
               <FilterSection title="Agency" icon={Building2}>
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">Awarding Agency</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Awarding Agency</Label>
                     <Select value={filters.awardingAgency} onValueChange={(v) => setFilter("awardingAgency", v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs border-slate-300">
+                      <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Any agency" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
@@ -465,9 +483,9 @@ export default function USASpendingSearchPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">Funding Agency</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Funding Agency</Label>
                     <Select value={filters.fundingAgency} onValueChange={(v) => setFilter("fundingAgency", v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs border-slate-300">
+                      <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Any agency" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
@@ -479,22 +497,21 @@ export default function USASpendingSearchPage() {
                 </div>
               </FilterSection>
 
-              {/* Recipient */}
               <FilterSection title="Recipient" icon={Building2} defaultOpen={false}>
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">Recipient Name</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Recipient Name</Label>
                     <Input
                       placeholder="Company or org name..."
                       value={filters.recipientName}
                       onChange={(e) => setFilter("recipientName", e.target.value)}
-                      className="border-slate-300 text-sm h-8"
+                      className="h-8 text-sm"
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">Recipient State</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Recipient State</Label>
                     <Select value={filters.recipientState} onValueChange={(v) => setFilter("recipientState", v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs border-slate-300">
+                      <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Any state" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60">
@@ -506,27 +523,26 @@ export default function USASpendingSearchPage() {
                 </div>
               </FilterSection>
 
-              {/* Award Amount */}
               <FilterSection title="Award Amount" icon={DollarSign} defaultOpen={false}>
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">Minimum Amount</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Minimum ($)</Label>
                     <Input
                       placeholder="e.g. 100000"
                       value={filters.awardAmountMin}
                       onChange={(e) => setFilter("awardAmountMin", e.target.value)}
-                      className="border-slate-300 text-sm h-8"
+                      className="h-8 text-sm"
                       type="number"
                       min={0}
                     />
                   </div>
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">Maximum Amount</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Maximum ($)</Label>
                     <Input
                       placeholder="e.g. 10000000"
                       value={filters.awardAmountMax}
                       onChange={(e) => setFilter("awardAmountMax", e.target.value)}
-                      className="border-slate-300 text-sm h-8"
+                      className="h-8 text-sm"
                       type="number"
                       min={0}
                     />
@@ -534,78 +550,69 @@ export default function USASpendingSearchPage() {
                 </div>
               </FilterSection>
 
-              {/* NAICS & PSC */}
               <FilterSection title="Industry Codes" icon={Hash} defaultOpen={false}>
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">NAICS Code</Label>
-                    <div className="flex gap-1">
+                    <Label className="text-xs text-muted-foreground mb-1 block">NAICS Code</Label>
+                    <div className="flex gap-1.5">
                       <Input
                         placeholder="e.g. 541512"
                         value={naicsInput}
                         onChange={(e) => setNaicsInput(e.target.value.replace(/\D/g, ""))}
-                        className="border-slate-300 text-sm h-8"
+                        className="h-8 text-sm"
                         maxLength={6}
                       />
-                      <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs"
+                      <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs flex-shrink-0"
                         onClick={() => { if (naicsInput) { setFilter("naicsCode", naicsInput); } }}>
                         Set
                       </Button>
                     </div>
                     {filters.naicsCode && (
-                      <div className="mt-1 flex items-center gap-1">
-                        <Badge variant="secondary" className="text-xs">{filters.naicsCode}</Badge>
-                        <button onClick={() => { setFilter("naicsCode", ""); setNaicsInput(""); }} className="text-slate-400 hover:text-red-500">
-                          <X className="h-3 w-3" />
-                        </button>
+                      <div className="mt-1.5">
+                        <FilterChip label={filters.naicsCode} onRemove={() => { setFilter("naicsCode", ""); setNaicsInput(""); }} />
                       </div>
                     )}
                   </div>
                   <div>
-                    <Label className="text-xs text-slate-500 mb-1 block">PSC Code</Label>
-                    <div className="flex gap-1">
+                    <Label className="text-xs text-muted-foreground mb-1 block">PSC Code</Label>
+                    <div className="flex gap-1.5">
                       <Input
                         placeholder="e.g. D302"
                         value={pscInput}
                         onChange={(e) => setPscInput(e.target.value.toUpperCase())}
-                        className="border-slate-300 text-sm h-8"
+                        className="h-8 text-sm"
                         maxLength={4}
                       />
-                      <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs"
+                      <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs flex-shrink-0"
                         onClick={() => { if (pscInput) { setFilter("pscCode", pscInput); } }}>
                         Set
                       </Button>
                     </div>
                     {filters.pscCode && (
-                      <div className="mt-1 flex items-center gap-1">
-                        <Badge variant="secondary" className="text-xs">{filters.pscCode}</Badge>
-                        <button onClick={() => { setFilter("pscCode", ""); setPscInput(""); }} className="text-slate-400 hover:text-red-500">
-                          <X className="h-3 w-3" />
-                        </button>
+                      <div className="mt-1.5">
+                        <FilterChip label={filters.pscCode} onRemove={() => { setFilter("pscCode", ""); setPscInput(""); }} />
                       </div>
                     )}
                   </div>
                 </div>
               </FilterSection>
 
-              {/* Award ID */}
               <FilterSection title="Award ID" icon={Hash} defaultOpen={false}>
                 <Input
                   placeholder="e.g. CONT_AWD_..."
                   value={filters.awardIdSearch}
                   onChange={(e) => setFilter("awardIdSearch", e.target.value)}
-                  className="border-slate-300 text-sm h-8"
+                  className="h-8 text-sm"
                 />
               </FilterSection>
 
             </CardContent>
 
-            {/* Search button */}
-            <div className="px-4 pb-4">
+            <div className="p-4 pt-3">
               <Button
                 onClick={handleSearch}
                 disabled={isLoading}
-                className="w-full bg-[#112e51] hover:bg-[#1a3d6b] text-white gap-2"
+                className="w-full gap-2"
               >
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 {isLoading ? "Searching…" : "Search Awards"}
@@ -637,17 +644,60 @@ export default function USASpendingSearchPage() {
             </div>
           )}
 
-          {/* Results header */}
+          {/* Error */}
+          {fetchError && (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardContent className="flex items-start gap-3 py-4">
+                <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-destructive">Search Error</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{fetchError}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Empty / initial state */}
+          {!hasSearched && !isLoading && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Search className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Search Federal Awards</h3>
+                <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+                  Use the filters on the left to search contracts, grants, loans and other financial assistance.
+                  Data is fetched live from USASpending.gov — no API key required.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+                  {[
+                    { label: "Defense contracts 2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Defense"); } },
+                    { label: "HHS grants 2024", action: () => { setFilter("awardTypes", ["02","03","04","05"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Health and Human Services"); } },
+                    { label: "NASA contracts 2023–2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2023","2024"]); setFilter("awardingAgency","National Aeronautics and Space Administration"); } },
+                    { label: "VA IT contracts", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("naicsCode","541512"); setNaicsInput("541512"); setFilter("awardingAgency","Department of Veterans Affairs"); } },
+                  ].map(({ label, action }) => (
+                    <button key={label} onClick={() => { action(); setTimeout(handleSearch, 100); }}
+                      className="text-left text-sm px-3 py-2.5 rounded-lg border bg-card hover:bg-muted transition-colors flex items-center gap-2">
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Results header bar */}
           {hasSearched && (
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-slate-600">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
                 {isLoading ? "Searching…" : (
-                  <><span className="font-bold text-slate-900">{total.toLocaleString()}</span> awards found · showing {results.length}</>
+                  <><span className="font-semibold text-foreground">{total.toLocaleString()}</span> awards found · showing {results.length}</>
                 )}
-              </div>
+              </p>
               <div className="flex items-center gap-2">
                 <Select value={sortField} onValueChange={setSortField}>
-                  <SelectTrigger className="h-8 text-xs w-[160px] border-slate-300">
+                  <SelectTrigger className="h-8 text-xs w-[160px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -658,7 +708,8 @@ export default function USASpendingSearchPage() {
                 </Select>
                 <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
                   onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}>
-                  {sortDir === "desc" ? "↓ Desc" : "↑ Asc"}
+                  <ArrowUpDown className="h-3 w-3" />
+                  {sortDir === "desc" ? "Desc" : "Asc"}
                 </Button>
                 {results.length > 0 && (
                   <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5"
@@ -666,136 +717,100 @@ export default function USASpendingSearchPage() {
                     <Download className="h-3.5 w-3.5" /> Export CSV
                   </Button>
                 )}
-                <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer"
-                  className="h-8 inline-flex items-center gap-1.5 text-xs px-3 rounded-md border border-slate-200 text-blue-600 hover:bg-blue-50 transition-colors">
-                  View on USASpending <ExternalLink className="h-3 w-3" />
+                <a href="https://www.usaspending.gov/search" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                    USASpending.gov <ExternalLink className="h-3 w-3" />
+                  </Button>
                 </a>
               </div>
             </div>
           )}
 
-          {/* Error */}
-          {fetchError && (
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold mb-1">Search Error</p>
-                <p className="text-xs">{fetchError}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Empty / initial state */}
-          {!hasSearched && !isLoading && (
-            <Card className="border-dashed border-slate-300 bg-white">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="h-16 w-16 rounded-full bg-[#112e51]/10 flex items-center justify-center mb-4">
-                  <Search className="h-8 w-8 text-[#112e51]" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">Search Federal Awards</h3>
-                <p className="text-sm text-slate-500 text-center max-w-md mb-6">
-                  Use the filters on the left to search contracts, grants, loans and other financial assistance from USASpending.gov.
-                  Data is fetched live — no API key required.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
-                  {[
-                    { label: "Defense contracts 2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Defense"); } },
-                    { label: "HHS grants 2024", action: () => { setFilter("awardTypes", ["02","03","04","05"]); setFilter("fiscalYears",["2024"]); setFilter("awardingAgency","Department of Health and Human Services"); } },
-                    { label: "NASA contracts 2023–2024", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("fiscalYears",["2023","2024"]); setFilter("awardingAgency","National Aeronautics and Space Administration"); } },
-                    { label: "VA IT contracts", action: () => { setFilter("awardTypes", ["A","B","C","D"]); setFilter("naicsCode","541512"); setNaicsInput("541512"); setFilter("awardingAgency","Department of Veterans Affairs"); } },
-                  ].map(({ label, action }) => (
-                    <button key={label} onClick={() => { action(); setTimeout(handleSearch, 100); }}
-                      className="text-left text-sm px-3 py-2.5 rounded-lg border border-slate-200 bg-white hover:border-[#112e51] hover:bg-blue-50 transition-colors flex items-center gap-2">
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-                      {label}
-                    </button>
-                  ))}
+          {/* Loading skeleton */}
+          {isLoading && (
+            <Card>
+              <CardContent className="py-12">
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Loading skeleton */}
-          {isLoading && (
-            <div className="space-y-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-lg border border-slate-200 p-4 space-y-2 animate-pulse">
-                  <div className="h-3.5 bg-slate-200 rounded w-1/3" />
-                  <div className="h-3 bg-slate-100 rounded w-2/3" />
-                  <div className="h-3 bg-slate-100 rounded w-1/2" />
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Results table */}
           {!isLoading && results.length > 0 && (
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-[#112e51] text-white">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wide">Recipient</th>
-                      <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wide">Award Amount</th>
-                      <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wide hidden sm:table-cell">Type</th>
-                      <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wide hidden md:table-cell">Awarding Agency</th>
-                      <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wide hidden lg:table-cell">Description</th>
-                      <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wide hidden lg:table-cell">Start Date</th>
-                      <th className="px-4 py-3 text-right font-semibold text-xs uppercase tracking-wide">Link</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {results.map((r, i) => {
-                      const name = String(r["Recipient Name"] || "—");
-                      const amount = r["Award Amount"];
-                      const type = r["Award Type"] || "";
-                      const agency = String(r["Awarding Agency"] || "—");
-                      const desc = String(r["Description"] || "—");
-                      const startDate = r["Start Date"] ? new Date(r["Start Date"]).toLocaleDateString() : "—";
-                      const link = awardPermalink(r);
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Results</CardTitle>
+                <CardDescription>{results.length} of {total.toLocaleString()} awards</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Recipient</TableHead>
+                        <TableHead>Award Amount</TableHead>
+                        <TableHead className="hidden sm:table-cell">Type</TableHead>
+                        <TableHead className="hidden md:table-cell">Awarding Agency</TableHead>
+                        <TableHead className="hidden lg:table-cell">Description</TableHead>
+                        <TableHead className="hidden lg:table-cell">Start Date</TableHead>
+                        <TableHead className="text-right">Link</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {results.map((r, i) => {
+                        const name = String(r["Recipient Name"] || "—");
+                        const amount = r["Award Amount"];
+                        const type = r["Award Type"] || "";
+                        const agency = String(r["Awarding Agency"] || "—");
+                        const desc = String(r["Description"] || "—");
+                        const startDate = r["Start Date"] ? new Date(r["Start Date"]).toLocaleDateString() : "—";
+                        const link = awardPermalink(r);
 
-                      return (
-                        <tr key={i} className={`hover:bg-blue-50 transition-colors ${i % 2 === 0 ? "" : "bg-slate-50/50"}`}>
-                          <td className="px-4 py-3 font-medium text-slate-800 max-w-[180px]">
-                            <span className="block truncate" title={name}>{name}</span>
-                          </td>
-                          <td className="px-4 py-3 text-emerald-700 font-bold whitespace-nowrap">
-                            {formatCurrency(amount)}
-                          </td>
-                          <td className="px-4 py-3 hidden sm:table-cell">
-                            {type ? <Badge variant="outline" className="text-xs font-normal whitespace-nowrap">{type}</Badge> : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 hidden md:table-cell max-w-[160px]">
-                            <span className="block truncate text-xs" title={agency}>{agency}</span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-500 hidden lg:table-cell max-w-[200px]">
-                            <span className="block truncate text-xs" title={desc}>{desc}</span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-500 hidden lg:table-cell text-xs whitespace-nowrap">
-                            {startDate}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <a href={link} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap">
-                              View <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        return (
+                          <TableRow key={i} className="hover:bg-muted/50">
+                            <TableCell className="font-medium max-w-[180px]">
+                              <span className="block truncate" title={name}>{name}</span>
+                            </TableCell>
+                            <TableCell className="font-semibold text-green-600 whitespace-nowrap">
+                              {formatCurrency(amount)}
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              {type ? <Badge variant="outline" className="text-xs font-normal whitespace-nowrap">{type}</Badge> : "—"}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell max-w-[160px]">
+                              <span className="block truncate text-xs text-muted-foreground" title={agency}>{agency}</span>
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell max-w-[200px]">
+                              <span className="block truncate text-xs text-muted-foreground" title={desc}>{desc}</span>
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell text-xs text-muted-foreground whitespace-nowrap">
+                              {startDate}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <a href={link} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline whitespace-nowrap">
+                                View <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             </Card>
           )}
 
           {/* No results */}
           {!isLoading && hasSearched && results.length === 0 && !fetchError && (
-            <Card className="border-slate-200">
+            <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Search className="h-10 w-10 text-slate-300 mb-3" />
-                <p className="font-semibold text-slate-700">No awards found</p>
-                <p className="text-sm text-slate-500 mt-1 text-center max-w-sm">
+                <Search className="h-10 w-10 text-muted-foreground mb-3" />
+                <p className="font-semibold">No awards found</p>
+                <p className="text-sm text-muted-foreground mt-1 text-center max-w-sm">
                   Try broadening your search — remove some filters or change the fiscal year range.
                 </p>
               </CardContent>
@@ -804,18 +819,5 @@ export default function USASpendingSearchPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-// ─── FilterChip helper ────────────────────────────────────────────────────────
-
-function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#112e51]/10 text-[#112e51] border border-[#112e51]/20">
-      {label}
-      <button onClick={onRemove} className="hover:text-red-600 transition-colors ml-0.5">
-        <X className="h-3 w-3" />
-      </button>
-    </span>
   );
 }
