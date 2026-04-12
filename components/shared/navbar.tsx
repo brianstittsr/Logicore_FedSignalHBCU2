@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import {
   Menu,
   ChevronDown,
-  Factory,
+  Shield,
   Cpu,
   Brain,
   FileCheck,
@@ -25,47 +25,64 @@ import {
   BarChart3,
   Globe,
   Zap,
+  Truck,
+  Code,
+  Award,
+  Briefcase,
+  GraduationCap,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const services = [
   {
-    title: "Supplier Readiness",
-    href: "/",
-    description: "OEM qualification and supplier readiness assessments",
-    icon: Factory,
+    title: "Cybersecurity",
+    href: "/cybersecurity",
+    description: "Information assurance, CMMC compliance, and cyber defense solutions",
+    icon: Shield,
     items: [
-      { title: "Request Readiness Assessment", href: "/contact" },
-      { title: "For OEM Buyers", href: "/oem" },
-      { title: "Join Affiliate Network", href: "/affiliates" },
+      { title: "Cyber Defense Solutions", href: "/cybersecurity" },
+      { title: "CMMC Training", href: "/cmmc-training" },
+      { title: "Information Assurance", href: "/cybersecurity" },
     ],
   },
   {
-    title: "V+ EDGE™",
-    href: "/v-edge",
-    description: "Modular platform that accelerates readiness execution",
-    icon: Wrench,
+    title: "Engineering",
+    href: "/engineering",
+    description: "Software engineering services for defense and government programs",
+    icon: Code,
     items: [
-      { title: "Explore V+ EDGE", href: "/v-edge" },
-      { title: "Quality & ISO", href: "/v-edge" },
-      { title: "Reshoring", href: "/v-edge" },
+      { title: "Software Engineering", href: "/engineering" },
+      { title: "Systems Engineering", href: "/engineering" },
+      { title: "Data Analytics", href: "/engineering" },
+    ],
+  },
+  {
+    title: "Logistics Engineering",
+    href: "/logistics",
+    description: "Performance-based logistics and value engineering",
+    icon: Truck,
+    items: [
+      { title: "Performance-Based Logistics", href: "/logistics" },
+      { title: "Value Engineering", href: "/logistics" },
+      { title: "Sustainment Services", href: "/logistics" },
     ],
   },
 ];
 
 const resources = [
-  { title: "About", href: "/about", icon: Globe },
-  { title: "Leadership", href: "/leadership", icon: Users },
-  { title: "AntiFragile", href: "/antifragile", icon: Zap },
-  { title: "Accessibility", href: "/accessibility", icon: FileCheck },
+  { title: "News", href: "/news", icon: Newspaper },
+  { title: "Our Community", href: "/community", icon: GraduationCap },
+  { title: "Our Jobs", href: "/jobs", icon: Briefcase },
+  { title: "Why Choose LogiCore?", href: "/why-logicore", icon: Award },
 ];
 
 const companyLinks = [
-  { title: "About Us", href: "/about", icon: Globe },
+  { title: "Our Company", href: "/about", icon: Globe },
   { title: "Leadership Team", href: "/leadership", icon: Users },
-  { title: "Core Team", href: "/company", icon: Users },
-  { title: "OEM Buyers", href: "/oem", icon: Factory },
-  { title: "Affiliates", href: "/affiliates", icon: Users },
+  { title: "Customer/Programs", href: "/programs", icon: BarChart3 },
+  { title: "Customer Care/Quality", href: "/quality", icon: Award },
+  { title: "HBCU Partnerships", href: "/hbcu", icon: GraduationCap },
 ];
 
 export function Navbar() {
@@ -76,17 +93,12 @@ export function Navbar() {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/VPlus_logo.webp"
-            alt="Strategic Value+ Logo"
-            width={48}
-            height={48}
-            className="h-12 w-auto"
-            priority
-          />
+          <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-lg">LC</span>
+          </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold leading-none">Strategic Value+</span>
-            <span className="text-xs text-muted-foreground">Transforming U.S. Manufacturing</span>
+            <span className="text-lg font-bold leading-none">LogiCore HSV</span>
+            <span className="text-xs text-muted-foreground">Cyber Security, Logistics & Engineering</span>
           </div>
         </Link>
 
@@ -184,7 +196,7 @@ export function Navbar() {
             <Link href="/sign-up">Sign Up</Link>
           </Button>
           <Button asChild>
-            <Link href="/contact">Get Assessment</Link>
+            <Link href="/contact">Contact Us</Link>
           </Button>
         </div>
 
@@ -268,7 +280,7 @@ export function Navbar() {
                 </Button>
                 <Button className="w-full" asChild>
                   <Link href="/contact" onClick={() => setMobileOpen(false)}>
-                    Get Assessment
+                    Contact Us
                   </Link>
                 </Button>
               </div>

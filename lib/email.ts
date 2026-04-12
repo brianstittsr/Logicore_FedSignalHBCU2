@@ -3,15 +3,15 @@ import { Client, GraphError } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
 
 /**
- * Shared email utility using Microsoft Graph API for Strategic Value Plus.
- * Sends emails as nelinia@strategicvalueplus.com via Azure AD app registration.
+ * Shared email utility using Microsoft Graph API for LogiCore Corporation.
+ * Sends emails as info@logicorehsv.com via Azure AD app registration.
  *
  * Required environment variables:
  *   AZURE_TENANT_ID     - Azure AD tenant (directory) ID
  *   AZURE_CLIENT_ID     - App registration application (client) ID
  *   AZURE_CLIENT_SECRET - App registration client secret value
- *   SMTP_FROM_EMAIL     - Sender email address (default: nelinia@strategicvalueplus.com)
- *   SMTP_FROM_NAME      - Sender display name (default: "Strategic Value+")
+ *   SMTP_FROM_EMAIL     - Sender email address (default: info@logicorehsv.com)
+ *   SMTP_FROM_NAME      - Sender display name (default: "LogiCore Corporation")
  *
  * Azure app registration requirements:
  *   - API permission: Microsoft Graph → Application permission → Mail.Send
@@ -107,8 +107,8 @@ const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
  * Get the configured "from" address for outgoing emails.
  */
 export function getFromAddress(): string {
-  const name = process.env.SMTP_FROM_NAME || "Strategic Value+";
-  const email = process.env.SMTP_FROM_EMAIL || "nelinia@strategicvalueplus.com";
+  const name = process.env.SMTP_FROM_NAME || "LogiCore Corporation";
+  const email = process.env.SMTP_FROM_EMAIL || "info@logicorehsv.com";
   return `${name} <${email}>`;
 }
 
@@ -137,7 +137,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     };
   }
 
-  const fromEmail = process.env.SMTP_FROM_EMAIL || "nelinia@strategicvalueplus.com";
+  const fromEmail = process.env.SMTP_FROM_EMAIL || "info@logicorehsv.com";
 
   // Build recipient list
   const toRecipients = (Array.isArray(options.to) ? options.to : [options.to]).map(

@@ -294,6 +294,12 @@ const aiToolsItems = [
 // ============================================================================
 const adminToolsItems = [
   {
+    title: "FedSignal Admin",
+    href: "/portal/admin/fedsignal",
+    icon: Sparkles,
+    badge: "HBCU",
+  },
+  {
     title: "Team Members",
     href: "/portal/admin/team-members",
     icon: UserCog,
@@ -540,15 +546,11 @@ export function PortalSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
         <Link href="/portal" className="flex items-center gap-2 px-2 py-4">
-          <NextImage
-            src="/VPlus_logo.webp"
-            alt="Strategic Value+ Logo"
-            width={40}
-            height={40}
-            style={{ width: 'auto', height: 'auto' }}
-          />
+          <div className="w-10 h-10 rounded-md bg-[#1a56db] flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-lg">LC</span>
+          </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold leading-none">Strategic Value+</span>
+            <span className="text-lg font-bold leading-none">LogiCore HSV</span>
             <span className="text-xs text-sidebar-foreground/60">Business Portal</span>
           </div>
         </Link>

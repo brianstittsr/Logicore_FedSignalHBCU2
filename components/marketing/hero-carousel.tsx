@@ -30,51 +30,63 @@ export interface HeroSlide {
 const defaultSlides: HeroSlide[] = [
   {
     id: "1",
-    badge: "Supplier Readiness & OEM Qualification",
-    headline: "Become OEM-ready.",
-    highlightedText: "Qualify",
-    subheadline: "We help manufacturers with 25–500 employees close readiness gaps across quality, delivery, and compliance—so you can win and keep OEM business.",
-    benefits: ["Readiness Assessment", "Qualification Roadmap", "Hands-on Execution"],
-    primaryCta: { text: "Request Assessment", href: "/contact" },
-    secondaryCta: { text: "For OEM Buyers", href: "/oem" },
+    badge: "This Is Our Battlespace",
+    headline: "Cyber Security, Logistics &",
+    highlightedText: "Software Engineering",
+    subheadline: "LogiCore Corporation provides analytical, advisory, and operational support services across cybersecurity, logistics engineering, and software engineering for the Department of Defense.",
+    benefits: ["Cybersecurity & CMMC", "Performance-Based Logistics", "HBCU Partnerships"],
+    primaryCta: { text: "Find Out More", href: "/contact" },
+    secondaryCta: { text: "Our Company", href: "/about" },
     isPublished: true,
     order: 1,
   },
   {
     id: "2",
-    badge: "V+ EDGE™ Platform",
-    headline: "Execute the roadmap.",
-    highlightedText: "Improve",
-    subheadline: "V+ EDGE helps you implement readiness improvements with modular execution across quality systems, operational discipline, and capability upgrades.",
-    benefits: ["Modular Execution", "KPIs & Visibility", "No ERP Overhaul"],
-    primaryCta: { text: "Explore V+ EDGE", href: "/v-edge" },
-    secondaryCta: { text: "Request Assessment", href: "/contact" },
+    badge: "★ FedSignal — Government Funding Intelligence",
+    headline: "HBCU funding intelligence.",
+    highlightedText: "FedSignal",
+    subheadline: "AI-powered government funding radar for HBCUs. Track opportunities, match capabilities, build consortiums, and win federal awards — all in one command center.",
+    benefits: ["47 Active Opportunities", "$14.2M Pipeline", "101 HBCU Network"],
+    primaryCta: { text: "Launch FedSignal", href: "/fedsignal" },
+    secondaryCta: { text: "Learn More", href: "/about" },
     isPublished: true,
     order: 2,
   },
   {
     id: "3",
-    badge: "Affiliate Network",
-    headline: "Bring the right experts.",
-    highlightedText: "Faster",
-    subheadline: "We match readiness needs to targeted specialists—so the right work gets done at the right stage without wasting time.",
-    benefits: ["Targeted Expertise", "Accountable Milestones", "Repeatable Delivery"],
-    primaryCta: { text: "Join Affiliate Network", href: "/affiliates" },
-    secondaryCta: { text: "Request Assessment", href: "/contact" },
+    badge: "Cybersecurity Solutions",
+    headline: "Defend the mission.",
+    highlightedText: "Protect",
+    subheadline: "Information assurance, CMMC compliance, and cyber defense solutions protecting critical DoD and federal systems from evolving threats.",
+    benefits: ["Cyber Defense", "CMMC Compliance", "Risk Management"],
+    primaryCta: { text: "Learn More", href: "/cybersecurity" },
+    secondaryCta: { text: "Contact Us", href: "/contact" },
     isPublished: true,
     order: 3,
   },
   {
     id: "4",
-    badge: "For OEM Buyers",
-    headline: "Build supplier capacity.",
-    highlightedText: "Confidently",
-    subheadline: "OEMs use our supplier readiness pipeline to qualify suppliers faster, reduce risk, and expand domestic capacity with stage-based visibility.",
-    benefits: ["Supplier Pipeline", "Risk Reduction", "Measured Readiness"],
-    primaryCta: { text: "See OEM Program", href: "/oem" },
-    secondaryCta: { text: "Talk to our team", href: "/contact" },
+    badge: "Logistics Engineering",
+    headline: "Sustain readiness.",
+    highlightedText: "Deliver",
+    subheadline: "Performance-based logistics and value engineering supporting Army Aviation, Missiles, and tactical systems across CONUS and OCONUS locations.",
+    benefits: ["PBL Solutions", "Value Engineering", "Sustainment Services"],
+    primaryCta: { text: "Explore Logistics", href: "/logistics" },
+    secondaryCta: { text: "Contact Us", href: "/contact" },
     isPublished: true,
     order: 4,
+  },
+  {
+    id: "5",
+    badge: "HBCU Partnerships",
+    headline: "Strengthening the pipeline.",
+    highlightedText: "Together",
+    subheadline: "Building pathways for HBCU talent into defense and technology careers through mentorship, research opportunities, and workforce development.",
+    benefits: ["Workforce Development", "Research Partnerships", "STEM Education"],
+    primaryCta: { text: "HBCU Programs", href: "/hbcu" },
+    secondaryCta: { text: "Talk to our team", href: "/contact" },
+    isPublished: true,
+    order: 5,
   },
 ];
 
@@ -117,9 +129,9 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
   const currentSlide = publishedSlides[currentIndex];
 
   return (
-    <section className="relative overflow-hidden bg-black text-white">
+    <section className="relative overflow-hidden bg-[#0f2a4a] text-white">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1a1a1a_1px,transparent_1px),linear-gradient(to_bottom,#1a1a1a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1a3a5c_1px,transparent_1px),linear-gradient(to_bottom,#1a3a5c_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
       
       <div className="relative py-20 md:py-32 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
@@ -133,7 +145,7 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
             {/* Headline */}
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
               {currentSlide.headline}{" "}
-              <span className="text-primary">{currentSlide.highlightedText}</span> Your Manufacturing.
+              <span className="text-[#4d94ff]">{currentSlide.highlightedText}</span>
             </h1>
 
             {/* Subheadline */}

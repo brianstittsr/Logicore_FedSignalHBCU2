@@ -16,7 +16,7 @@ import {
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about Strategic Value+ and our mission to transform U.S. manufacturing through supplier qualification, ISO certification, and operational excellence.",
+    "Learn about LogiCore Corporation and our mission to provide cybersecurity, logistics engineering, and software engineering services supporting the Department of Defense.",
 };
 
 const values = [
@@ -55,10 +55,10 @@ export default function AboutPage() {
         <div className="container">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="outline" className="mb-6 border-primary/50 text-primary">
-              About Strategic Value+
+              About LogiCore Corporation
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Transforming U.S. Manufacturing,{" "}
+              Cyber Security, Logistics &{" "}
               <span className="text-primary">One Supplier at a Time</span>
             </h1>
             <p className="mt-6 text-lg text-gray-300 max-w-2xl mx-auto">
@@ -114,17 +114,17 @@ export default function AboutPage() {
             </div>
             <div className="prose prose-lg max-w-none">
               <p className="text-muted-foreground text-lg leading-relaxed">
-                Strategic Value+ was founded with a simple observation: too many capable 
-                American manufacturers were being left behind. While large enterprises had 
-                access to world-class consulting and transformation resources, small and 
-                mid-sized manufacturers—the backbone of American industry—often struggled 
-                to meet the increasingly complex requirements of OEM customers.
+                LogiCore Corporation was founded in Huntsville, Alabama with a clear mission: 
+                to provide world-class cybersecurity, logistics engineering, and software engineering 
+                services to the Department of Defense and federal agencies. Our team of highly 
+                qualified professionals delivers analytical, advisory, and operational support 
+                across multiple system sectors.
               </p>
               <p className="text-muted-foreground text-lg leading-relaxed mt-6">
-                We built Strategic Value+ to change that. By creating a modular, accessible 
-                approach to manufacturing transformation and leveraging a network of expert 
-                affiliates, we've made enterprise-grade capabilities available to companies 
-                with 25 to 500 employees.
+                We serve the Army Aviation and Missile Command (AMCOM), providing performance-based 
+                logistics, value engineering, and sustainment services. Our commitment to HBCU 
+                partnerships strengthens our workforce pipeline and supports educational excellence 
+                in science, technology, engineering, and mathematics.
               </p>
               <p className="text-muted-foreground text-lg leading-relaxed mt-6">
                 Today, we've helped over 150 manufacturers achieve supplier qualification, 
@@ -171,8 +171,8 @@ export default function AboutPage() {
             Ready to Transform Your Manufacturing?
           </h2>
           <p className="mt-4 text-lg opacity-90 max-w-2xl mx-auto">
-            Join the growing community of manufacturers who've partnered with 
-            Strategic Value+ to achieve their goals.
+            Join the growing network of organizations who trust 
+            LogiCore Corporation for mission-critical support.
           </p>
           <Button
             size="lg"

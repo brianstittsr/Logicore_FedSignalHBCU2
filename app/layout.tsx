@@ -16,38 +16,38 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://strategicvalueplus.com"),
+  metadataBase: new URL("https://logicorehsv.com"),
   title: {
-    default: "Strategic Value+ | Transforming U.S. Manufacturing",
-    template: "%s | Strategic Value+",
+    default: "LogiCore HSV | Cyber Security, Logistics & Software Engineering",
+    template: "%s | LogiCore HSV",
   },
   description:
-    "We help small- and mid-sized U.S. manufacturers win OEM contracts through supplier qualification, ISO certification, and operational readiness.",
+    "LogiCore Corporation provides cybersecurity, logistics engineering, and software engineering services supporting the Department of Defense and federal agencies.",
   keywords: [
-    "manufacturing consulting",
-    "OEM supplier qualification",
-    "ISO certification",
-    "IATF 16949",
-    "Industry 4.0",
-    "lean manufacturing",
-    "digital transformation",
-    "reshoring",
-    "supply chain optimization",
-    "digital twins",
-    "AI manufacturing",
-    "Toyota supplier",
-    "automotive supplier qualification",
+    "cybersecurity",
+    "logistics engineering",
+    "software engineering",
+    "performance-based logistics",
+    "value engineering",
+    "defense contractor",
+    "Huntsville AL",
+    "DoD support services",
+    "HBCU partnerships",
+    "government contracting",
+    "federal funding intelligence",
+    "Army logistics",
+    "AMCOM",
   ],
-  authors: [{ name: "Strategic Value+ Solutions", url: "https://strategicvalueplus.com" }],
-  creator: "Strategic Value+ Solutions",
-  publisher: "Strategic Value+ Solutions",
+  authors: [{ name: "LogiCore Corporation", url: "https://logicorehsv.com" }],
+  creator: "LogiCore Corporation",
+  publisher: "LogiCore Corporation",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   alternates: {
-    canonical: "https://strategicvalueplus.com",
+    canonical: "https://logicorehsv.com",
   },
   robots: {
     index: true,
@@ -63,34 +63,34 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://strategicvalueplus.com",
-    siteName: "Strategic Value+",
-    title: "Strategic Value+ | Transforming U.S. Manufacturing",
+    url: "https://logicorehsv.com",
+    siteName: "LogiCore HSV",
+    title: "LogiCore HSV | Cyber Security, Logistics & Software Engineering",
     description:
-      "We help small- and mid-sized U.S. manufacturers win OEM contracts through supplier qualification, ISO certification, and operational readiness.",
+      "LogiCore Corporation provides cybersecurity, logistics engineering, and software engineering services supporting the Department of Defense and federal agencies.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Strategic Value+ - Transforming U.S. Manufacturing",
+        alt: "LogiCore HSV - Cyber Security, Logistics & Software Engineering",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Strategic Value+ | Transforming U.S. Manufacturing",
+    title: "LogiCore HSV | Cyber Security, Logistics & Software Engineering",
     description:
-      "We help small- and mid-sized U.S. manufacturers win OEM contracts through supplier qualification, ISO certification, and operational readiness.",
+      "LogiCore Corporation provides cybersecurity, logistics engineering, and software engineering services supporting the Department of Defense and federal agencies.",
     images: ["/og-image.png"],
-    creator: "@strategicvalueplus",
+    creator: "@logicorehsv",
   },
   verification: {
     google: "your-google-verification-code",
     // yandex: "your-yandex-verification-code",
     // bing: "your-bing-verification-code",
   },
-  category: "business",
+  category: "government",
 };
 
 export default function RootLayout({

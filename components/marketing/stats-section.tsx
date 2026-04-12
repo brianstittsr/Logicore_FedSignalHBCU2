@@ -1,36 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Factory, Users, Award, TrendingUp } from "lucide-react";
+import { Shield, Users, Award, TrendingUp } from "lucide-react";
 
 const stats = [
   {
-    label: "Years Experience",
-    value: 50,
-    suffix: "+",
-    icon: Award,
-    description: "Combined team expertise in manufacturing",
-  },
-  {
-    label: "Industry Sectors",
-    value: 12,
-    suffix: "+",
-    icon: Factory,
-    description: "Automotive, aerospace, medical & more",
-  },
-  {
-    label: "Expert Affiliates",
+    label: "Years of Service",
     value: 25,
     suffix: "+",
-    icon: Users,
-    description: "Nationwide network of specialists",
+    icon: Award,
+    description: "Supporting DoD and federal agencies",
   },
   {
-    label: "Certifications",
-    value: 15,
+    label: "System Sectors",
+    value: 5,
+    suffix: "",
+    icon: Shield,
+    description: "Aviation, Missiles, Comms, Test, Tactical",
+  },
+  {
+    label: "Dedicated Workforce",
+    value: 200,
+    suffix: "+",
+    icon: Users,
+    description: "Highly qualified professionals",
+  },
+  {
+    label: "Active Programs",
+    value: 30,
     suffix: "+",
     icon: TrendingUp,
-    description: "ISO, IATF, AS9100 & more",
+    description: "CONUS and OCONUS locations",
   },
 ];
 
@@ -66,7 +66,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
 
 export function StatsSection() {
   return (
-    <section className="py-16 bg-black text-white">
+    <section className="py-16 bg-[#0f2a4a] text-white">
       <div className="container">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat) => (

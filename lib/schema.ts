@@ -2254,6 +2254,19 @@ export const COLLECTIONS = {
   // SAM.gov Federal Opportunities
   SAM_SAVED_OPPORTUNITIES: "samSavedOpportunities",
   SAM_SEARCH_SCHEDULES: "samSearchSchedules",
+  // FedSignal — Government Funding Intelligence for HBCUs
+  FS_UNIVERSITIES: "fs_universities",
+  FS_OPPORTUNITIES: "fs_opportunities",
+  FS_CONTACTS: "fs_contacts",
+  FS_CAPABILITIES: "fs_capabilities",
+  FS_CONSORTIUMS: "fs_consortiums",
+  FS_ALERTS: "fs_alerts",
+  FS_PROPOSALS: "fs_proposals",
+  FS_WIN_LOSS: "fs_winLoss",
+  FS_CALENDAR_EVENTS: "fs_calendarEvents",
+  FS_ACTIVITIES: "fs_activities",
+  FS_REPORTS: "fs_reports",
+  FS_SETTINGS: "fs_settings",
 } as const;
 
 // ============================================================================

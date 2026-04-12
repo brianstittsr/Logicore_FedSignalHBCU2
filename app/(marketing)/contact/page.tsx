@@ -318,10 +318,10 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Email</p>
                       <Link
-                        href="mailto:info@strategicvalueplus.com"
+                        href="mailto:info@logicorehsv.com"
                         className="text-muted-foreground hover:text-primary"
                       >
-                        info@strategicvalueplus.com
+                        info@logicorehsv.com
                       </Link>
                     </div>
                   </div>
@@ -330,10 +330,10 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Phone</p>
                       <Link
-                        href="tel:+1-302-215-4700"
+                        href="tel:+1-256-533-5789"
                         className="text-muted-foreground hover:text-primary"
                       >
-                        (302) 215-4700
+                        (256) 533-5789
                       </Link>
                     </div>
                   </div>

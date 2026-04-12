@@ -4,55 +4,55 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Wrench, Factory, Users, CheckCircle } from "lucide-react";
+import { ArrowRight, Shield, Code, Truck, CheckCircle } from "lucide-react";
 
 const services = [
   {
-    title: "Supplier Readiness",
-    tagline: "Close gaps. Get qualified.",
+    title: "Cybersecurity",
+    tagline: "Defend the mission.",
     description:
-      "A structured program to move your company from capable to OEM-ready: assessment, roadmap, and stage-based execution toward qualification.",
-    icon: Factory,
+      "Information assurance, CMMC compliance, and cyber defense solutions protecting critical DoD and federal systems.",
+    icon: Shield,
     color: "text-primary",
     bgColor: "bg-primary/10",
-    href: "/contact",
+    href: "/cybersecurity",
     features: [
-      "Readiness assessment and gap analysis",
-      "Qualification roadmap with milestones",
-      "Quality/ISO pathway and audit preparation",
-      "Supplier development with targeted experts",
+      "Cyber defense solutions",
+      "CMMC compliance and training",
+      "Information assurance",
+      "Risk management framework",
     ],
   },
   {
-    title: "V+ EDGE™",
-    tagline: "Execute the roadmap.",
+    title: "Software Engineering",
+    tagline: "Build mission-critical systems.",
     description:
-      "A modular execution platform that supports readiness work across quality systems, operations discipline, and capability upgrades.",
-    icon: Wrench,
+      "Full-spectrum software engineering services for defense and government programs, from design through deployment.",
+    icon: Code,
     color: "text-secondary",
     bgColor: "bg-secondary/10",
-    href: "/v-edge",
+    href: "/engineering",
     features: [
-      "Modular implementation for rapid progress",
-      "KPIs and visibility for accountability",
-      "Works with existing systems",
-      "Scales as your readiness needs grow",
+      "Software engineering and development",
+      "Systems engineering and integration",
+      "Data analytics and visualization",
+      "Agile program management",
     ],
   },
   {
-    title: "Affiliate Network",
-    tagline: "Bring the right expertise.",
+    title: "Logistics Engineering",
+    tagline: "Sustain readiness.",
     description:
-      "A vetted delivery network that matches your readiness gaps to specialized experts—so progress is fast and measurable.",
-    icon: Users,
+      "Performance-based logistics and value engineering supporting Army Aviation, Missiles, and tactical systems.",
+    icon: Truck,
     color: "text-accent",
     bgColor: "bg-accent/10",
-    href: "/affiliates",
+    href: "/logistics",
     features: [
-      "Targeted assignments by stage and need",
-      "Clear deliverables and milestones",
-      "Collaborative execution",
-      "Designed for repeatable outcomes",
+      "Performance-based logistics (PBL)",
+      "Value engineering (VE/LCCR)",
+      "Sustainment and readiness",
+      "Reliability, availability, maintainability",
     ],
   },
 ];
@@ -64,13 +64,13 @@ export function ServicesOverview() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge variant="outline" className="mb-4">
-            Supplier Readiness for Manufacturers
+            Centers of Excellence
           </Badge>
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-            The readiness path to OEM qualification
+            Mission-Ready Support Services
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Start with a readiness assessment and roadmap. Then execute improvements with the right experts and tools.
+            Our highly qualified workforce provides analytical, advisory, and operational support across multiple system sectors within the Department of the Army.
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export function ServicesOverview() {
                 </ul>
                 <Button variant="ghost" className="group/btn p-0 h-auto" asChild>
                   <Link href={service.href}>
-                    {service.title === "Supplier Readiness" ? "Request assessment" : "Learn more"}
+                    {"Learn more"}
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                   </Link>
                 </Button>
@@ -112,11 +112,11 @@ export function ServicesOverview() {
         {/* CTA */}
         <div className="mt-16 text-center">
           <p className="text-muted-foreground mb-4">
-            Not sure which solution is right for you?
+            Ready to learn how we can support your mission?
           </p>
           <Button size="lg" asChild>
             <Link href="/contact">
-              Request Supplier Readiness Assessment
+              Contact Us Today
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>

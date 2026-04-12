@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Terms of Service | Strategic Value+",
-  description: "Terms of Service for Strategic Value+ platform and services.",
+  title: "Terms of Service | LogiCore HSV",
+  description: "Terms of Service for LogiCore Corporation platform and services.",
 };
 
 export default function TermsPage() {
@@ -28,7 +28,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the Strategic Value Plus Solutions LLC (&quot;V+&quot;) platform and services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.
+              By accessing or using the LogiCore Corporation (&quot;LogiCore&quot;) platform and services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.
             </p>
           </section>
 
@@ -65,7 +65,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">5. Intellectual Property</h2>
             <p>
-              All content, features, and functionality of the V+ platform are owned by Strategic Value Plus Solutions LLC and are protected by intellectual property laws. You may not copy, modify, or distribute our content without permission.
+              All content, features, and functionality of the LogiCore platform are owned by LogiCore Corporation and are protected by intellectual property laws. You may not copy, modify, or distribute our content without permission.
             </p>
           </section>
 
@@ -89,9 +89,9 @@ export default function TermsPage() {
               If you have any questions about these Terms of Service, please contact us at:
             </p>
             <p className="mt-2">
-              <strong>Strategic Value Plus Solutions LLC</strong><br />
-              Email: legal@strategicvalueplus.com<br />
-              Website: <Link href="https://strategicvalueplus.com" className="text-primary hover:underline">strategicvalueplus.com</Link>
+              <strong>LogiCore Corporation</strong><br />
+              Email: legal@logicorehsv.com<br />
+              Website: <Link href="https://logicorehsv.com" className="text-primary hover:underline">logicorehsv.com</Link>
             </p>
           </section>
         </div>

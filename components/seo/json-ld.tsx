@@ -5,55 +5,50 @@ export function OrganizationJsonLd() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Strategic Value+ Solutions",
-    alternateName: "Strategic Value Plus",
-    url: "https://strategicvalueplus.com",
-    logo: "https://strategicvalueplus.com/logo.png",
+    name: "LogiCore Corporation",
+    alternateName: "LogiCore HSV",
+    url: "https://logicorehsv.com",
+    logo: "https://logicorehsv.com/logo.png",
     description:
-      "We help small- and mid-sized U.S. manufacturers win OEM contracts through supplier qualification, ISO certification, and operational readiness.",
-    foundingDate: "2020",
-    founders: [
-      {
-        "@type": "Person",
-        name: "Nel Varenas",
-        jobTitle: "CEO",
-      },
-    ],
+      "LogiCore Corporation provides cybersecurity, logistics engineering, and software engineering services supporting the Department of Defense and federal agencies.",
+    foundingDate: "2000",
     address: {
       "@type": "PostalAddress",
+      streetAddress: "100 Church Street, Suite 100",
+      addressLocality: "Huntsville",
+      addressRegion: "AL",
+      postalCode: "35801",
       addressCountry: "US",
     },
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: "+1-302-215-4700",
+        telephone: "+1-256-533-5789",
         contactType: "sales",
         availableLanguage: ["English"],
       },
       {
         "@type": "ContactPoint",
-        email: "info@strategicvalueplus.com",
+        email: "info@logicorehsv.com",
         contactType: "customer service",
       },
     ],
     sameAs: [
-      "https://www.linkedin.com/company/strategicvalueplus",
-      "https://twitter.com/strategicvalueplus",
-      "https://www.youtube.com/@strategicvalueplus",
+      "https://www.linkedin.com/company/logicore-corporation",
     ],
     areaServed: {
       "@type": "Country",
       name: "United States",
     },
     knowsAbout: [
-      "Manufacturing Consulting",
-      "ISO Certification",
-      "IATF 16949",
-      "Lean Manufacturing",
-      "Industry 4.0",
-      "Digital Transformation",
-      "Supply Chain Optimization",
-      "OEM Supplier Qualification",
+      "Cybersecurity",
+      "Logistics Engineering",
+      "Software Engineering",
+      "Performance-Based Logistics",
+      "Value Engineering",
+      "CMMC Compliance",
+      "Defense Contracting",
+      "HBCU Partnerships",
     ],
   };
 
@@ -71,34 +66,33 @@ export function LocalBusinessJsonLd() {
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
-    name: "Strategic Value+ Solutions",
-    image: "https://strategicvalueplus.com/logo.png",
-    url: "https://strategicvalueplus.com",
-    telephone: "+1-302-215-4700",
-    email: "info@strategicvalueplus.com",
+    name: "LogiCore Corporation",
+    image: "https://logicorehsv.com/logo.png",
+    url: "https://logicorehsv.com",
+    telephone: "+1-256-533-5789",
+    email: "info@logicorehsv.com",
     priceRange: "$$$$",
     address: {
       "@type": "PostalAddress",
+      streetAddress: "100 Church Street, Suite 100",
+      addressLocality: "Huntsville",
+      addressRegion: "AL",
+      postalCode: "35801",
       addressCountry: "US",
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: 35.7796,
-      longitude: -78.6382,
+      latitude: 34.7304,
+      longitude: -86.5861,
     },
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
         dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "09:00",
-        closes: "17:00",
+        opens: "08:00",
+        closes: "16:30",
       },
     ],
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "47",
-    },
   };
 
   return (
@@ -123,7 +117,7 @@ export function ServiceJsonLd({
   name,
   description,
   url,
-  provider = "Strategic Value+ Solutions",
+  provider = "LogiCore Corporation",
   areaServed = "United States",
 }: ServiceJsonLdProps) {
   const serviceSchema = {
@@ -135,13 +129,13 @@ export function ServiceJsonLd({
     provider: {
       "@type": "Organization",
       name: provider,
-      url: "https://strategicvalueplus.com",
+      url: "https://logicorehsv.com",
     },
     areaServed: {
       "@type": "Country",
       name: areaServed,
     },
-    serviceType: "Manufacturing Consulting",
+    serviceType: "Defense & Government Services",
   };
 
   return (
@@ -252,10 +246,10 @@ export function ArticleJsonLd({
     },
     publisher: {
       "@type": "Organization",
-      name: "Strategic Value+ Solutions",
+      name: "LogiCore Corporation",
       logo: {
         "@type": "ImageObject",
-        url: "https://strategicvalueplus.com/logo.png",
+        url: "https://logicorehsv.com/logo.png",
       },
     },
     mainEntityOfPage: {
@@ -278,14 +272,14 @@ export function WebsiteJsonLd() {
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Strategic Value+",
-    alternateName: "Strategic Value Plus Solutions",
-    url: "https://strategicvalueplus.com",
+    name: "LogiCore HSV",
+    alternateName: "LogiCore Corporation",
+    url: "https://logicorehsv.com",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: "https://strategicvalueplus.com/search?q={search_term_string}",
+        urlTemplate: "https://logicorehsv.com/search?q={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },

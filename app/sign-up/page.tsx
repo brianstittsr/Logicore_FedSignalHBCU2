@@ -210,7 +210,7 @@ export default function SignUpPage() {
               <div className="absolute -inset-2 bg-gradient-to-r from-[#C8A951] to-[#a08840] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
               <Image
                 src="/VPlus_logo.webp"
-                alt="Strategic Value+ Logo"
+                alt="LogiCore HSV Logo"
                 width={80}
                 height={80}
                 className="relative h-20 w-auto"
@@ -218,8 +218,8 @@ export default function SignUpPage() {
               />
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground">Strategic Value+</h1>
-              <p className="text-sm text-muted-foreground">Transforming U.S. Manufacturing</p>
+              <h1 className="text-2xl font-bold text-foreground">LogiCore HSV</h1>
+              <p className="text-sm text-muted-foreground">Cyber Security, Logistics & Engineering</p>
             </div>
           </Link>
         </div>
@@ -245,7 +245,7 @@ export default function SignUpPage() {
             </CardTitle>
             <CardDescription className="text-center">
               {step === 1 
-                ? "Select how you'd like to join Strategic Value+" 
+                ? "Select how you'd like to join LogiCore HSV" 
                 : "Fill in your details to get started"}
             </CardDescription>
           </CardHeader>
@@ -310,7 +310,7 @@ export default function SignUpPage() {
                         </Label>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Partner with Strategic Value+ to deliver comprehensive manufacturing solutions. 
+                        Partner with LogiCore HSV to deliver comprehensive defense and engineering solutions. 
                         Ideal for service providers, technology vendors, and industry organizations.
                       </p>
                       <ul className="text-xs text-muted-foreground mt-2 space-y-1">

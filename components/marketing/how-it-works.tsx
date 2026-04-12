@@ -3,30 +3,30 @@ import { Search, Map, Rocket, Award } from "lucide-react";
 const steps = [
   {
     number: "01",
-    title: "Discovery Assessment",
+    title: "Mission Assessment",
     description:
-      "We evaluate your current operations, identify gaps, and understand your OEM qualification goals.",
+      "We analyze your operational environment, identify capability gaps, and understand your mission requirements.",
     icon: Search,
   },
   {
     number: "02",
-    title: "Readiness Roadmap",
+    title: "Solution Architecture",
     description:
-      "Receive a customized transformation plan with clear milestones, timelines, and ROI projections.",
+      "Receive a tailored support plan with clear milestones, resource allocation, and performance metrics.",
     icon: Map,
   },
   {
     number: "03",
-    title: "Implementation",
+    title: "Integrated Execution",
     description:
-      "Our expert team and affiliate network execute the plan with hands-on support and real-time tracking.",
+      "Our highly qualified workforce deploys across cybersecurity, logistics, and engineering with hands-on support.",
     icon: Rocket,
   },
   {
     number: "04",
-    title: "OEM Qualification",
+    title: "Sustained Readiness",
     description:
-      "Achieve supplier certification, win contracts, and establish long-term OEM partnerships.",
+      "Achieve operational excellence with ongoing support, performance monitoring, and continuous improvement.",
     icon: Award,
   },
 ];
@@ -41,8 +41,8 @@ export function HowItWorks() {
             How It Works
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            A proven four-step process to transform your manufacturing operations 
-            and become an OEM-qualified supplier.
+            A proven four-step process to deliver mission-critical support 
+            across cybersecurity, logistics, and engineering.
           </p>
         </div>
 

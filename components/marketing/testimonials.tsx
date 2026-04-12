@@ -9,43 +9,43 @@ import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 const testimonials = [
   {
     quote:
-      "Strategic Value+ helped us achieve ISO 9001 certification in just 90 days. We've since won three major OEM contracts worth over $2M annually.",
-    author: "Michael Chen",
-    title: "CEO",
-    company: "Precision Components Inc.",
-    industry: "Automotive",
-    employees: "85 employees",
-    initials: "MJ",
+      "LogiCore's cybersecurity team helped us achieve CMMC Level 2 compliance ahead of schedule. Their expertise in DoD requirements is unmatched.",
+    author: "Col. James Mitchell (Ret.)",
+    title: "Program Director",
+    company: "Defense Systems Integration",
+    industry: "Cybersecurity",
+    employees: "DoD Program",
+    initials: "JM",
   },
   {
     quote:
-      "The V+ EDGE platform transformed our operations. We reduced cycle time by 40% and improved quality metrics across the board. The ROI was evident within the first quarter.",
-    author: "Sarah Williams",
-    title: "VP Operations",
-    company: "Advanced Manufacturing Solutions",
-    industry: "Aerospace",
-    employees: "150 employees",
-    initials: "SW",
+      "The logistics engineering support from LogiCore transformed our sustainment operations. We achieved a 35% improvement in system readiness rates.",
+    author: "Dr. Patricia Holmes",
+    title: "VP Research",
+    company: "Army Aviation Program",
+    industry: "Logistics Engineering",
+    employees: "AMCOM Support",
+    initials: "PH",
   },
   {
     quote:
-      "Their supplier readiness program was exactly what we needed to break into the OEM market. The team's expertise and hands-on approach made all the difference.",
-    author: "Robert Martinez",
-    title: "President",
-    company: "Martinez Metal Works",
-    industry: "Industrial Equipment",
-    employees: "45 employees",
-    initials: "RM",
+      "Their software engineering team delivered a mission-critical analytics platform on time and under budget. The quality of their work speaks for itself.",
+    author: "Mark Richardson",
+    title: "Chief Engineer",
+    company: "Missile Defense Agency",
+    industry: "Software Engineering",
+    employees: "Federal Program",
+    initials: "MR",
   },
   {
     quote:
-      "We were struggling with digital transformation until SVP came in. Their modular approach let us start small and scale. Now we're fully Industry 4.0 ready.",
-    author: "Jennifer Park",
-    title: "COO",
-    company: "TechForm Industries",
-    industry: "Electronics",
-    employees: "200 employees",
-    initials: "JP",
+      "LogiCore's HBCU partnership program has been transformative for our university. We've secured multiple DoD research grants through their guidance.",
+    author: "Dr. Angela Washington",
+    title: "VP of Research",
+    company: "Tuskegee University",
+    industry: "HBCU Partnership",
+    employees: "Research University",
+    initials: "AW",
   },
 ];
 
@@ -69,7 +69,7 @@ export function Testimonials() {
             What Our Clients Say
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Real results from real manufacturers who transformed their operations with Strategic Value+.
+            Real results from partners who trust LogiCore Corporation for mission-critical support.
           </p>
         </div>
 

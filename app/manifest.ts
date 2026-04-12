@@ -2,14 +2,14 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Strategic Value+ | Transforming U.S. Manufacturing",
-    short_name: "Strategic Value+",
+    name: "LogiCore HSV | Cyber Security, Logistics & Software Engineering",
+    short_name: "LogiCore HSV",
     description:
-      "We help small- and mid-sized U.S. manufacturers win OEM contracts through supplier qualification, ISO certification, and operational readiness.",
+      "LogiCore Corporation provides cybersecurity, logistics engineering, and software engineering services supporting the Department of Defense and federal agencies.",
     start_url: "/",
     display: "standalone",
-    background_color: "#000000",
-    theme_color: "#37ca37",
+    background_color: "#0f2a4a",
+    theme_color: "#1a56db",
     orientation: "portrait-primary",
     icons: [
       {
@@ -30,7 +30,7 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/webp",
       },
     ],
-    categories: ["business", "productivity"],
+    categories: ["government", "business"],
     lang: "en-US",
     dir: "ltr",
   };
