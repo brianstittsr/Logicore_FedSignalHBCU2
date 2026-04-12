@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function belongsToUniversity(universityId) {
+      return request.auth.token.universityId == universityId;
+    }
+    
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // Universities collection
+    match /universities/{universityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // Opportunities collection
+    match /opportunities/{opportunityId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && (isAdmin() || belongsToUniversity(request.resource.data.universityId));
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // Contacts collection (CRM)
+    match /contacts/{contactId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && belongsToUniversity(request.resource.data.universityId);
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+    }
+
+    // Capabilities collection
+    match /capabilities/{capabilityId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+    }
+
+    // Consortiums collection
+    match /consortiums/{consortiumId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (belongsToUniversity(resource.data.leadUniversityId) || 
+         request.auth.uid in resource.data.memberUniversityIds);
+      allow delete: if isAuthenticated() && belongsToUniversity(resource.data.leadUniversityId);
+    }
+
+    // Alerts collection
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && isAdmin();
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && belongsToUniversity(request.resource.data.universityId);
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // Win/Loss collection
+    match /winLoss/{recordId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && belongsToUniversity(request.resource.data.universityId);
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+    }
+
+    // Calendar events collection
+    match /calendarEvents/{eventId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && belongsToUniversity(request.resource.data.universityId);
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+    }
+
+    // Proposals collection
+    match /proposals/{proposalId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && belongsToUniversity(request.resource.data.universityId);
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+    }
+
+    // RFIs collection
+    match /rfis/{rfiId} {
+      allow read: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow create: if isAuthenticated() && belongsToUniversity(request.resource.data.universityId);
+      allow update: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+      allow delete: if isAuthenticated() && belongsToUniversity(resource.data.universityId);
+    }
+  }
+}

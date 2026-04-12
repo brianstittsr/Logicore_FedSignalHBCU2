@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+    
+    /* FedSignal Design System */
+    --bg-0: #f4f6f9;
+    --bg-1: #ffffff;
+    --bg-2: #f8f9fc;
+    --bg-3: #eef1f6;
+    --bg-4: #e3e8f0;
+    --bg-card: #ffffff;
+    --border-color: #dde1e9;
+    --border-hi: #bbc0cc;
+    
+    /* University brand — Tuskegee default */
+    --uni-primary: #7A0019;
+    --uni-secondary: #9a6b00;
+    --uni-accent: #A50021;
+    
+    /* Platform accent */
+    --radar: #1a56db;
+    --radar-dim: rgba(26,86,219,0.08);
+    --radar-glow: rgba(26,86,219,0.18);
+    
+    /* Signal colors */
+    --green: #166534;
+    --green-d: rgba(22,101,52,0.08);
+    --amber: #92400e;
+    --amber-d: rgba(146,64,14,0.08);
+    --red: #991b1b;
+    --red-d: rgba(153,27,27,0.08);
+    --purple: #5b21b6;
+    --purple-d: rgba(91,33,182,0.08);
+    --teal: #0e7490;
+    --teal-d: rgba(14,116,144,0.08);
+    
+    /* Text */
+    --t1: #111827;
+    --t2: #4b5563;
+    --t3: #9ca3af;
+  }
+
+  /* University Theme Variants */
+  .theme-howard {
+    --uni-primary: #003A63;
+    --uni-secondary: #7a0000;
+  }
+  
+  .theme-famu {
+    --uni-primary: #b45309;
+    --uni-secondary: #14532d;
+  }
+  
+  .theme-ncat {
+    --uni-primary: #1e3a8a;
+    --uni-secondary: #78350f;
+  }
+  
+  .theme-morehouse {
+    --uni-primary: #1c1917;
+    --uni-secondary: #991b1b;
+  }
+  
+  .theme-aamu {
+    --uni-primary: #1e3a8a;
+    --uni-secondary: #881337;
+  }
+  
+  .theme-tuskegee {
+    --uni-primary: #7A0019;
+    --uni-secondary: #9a6b00;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animate-page-in {
+    animation: pageIn 0.2s ease;
+  }
+  
+  @keyframes pageIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  
+  .animate-alert-pulse {
+    animation: alertPulse 2s infinite;
+  }
+  
+  @keyframes alertPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hi);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--t3);
+}
+
+/* Sidebar deep navy styling */
+.sidebar-nav {
+  background: #0f2a4a;
+}
+
+/* KPI card accent colors */
+.k-radar::after { background: var(--radar); }
+.k-green::after { background: var(--green); }
+.k-amber::after { background: var(--amber); }
+.k-red::after { background: var(--red); }
+.k-uni::after { background: var(--uni-primary); }
