@@ -115,9 +115,34 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
   const currentSlide = publishedSlides[currentIndex];
 
   return (
-    <section className="relative overflow-hidden bg-[#0f2a4a] text-white">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1a3a5c_1px,transparent_1px),linear-gradient(to_bottom,#1a3a5c_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+    <section className="relative overflow-hidden bg-[#0a1628] text-white">
+      {/* NCIS-themed Background */}
+      {/* Base dark navy gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#0d1f35] to-[#0a1628]" />
+      
+      {/* Grid pattern overlay - NCIS style */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(26,86,219,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26,86,219,0.15)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
+      
+      {/* Subtle radial glow from center */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,rgba(26,86,219,0.15),transparent_70%)]" />
+      
+      {/* Top light beam effect */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[conic-gradient(from_180deg_at_50%_50%,transparent_0deg,rgba(77,148,255,0.1)_45deg,transparent_90deg)] blur-3xl" />
+      
+      {/* NCIS-inspired seal/badge watermark */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-[0.03]">
+        <svg viewBox="0 0 200 200" className="w-full h-full">
+          <circle cx="100" cy="100" r="95" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="currentColor" strokeWidth="1"/>
+          <circle cx="100" cy="100" r="75" fill="none" stroke="currentColor" strokeWidth="1"/>
+          <path d="M100 20 L110 85 L180 100 L110 115 L100 180 L90 115 L20 100 L90 85 Z" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      </div>
+      
+      {/* Animated scan line */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-full h-[2px] bg-gradient-to-r from-transparent via-[#4d94ff]/50 to-transparent animate-scan" />
+      </div>
       
       <div className="relative py-20 md:py-32 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
@@ -151,14 +176,33 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
 
             {/* CTAs */}
             <div className="mt-10 flex justify-center gap-4">
-              <Button 
-                size="lg" 
-                className="text-lg px-8"
+              <button 
                 onClick={() => setIsLoginModalOpen(true)}
+                className="group relative px-8 py-4 text-lg font-semibold text-white transition-all duration-300 ease-out
+                  bg-gradient-to-b from-[#1a56db] to-[#1e40af]
+                  border-2 border-[#4d94ff]/50
+                  rounded-lg
+                  shadow-[0_4px_0_0_#1e3a8a,0_8px_16px_rgba(26,86,219,0.4)]
+                  hover:shadow-[0_6px_0_0_#1e3a8a,0_12px_24px_rgba(26,86,219,0.5)]
+                  hover:translate-y-[-2px]
+                  hover:border-[#4d94ff]/80
+                  active:translate-y-[2px]
+                  active:shadow-[0_2px_0_0_#1e3a8a,0_4px_8px_rgba(26,86,219,0.3)]
+                  active:duration-100
+                  overflow-hidden"
               >
-                {currentSlide.primaryCta.text}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                {/* Shine effect overlay */}
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                
+                {/* Button content */}
+                <span className="relative flex items-center gap-2">
+                  {currentSlide.primaryCta.text}
+                  <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                </span>
+                
+                {/* Glow pulse on hover */}
+                <span className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_center,rgba(77,148,255,0.3),transparent_70%)]" />
+              </button>
             </div>
           </div>
 
@@ -285,6 +329,17 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
 
       {/* Bottom Gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+      
+      {/* Add custom animation keyframes */}
+      <style jsx>{`
+        @keyframes scan {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100vh); }
+        }
+        .animate-scan {
+          animation: scan 8s linear infinite;
+        }
+      `}</style>
     </section>
   );
 }
