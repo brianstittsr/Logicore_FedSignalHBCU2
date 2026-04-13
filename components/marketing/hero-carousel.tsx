@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ArrowRight, CheckCircle, Play, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface HeroSlide {
@@ -27,19 +31,8 @@ export interface HeroSlide {
 }
 
 // Default slides - in production these would come from a database
+// Only FedSignal slide is active per request
 const defaultSlides: HeroSlide[] = [
-  {
-    id: "1",
-    badge: "This Is Our Battlespace",
-    headline: "Cyber Security, Logistics &",
-    highlightedText: "Software Engineering",
-    subheadline: "LogiCore Corporation provides analytical, advisory, and operational support services across cybersecurity, logistics engineering, and software engineering for the Department of Defense.",
-    benefits: ["Cybersecurity & CMMC", "Performance-Based Logistics", "HBCU Partnerships"],
-    primaryCta: { text: "Find Out More", href: "/contact" },
-    secondaryCta: { text: "Our Company", href: "/about" },
-    isPublished: true,
-    order: 1,
-  },
   {
     id: "2",
     badge: "★ FedSignal — Government Funding Intelligence",
@@ -50,43 +43,7 @@ const defaultSlides: HeroSlide[] = [
     primaryCta: { text: "Launch FedSignal", href: "/fedsignal" },
     secondaryCta: { text: "Learn More", href: "/about" },
     isPublished: true,
-    order: 2,
-  },
-  {
-    id: "3",
-    badge: "Cybersecurity Solutions",
-    headline: "Defend the mission.",
-    highlightedText: "Protect",
-    subheadline: "Information assurance, CMMC compliance, and cyber defense solutions protecting critical DoD and federal systems from evolving threats.",
-    benefits: ["Cyber Defense", "CMMC Compliance", "Risk Management"],
-    primaryCta: { text: "Learn More", href: "/cybersecurity" },
-    secondaryCta: { text: "Contact Us", href: "/contact" },
-    isPublished: true,
-    order: 3,
-  },
-  {
-    id: "4",
-    badge: "Logistics Engineering",
-    headline: "Sustain readiness.",
-    highlightedText: "Deliver",
-    subheadline: "Performance-based logistics and value engineering supporting Army Aviation, Missiles, and tactical systems across CONUS and OCONUS locations.",
-    benefits: ["PBL Solutions", "Value Engineering", "Sustainment Services"],
-    primaryCta: { text: "Explore Logistics", href: "/logistics" },
-    secondaryCta: { text: "Contact Us", href: "/contact" },
-    isPublished: true,
-    order: 4,
-  },
-  {
-    id: "5",
-    badge: "HBCU Partnerships",
-    headline: "Strengthening the pipeline.",
-    highlightedText: "Together",
-    subheadline: "Building pathways for HBCU talent into defense and technology careers through mentorship, research opportunities, and workforce development.",
-    benefits: ["Workforce Development", "Research Partnerships", "STEM Education"],
-    primaryCta: { text: "HBCU Programs", href: "/hbcu" },
-    secondaryCta: { text: "Talk to our team", href: "/contact" },
-    isPublished: true,
-    order: 5,
+    order: 1,
   },
 ];
 
@@ -96,9 +53,38 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }: HeroCarouselProps) {
+  const router = useRouter();
   const publishedSlides = slides.filter(s => s.isPublished).sort((a, b) => a.order - b.order);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  
+  // Login modal state
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleLogin = useCallback(() => {
+    if (!username || !password) return;
+    
+    setIsLoggingIn(true);
+    setLoginError("");
+    
+    // Validate credentials
+    if (username === "HBCU1" && password === "HBCU2026") {
+      // Store login state
+      sessionStorage.setItem("fedsignal_demo_login", "true");
+      sessionStorage.setItem("fedsignal_username", username);
+      
+      // Close modal and redirect
+      setIsLoginModalOpen(false);
+      router.push("/fedsignal");
+    } else {
+      setLoginError("Invalid username or password. Try HBCU1 / HBCU2026");
+      setIsLoggingIn(false);
+    }
+  }, [username, password, router]);
 
   const goToNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % publishedSlides.length);
@@ -164,15 +150,69 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
             </div>
 
             {/* CTAs */}
-            <div className="mt-10 flex justify-center">
-              <Button size="lg" className="text-lg px-8" asChild>
-                <Link href={currentSlide.primaryCta.href}>
-                  {currentSlide.primaryCta.text}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+            <div className="mt-10 flex justify-center gap-4">
+              <Button 
+                size="lg" 
+                className="text-lg px-8"
+                onClick={() => setIsLoginModalOpen(true)}
+              >
+                {currentSlide.primaryCta.text}
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </div>
+
+          {/* Login Modal */}
+          <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-center text-2xl">FedSignal Login</DialogTitle>
+                <DialogDescription className="text-center">
+                  Enter your credentials to access the FedSignal portal
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {loginError && (
+                  <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+                    <AlertCircle className="h-4 w-4" />
+                    {loginError}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="Enter username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && document.getElementById("password")?.focus()}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleLogin}
+                  disabled={isLoggingIn || !username || !password}
+                >
+                  {isLoggingIn ? "Logging in..." : "Login"}
+                </Button>
+                <p className="text-xs text-center text-muted-foreground pt-2">
+                  Demo credentials: HBCU1 / HBCU2026
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Carousel Navigation */}
           {publishedSlides.length > 1 && (

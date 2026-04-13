@@ -9,11 +9,12 @@ export default function HomePage() {
   return (
     <>
       <HeroCarousel />
-      <ServicesOverview />
-      <StatsSection />
-      <HowItWorks />
-      <Testimonials />
-      <CTASection />
+      {/* Sections hidden per request - only HeroCarousel and Footer remain */}
+      {/* <ServicesOverview /> */}
+      {/* <StatsSection /> */}
+      {/* <HowItWorks /> */}
+      {/* <Testimonials /> */}
+      {/* <CTASection /> */}
     </>
   );
 }

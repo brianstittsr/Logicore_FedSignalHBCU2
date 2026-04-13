@@ -146,7 +146,7 @@ export default function SignInPage() {
               <div className="absolute -inset-2 bg-gradient-to-r from-[#C8A951] to-[#a08840] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
               <Image
                 src="/VPlus_logo.webp"
-                alt="LogiCore HSV Logo"
+                alt="FedSignal Logo"
                 width={80}
                 height={80}
                 className="relative h-20 w-auto"
@@ -154,8 +154,8 @@ export default function SignInPage() {
               />
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground">LogiCore HSV</h1>
-              <p className="text-sm text-muted-foreground">Cyber Security, Logistics & Engineering</p>
+              <h1 className="text-2xl font-bold text-foreground">FedSignal</h1>
+              <p className="text-sm text-muted-foreground">HBCU Research & Contracting Opportunity Hub</p>
             </div>
           </Link>
         </div>
@@ -165,7 +165,7 @@ export default function SignInPage() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
             <CardDescription className="text-center">
-              Sign in to access your V+ Portal
+              Sign in to access your FedSignal Portal
             </CardDescription>
           </CardHeader>
           <CardContent>

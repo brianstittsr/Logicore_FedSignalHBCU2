@@ -105,77 +105,7 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <NavigationMenu className="hidden lg:flex">
           <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Services</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <div className="grid w-[800px] gap-3 p-4 md:grid-cols-3">
-                  {services.map((service) => (
-                    <div key={service.title} className="space-y-2">
-                      <Link
-                        href={service.href}
-                        className="flex items-center gap-2 font-semibold text-primary hover:underline"
-                      >
-                        <service.icon className="h-5 w-5" />
-                        {service.title}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        {service.description}
-                      </p>
-                      <ul className="space-y-1">
-                        {service.items.map((item) => (
-                          <li key={item.title}>
-                            <Link
-                              href={item.href}
-                              className="text-sm text-foreground/80 hover:text-primary hover:underline"
-                            >
-                              {item.title}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Company</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[250px] gap-3 p-4">
-                  {companyLinks.map((item) => (
-                    <li key={item.title}>
-                      <Link
-                        href={item.href}
-                        className="flex items-center gap-2 rounded-md p-2 hover:bg-accent"
-                      >
-                        <item.icon className="h-5 w-5 text-primary" />
-                        <span className="font-medium">{item.title}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[400px] gap-3 p-4 md:grid-cols-2">
-                  {resources.map((item) => (
-                    <li key={item.title}>
-                      <Link
-                        href={item.href}
-                        className="flex items-center gap-2 rounded-md p-2 hover:bg-accent"
-                      >
-                        <item.icon className="h-5 w-5 text-primary" />
-                        <span className="font-medium">{item.title}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
+            {/* Services, Company, Resources hidden per request */}
 
             <NavigationMenuItem>
               <NavigationMenuLink asChild className={cn(
@@ -210,54 +140,8 @@ export function Navbar() {
           <SheetContent side="right" className="w-[300px] sm:w-[400px]">
             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
             <nav className="flex flex-col gap-4 mt-8">
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Services</h3>
-                {services.map((service) => (
-                  <div key={service.title} className="space-y-2">
-                    <Link
-                      href={service.href}
-                      className="flex items-center gap-2 font-medium text-primary"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <service.icon className="h-5 w-5" />
-                      {service.title}
-                    </Link>
-                    <ul className="ml-7 space-y-1">
-                      {service.items.map((item) => (
-                        <li key={item.title}>
-                          <Link
-                            href={item.href}
-                            className="text-sm text-muted-foreground hover:text-primary"
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            {item.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t pt-4 space-y-2">
-                <Link
-                  href="/about"
-                  className="block py-2 font-medium"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  About
-                </Link>
-                {resources.map((item) => (
-                  <Link
-                    key={item.title}
-                    href={item.href}
-                    className="flex items-center gap-2 py-2"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <item.icon className="h-4 w-4 text-primary" />
-                    {item.title}
-                  </Link>
-                ))}
+              {/* Services, Company, Resources hidden per request */}
+              <div className="space-y-2">
                 <Link
                   href="/contact"
                   className="block py-2 font-medium"
