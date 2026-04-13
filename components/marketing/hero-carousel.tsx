@@ -329,17 +329,6 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
 
       {/* Bottom Gradient */}
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
-      
-      {/* Add custom animation keyframes */}
-      <style jsx>{`
-        @keyframes scan {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
-        }
-        .animate-scan {
-          animation: scan 8s linear infinite;
-        }
-      `}</style>
     </section>
   );
 }
