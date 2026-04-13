@@ -547,11 +547,11 @@ export function PortalSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <Link href="/portal" className="flex items-center gap-2 px-2 py-4">
           <div className="w-10 h-10 rounded-md bg-[#1a56db] flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-lg">LC</span>
+            <span className="text-white font-bold text-lg">FS</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold leading-none">LogiCore HSV</span>
-            <span className="text-xs text-sidebar-foreground/60">Business Portal</span>
+            <span className="text-lg font-bold leading-none">FedSignal</span>
+            <span className="text-xs text-sidebar-foreground/60">A Logicore HSV product</span>
           </div>
         </Link>
       </SidebarHeader>

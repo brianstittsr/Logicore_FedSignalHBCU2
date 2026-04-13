@@ -94,11 +94,11 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">LC</span>
+            <span className="text-primary-foreground font-bold text-lg">FS</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold leading-none">LogiCore HSV</span>
-            <span className="text-xs text-muted-foreground">Cyber Security, Logistics & Engineering</span>
+            <span className="text-lg font-bold leading-none">FedSignal</span>
+            <span className="text-xs text-muted-foreground">A Logicore HSV product</span>
           </div>
         </Link>
 
