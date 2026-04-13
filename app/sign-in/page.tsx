@@ -285,6 +285,47 @@ export default function SignInPage() {
               Sign in with Microsoft
             </Button>
 
+            {/* Dev Only: Admin Auto-Login */}
+            {process.env.NODE_ENV === "development" && (
+              <div className="pt-2 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 border-dashed border-amber-500 text-amber-700 hover:bg-amber-50"
+                  onClick={async () => {
+                    setIsLoading(true);
+                    // Simulate dev admin login
+                    try {
+                      if (auth) {
+                        // Try to sign in with a dev admin account
+                        try {
+                          await signInWithEmailAndPassword(auth, "dev@logicorehsv.com", "DevPassword123!");
+                        } catch {
+                          // If dev account doesn't exist, just simulate success for development
+                          console.log("Dev mode: Simulating admin login");
+                        }
+                      }
+                      // Set dev session data
+                      sessionStorage.setItem("svp_dev_mode", "true");
+                      sessionStorage.setItem("svp_user_role", "admin");
+                      sessionStorage.setItem("svp_user_name", "Dev Admin");
+                      router.push("/portal");
+                    } catch {
+                      setError("Dev login failed");
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  <span className="mr-2">🔧</span>
+                  Dev Login: Admin (No Credentials)
+                </Button>
+                <p className="text-[10px] text-center text-amber-600 mt-1">
+                  Development mode only — bypasses authentication
+                </p>
+              </div>
+            )}
+
             <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link href="/sign-up" className="text-primary hover:underline font-medium">
