@@ -56,6 +56,17 @@ export default function SignInPage() {
         return;
       }
 
+      // Demo login: HBCU1 / HBCU2026
+      if (email === "HBCU1" && password === "HBCU2026") {
+        sessionStorage.setItem("fedsignal_demo_login", "true");
+        sessionStorage.setItem("fedsignal_username", email);
+        sessionStorage.setItem("svp_team_member_id", "demo-user");
+        sessionStorage.setItem("svp_user_role", "admin");
+        sessionStorage.setItem("svp_user_name", "HBCU Demo User");
+        router.push("/fedsignal");
+        return;
+      }
+
       let firebaseUid: string | null = null;
       let userName: string | null = null;
 
@@ -141,21 +152,13 @@ export default function SignInPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo and Branding */}
         <div className="flex flex-col items-center mb-8">
-          <Link href="/" className="flex flex-col items-center gap-3 group">
-            <div className="relative">
-              <div className="absolute -inset-2 bg-gradient-to-r from-[#C8A951] to-[#a08840] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
-              <Image
-                src="/VPlus_logo.webp"
-                alt="FedSignal Logo"
-                width={80}
-                height={80}
-                className="relative h-20 w-auto"
-                priority
-              />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-12 h-12 rounded-md bg-[#1a56db] flex items-center justify-center">
+              <span className="text-white font-bold text-xl">FS</span>
             </div>
-            <div className="text-center">
+            <div className="text-left">
               <h1 className="text-2xl font-bold text-foreground">FedSignal</h1>
-              <p className="text-sm text-muted-foreground">HBCU Research & Contracting Opportunity Hub</p>
+              <p className="text-sm text-muted-foreground">A Logicore HSV product</p>
             </div>
           </Link>
         </div>
