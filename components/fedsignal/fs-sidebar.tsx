@@ -24,55 +24,55 @@ const navSections: NavSection[] = [
   {
     label: "Intelligence",
     items: [
-      { id: "dashboard", label: "Command Center", icon: "⬡", href: "/portal/fedsignal" },
-      { id: "opportunities", label: "Opportunity Feed", icon: "📡", badge: "47", href: "/portal/fedsignal/opportunities" },
-      { id: "radar", label: "FedSignal Radar", icon: "📊", href: "/portal/fedsignal/radar" },
-      { id: "alerts", label: "Strategic Alerts", icon: "🔔", badge: "6", badgeColor: "red", href: "/portal/fedsignal/alerts" },
+      { id: "dashboard", label: "Command Center", icon: "⬡", href: "/fedsignal" },
+      { id: "opportunities", label: "Opportunity Feed", icon: "📡", badge: "47", href: "/fedsignal/opportunities" },
+      { id: "radar", label: "FedSignal Radar", icon: "📊", href: "/fedsignal/radar" },
+      { id: "alerts", label: "Strategic Alerts", icon: "🔔", badge: "6", badgeColor: "red", href: "/fedsignal/alerts" },
     ],
   },
   {
     label: "University",
     items: [
-      { id: "capabilities", label: "Capability Graph", icon: "🔬", href: "/portal/fedsignal/capabilities" },
-      { id: "leadership", label: "Leadership", icon: "👤", href: "/portal/fedsignal/leadership" },
-      { id: "scoreboard", label: "HBCU Scoreboard", icon: "🏆", href: "/portal/fedsignal/scoreboard" },
+      { id: "capabilities", label: "Capability Graph", icon: "🔬", href: "/fedsignal/capabilities" },
+      { id: "leadership", label: "Leadership", icon: "👤", href: "/fedsignal/leadership" },
+      { id: "scoreboard", label: "HBCU Scoreboard", icon: "🏆", href: "/fedsignal/scoreboard" },
     ],
   },
   {
     label: "Partnerships",
     items: [
-      { id: "directory", label: "HBCU Network", icon: "🎓", badge: "101", href: "/portal/fedsignal/directory" },
-      { id: "marketplace", label: "Contractor Market", icon: "🤝", href: "/portal/fedsignal/marketplace" },
-      { id: "consortium", label: "Consortiums", icon: "⬡", badge: "3", badgeColor: "amber", href: "/portal/fedsignal/consortium" },
+      { id: "directory", label: "HBCU Network", icon: "🎓", badge: "101", href: "/fedsignal/directory" },
+      { id: "marketplace", label: "Contractor Market", icon: "🤝", href: "/fedsignal/marketplace" },
+      { id: "consortium", label: "Consortiums", icon: "⬡", badge: "3", badgeColor: "amber", href: "/fedsignal/consortium" },
     ],
   },
   {
     label: "Win Tools",
     items: [
-      { id: "proposalpal", label: "Proposal Pal", icon: "🏆", badge: "AI", href: "/portal/fedsignal/proposalpal" },
-      { id: "rficreator", label: "RFI Creator", icon: "📝", badge: "AI", href: "/portal/fedsignal/rficreator" },
+      { id: "proposalpal", label: "Proposal Pal", icon: "🏆", badge: "AI", href: "/fedsignal/proposalpal" },
+      { id: "rficreator", label: "RFI Creator", icon: "📝", badge: "AI", href: "/fedsignal/rficreator" },
     ],
   },
   {
     label: "Content & Growth",
     items: [
-      { id: "capvault", label: "Capability Vault", icon: "🗂️", href: "/portal/fedsignal/capvault" },
-      { id: "contentstudio", label: "Content Studio", icon: "✨", badge: "AI", href: "/portal/fedsignal/contentstudio" },
-      { id: "calendar", label: "Content Calendar", icon: "📅", href: "/portal/fedsignal/calendar" },
+      { id: "capvault", label: "Capability Vault", icon: "🗂️", href: "/fedsignal/capvault" },
+      { id: "contentstudio", label: "Content Studio", icon: "✨", badge: "AI", href: "/fedsignal/contentstudio" },
+      { id: "calendar", label: "Content Calendar", icon: "📅", href: "/fedsignal/calendar" },
     ],
   },
   {
     label: "BD & CRM",
     items: [
-      { id: "crm", label: "CRM & Contacts", icon: "👥", badge: "PRO", badgeColor: "amber", href: "/portal/fedsignal/crm" },
-      { id: "winloss", label: "Win/Loss Tracker", icon: "📊", href: "/portal/fedsignal/winloss" },
+      { id: "crm", label: "CRM & Contacts", icon: "👥", badge: "PRO", badgeColor: "amber", href: "/fedsignal/crm" },
+      { id: "winloss", label: "Win/Loss Tracker", icon: "📊", href: "/fedsignal/winloss" },
     ],
   },
   {
     label: "Reports",
     items: [
-      { id: "grants", label: "Grant Tracker", icon: "📋", href: "/portal/fedsignal/grants" },
-      { id: "board", label: "Board Report", icon: "📑", href: "/portal/fedsignal/board" },
+      { id: "grants", label: "Grant Tracker", icon: "📋", href: "/fedsignal/grants" },
+      { id: "board", label: "Board Report", icon: "📑", href: "/fedsignal/board" },
     ],
   },
 ];
@@ -92,8 +92,8 @@ export function FSSidebar({ universityId = "tuskegee", onUniversityChange }: FSS
   };
 
   const isActive = (href: string) => {
-    if (href === "/portal/fedsignal" && pathname === "/portal/fedsignal") return true;
-    if (href !== "/portal/fedsignal" && pathname.startsWith(href)) return true;
+    if (href === "/fedsignal" && pathname === "/fedsignal") return true;
+    if (href !== "/fedsignal" && pathname.startsWith(href)) return true;
     return false;
   };
 
