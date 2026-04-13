@@ -181,15 +181,15 @@ export default function SignInPage() {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">Email or Username</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="you@company.com"
+                  type="text"
+                  placeholder="you@company.com or HBCU1"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="email"
+                  autoComplete="username"
                   className="h-11"
                 />
               </div>
