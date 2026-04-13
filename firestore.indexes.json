@@ -1,6 +1,209 @@
 {
   "indexes": [
     {
+      "collectionGroup": "fedsignal_opportunities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "response_deadline", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_opportunities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "agency", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_opportunities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "set_aside", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "match_score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_grants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "deadline", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_grants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "eligibility", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "deadline", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "is_read", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "alert_type", "order": "ASCENDING" },
+        { "fieldPath": "priority", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_capabilities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "capability_type", "order": "ASCENDING" },
+        { "fieldPath": "match_score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_teaming_partners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "relationship_status", "order": "ASCENDING" },
+        { "fieldPath": "match_score", "order": "DESCENDING" },
+        { "fieldPath": "contract_history_count", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_proposals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "submission_deadline", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_proposals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "proposal_type", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "start_time", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "event_type", "order": "ASCENDING" },
+        { "fieldPath": "start_time", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_tasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "assigned_to", "order": "ASCENDING" },
+        { "fieldPath": "due_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_tasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "priority", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_contacts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "contact_type", "order": "ASCENDING" },
+        { "fieldPath": "last_contact_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_sbir_awards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "agency", "order": "ASCENDING" },
+        { "fieldPath": "award_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_scorecards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "entity_type", "order": "ASCENDING" },
+        { "fieldPath": "total_score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_win_loss",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "outcome", "order": "ASCENDING" },
+        { "fieldPath": "award_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_gammadeck_cards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "stage", "order": "ASCENDING" },
+        { "fieldPath": "expected_award_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_directory_entries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "primary_naics", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_consortiums",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "next_meeting_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fedsignal_capvault_docs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "university_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "expiration_date", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "opportunities",
       "queryScope": "COLLECTION",
       "fields": [

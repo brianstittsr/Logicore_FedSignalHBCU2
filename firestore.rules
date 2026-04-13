@@ -658,5 +658,306 @@ service cloud.firestore {
       allow update: if true; // Allow updates for signature completion
       allow delete: if isAuthenticated();
     }
+
+    // =========================================================================
+    // FedSignal Collections - Multi-tenant HBCU Research & Contracting Hub
+    // =========================================================================
+
+    // Helper function to check university membership
+    function belongsToUniversity(universityId) {
+      return isAuthenticated() && 
+        (resource.data.university_id == universityId ||
+         request.resource.data.university_id == universityId);
+    }
+
+    // 1. Opportunities
+    match /fedsignal_opportunities/{oppId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Grants
+    match /fedsignal_grants/{grantId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 3. SBIR Awards
+    match /fedsignal_sbir_awards/{awardId} {
+      allow read: if true; // Public read
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 4. Alerts
+    match /fedsignal_alerts/{alertId} {
+      allow read: if isAuthenticated() && (
+        resource.data.user_id == request.auth.uid ||
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.user_id == request.auth.uid ||
+        request.auth.token.role == 'admin'
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 5. Capabilities
+    match /fedsignal_capabilities/{capId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 6. Teaming Partners
+    match /fedsignal_teaming_partners/{partnerId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 7. Consortiums
+    match /fedsignal_consortiums/{consortiumId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 8. RFIs
+    match /fedsignal_rfis/{rfiId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 9. Proposals
+    match /fedsignal_proposals/{proposalId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow delete: if isAdmin();
+      
+      // Subcollections for proposal
+      match /versions/{versionId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // 10. Subcontracts
+    match /fedsignal_subcontracts/{subId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 11. Scorecards
+    match /fedsignal_scorecards/{scorecardId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // 12. Win/Loss Records
+    match /fedsignal_win_loss/{recordId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 13. F&A Records
+    match /fedsignal_fanda_records/{recordId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 14. GammaDeck Cards
+    match /fedsignal_gammadeck_cards/{cardId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 15. Directory Entries
+    match /fedsignal_directory_entries/{entryId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 16. Events
+    match /fedsignal_events/{eventId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 17. Tasks
+    match /fedsignal_tasks/{taskId} {
+      allow read: if isAuthenticated() && (
+        resource.data.assigned_to == request.auth.uid ||
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.assigned_to == request.auth.uid ||
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 18. Contacts
+    match /fedsignal_contacts/{contactId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 19. Newsletters
+    match /fedsignal_newsletters/{newsletterId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 20. Content Assets
+    match /fedsignal_content_assets/{assetId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 21. CAPVault Documents
+    match /fedsignal_capvault_docs/{docId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 22. Leadership Profiles
+    match /fedsignal_leadership_profiles/{profileId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 23. Board Members
+    match /fedsignal_board_members/{memberId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 24. Marketplace Listings
+    match /fedsignal_marketplace_listings/{listingId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.provider_university == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
+
+    // 25. Onboarding Flows
+    match /fedsignal_onboarding_flows/{flowId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 26. Invites
+    match /fedsignal_invites/{inviteId} {
+      allow read: if isAuthenticated() && (
+        resource.data.invited_email == request.auth.token.email ||
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.invited_email == request.auth.token.email ||
+        request.auth.token.role == 'admin'
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 27. Contracts
+    match /fedsignal_contracts/{contractId} {
+      allow read: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+      allow create, update, delete: if isAuthenticated() && (
+        resource.data.university_id == request.auth.token.university_id ||
+        request.auth.token.role == 'admin'
+      );
+    }
   }
 }
