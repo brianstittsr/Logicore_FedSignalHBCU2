@@ -298,32 +298,7 @@ export function HeroCarousel({ slides = defaultSlides, autoPlayInterval = 6000 }
             </div>
           )}
 
-          {/* Trust Indicators */}
-          <div className="mt-16 pt-8 border-t border-white/10">
-            <p className="text-sm text-gray-400 mb-6">Certifications & Partnerships</p>
-            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10">
-              <div className="flex flex-col items-center text-center">
-                <span className="text-lg font-bold text-white">ISO 9001</span>
-                <span className="text-xs text-gray-400">Certified</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="text-lg font-bold text-white">IATF 16949</span>
-                <span className="text-xs text-gray-400">Automotive</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="text-lg font-bold text-white">MEP</span>
-                <span className="text-xs text-gray-400">Network Partner</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="text-lg font-bold text-white">Reshoring</span>
-                <span className="text-xs text-gray-400">Initiative</span>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="text-lg font-bold text-white">NIST</span>
-                <span className="text-xs text-gray-400">Aligned</span>
-              </div>
-            </div>
-          </div>
+          {/* Trust Indicators removed as requested */}
         </div>
       </div>
 
