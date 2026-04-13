@@ -46,7 +46,7 @@ export interface PopupConfig {
 
 // Default configuration
 export const defaultPopupConfig: PopupConfig = {
-  enabled: true,
+  enabled: false,
   title: "Strategic Value+ Solutions",
   subtitle: "Request a supplier readiness assessment to identify gaps and define the fastest path to OEM qualification.",
   description: "Tell us what you're aiming to qualify for and where you're stuck. We'll follow up with next steps.",
